@@ -2,11 +2,20 @@ package main
 
 import (
 	"fmt"
-	internalPatterns "github.com/suikast42/logunifier/patterns"
+	"github.com/suikast42/logunifier/internal/config"
+	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 )
 
 func main() {
+	config.ReadConfigs()
+	err := config.ConfigLogging()
+	if err != nil {
+		panic(err)
+	}
 
+}
+
+func grokTest() {
 	factory, err := internalPatterns.New()
 	if err != nil {
 		panic(err)
@@ -64,5 +73,4 @@ func main() {
 			fmt.Printf("%+15s: %s\n", k, v)
 		}
 	}
-
 }
