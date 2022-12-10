@@ -26,7 +26,7 @@ func New() (*PatternFactory, error) {
 	{
 		err := add(addPatterns, grok.DefaultPatterns)
 		// better defined in additionalPatterns.Grok
-		for k, _ := range additionalPatterns.Grok {
+		for k := range additionalPatterns.Grok {
 			val := grok.DefaultPatterns[k]
 			if len(val) > 0 {
 				delete(addPatterns, k)
