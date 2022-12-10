@@ -26,8 +26,8 @@ func (c Config) IngressNatsJournald() string {
 	return c.ingressNatsJournald
 }
 
-func (c Config) NatsServers() []string {
-	return c.natsServers
+func (c Config) NatsServers() string {
+	return strings.Join(c.natsServers, ",")
 }
 
 func (c Config) Loglevel() string {

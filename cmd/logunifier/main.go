@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 )
@@ -12,7 +13,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	logger := config.Logger()
+	err = bootstrap.Connect()
+	if err != nil {
+		logger.Error().Err(err).Msg("Can't connect to nats")
+	}
 }
 
 func grokTest() {
