@@ -130,7 +130,6 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		}
 		logger.Info().Msgf("Consumer %s updated", updateConsumer.Name)
 	}
-
 	subscribe, err := js.PullSubscribe(r.subscription, r.durableSubscriptionName)
 	f := func() {
 		for {
@@ -148,9 +147,10 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 					continue
 				}
 				logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
-				//msg.Nak()
+				msg.Ack()
 			}
 		}
+
 	}
 	go f()
 	//subscribe, subError := js.Subscribe(r.subscription, func(msg *nats.Msg) {
