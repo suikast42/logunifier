@@ -2,6 +2,9 @@ package journald
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/config"
@@ -37,19 +40,21 @@ type IngressSubjectJournald struct {
 }
 
 type IngressJournaldSubscription struct {
-	name         string
-	subscription string
+	durableSubscriptionName string
+	streamName              string
+	subscription            string
 }
 
-func NewSubscription(name string, subscription string) *IngressJournaldSubscription {
+func NewSubscription(name string, durableSubscriptionName string, subscription string) *IngressJournaldSubscription {
 	return &IngressJournaldSubscription{
-		name:         name,
-		subscription: subscription,
+		durableSubscriptionName: durableSubscriptionName,
+		streamName:              name,
+		subscription:            subscription,
 	}
 }
 
 func (r *IngressJournaldSubscription) String() string {
-	return fmt.Sprintf("%s --> %s", r.name, r.subscription)
+	return fmt.Sprintf("%s@%s --> %s", r.durableSubscriptionName, r.streamName, r.subscription)
 }
 
 func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error {
@@ -65,7 +70,7 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 
 	// stream cfg
 	streamcfg := &nats.StreamConfig{
-		Name:         r.name,
+		Name:         r.streamName,
 		Description:  "Ingress Processor for journald logs comes over vector",
 		Subjects:     []string{r.subscription},
 		MaxBytes:     1024 * 1024 * 1_000, // 1GB ingress topic
@@ -81,25 +86,99 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		NoAck:      false,
 		Duplicates: time.Minute * 5, // Duplicate time window
 	}
-	// Create a stream
-	stream, err := js.AddStream(streamcfg)
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't add stream %s", streamcfg.Name)
-		return err
+	// Check if the stream already exists; if not, create it.
+	streamInfo, err := js.StreamInfo(streamcfg.Name)
+
+	if streamInfo == nil {
+		// Create a stream
+		stream, err := js.AddStream(streamcfg)
+		if err != nil {
+			logger.Error().Err(err).Msgf("Can't add stream %s", streamcfg.Name)
+			return err
+		}
+		logger.Info().Msgf("Connected to stream streamName: %s", stream.Config.Name)
+	} else {
+		// Update a stream
+		updateStream, err := js.UpdateStream(streamcfg)
+		if err != nil {
+			logger.Error().Err(err).Msgf("Can't update stream %s", streamcfg.Name)
+			return err
+		}
+		logger.Info().Msgf("Updated to stream streamName: %s", updateStream.Config.Name)
 	}
-	logger.Info().Msgf("Connected to stream name: %s", stream.Config.Name)
-	// Update a stream
-	updateStream, err := js.UpdateStream(streamcfg)
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't update stream %s", streamcfg.Name)
-		return err
+
+	// Check if the consumer already exists; if not, create it.
+	consumerInfo, err := js.ConsumerInfo(r.streamName, r.durableSubscriptionName)
+	consumerCfg := &nats.ConsumerConfig{
+		Durable:       r.durableSubscriptionName,
+		DeliverPolicy: nats.DeliverAllPolicy,
+		ReplayPolicy:  nats.ReplayInstantPolicy,
+		AckPolicy:     nats.AckExplicitPolicy,
 	}
-	logger.Info().Msgf("Updated to stream name: %s", updateStream.Config.Name)
-	// Create a Consumer
-	js.AddConsumer(r.name,
-		&nats.ConsumerConfig{
-			Durable: "JournaldIngressProcessor",
-		})
+	if consumerInfo == nil {
+		consumer, createError := js.AddConsumer(r.streamName, consumerCfg)
+		if createError != nil {
+			logger.Error().Err(createError).Msgf("Can't create consumer %s", consumerCfg.Name)
+			return createError
+		}
+		logger.Info().Msgf("Consumer %s created", consumer.Name)
+	} else {
+		updateConsumer, updateError := js.UpdateConsumer(r.streamName, consumerCfg)
+		if updateError != nil {
+			logger.Error().Err(updateError).Msgf("Can't update consumer %s", consumerCfg.Name)
+			return updateError
+		}
+		logger.Info().Msgf("Consumer %s updated", updateConsumer.Name)
+	}
+
+	subscribe, err := js.PullSubscribe(r.subscription, r.durableSubscriptionName)
+	f := func() {
+		for {
+			fetch, err := subscribe.Fetch(100)
+			if err != nil {
+				logger.Error().Err(err).Msg("Can't fetch")
+				continue
+			}
+			for _, msg := range fetch {
+
+				v := &IngressSubjectJournald{}
+				err := json.Unmarshal(msg.Data, v)
+				if err != nil {
+					logger.Error().Err(err).Msg("Can't unmarshal")
+					continue
+				}
+				logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
+				//msg.Nak()
+			}
+		}
+	}
+	go f()
+	//subscribe, subError := js.Subscribe(r.subscription, func(msg *nats.Msg) {
+	//	logger.Info().Msgf("%v", string(msg.Data))
+	//	msg.Ack()
+	//},
+	//	nats.Context(ctx),
+	//	nats.Durable(r.durableSubscriptionName),
+	//	//nats.OrderedConsumer(),
+	//	//nats.Description("Test consumer"),
+	//	//nats.ManualAck(),
+	//)
+	//if subError != nil {
+	//	logger.Error().Err(subError).Msgf("Can't subscribe to %s", r.subscription)
+	//	return subError
+	//}
+	//info, infoerror := subscribe.ConsumerInfo()
+	//if infoerror != nil {
+	//	logger.Error().Err(infoerror).Msg("CanÄ't obtain consumer info")
+	//	return infoerror
+	//}
+	//logger.Info().Msgf("Subscribed to %s with ", subscribe.Subject, info.Name)
 
 	return nil
+}
+
+func GetMD5Hash(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
 }

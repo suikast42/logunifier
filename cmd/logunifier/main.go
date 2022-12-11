@@ -20,7 +20,7 @@ func main() {
 		panic(err)
 	}
 	logger := config.Logger()
-	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournald", instance.IngressNatsJournald())
+	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald())
 	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
 	err = bootstrap.Connect(&subscriptions)
 	if err != nil {
