@@ -6,6 +6,7 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 import _ "github.com/nats-io/nats.go"
@@ -15,11 +16,12 @@ import _ "github.com/nats-io/nats.go"
 type customDialer struct {
 	ctx             context.Context
 	nc              *nats.Conn
+	subscriptions   *[]NatsSubscription
 	connectTimeout  time.Duration
 	connectTimeWait time.Duration
 }
 
-func Connect() error {
+func Connect(subscriptions *[]NatsSubscription) error {
 	cfg, err := config.Instance()
 	logger := config.Logger()
 	if err != nil {
@@ -35,12 +37,15 @@ func Connect() error {
 		ctx:             ctx,
 		connectTimeout:  10 * time.Second,
 		connectTimeWait: 3 * time.Second,
+		subscriptions:   subscriptions,
 	}
 	opts := []nats.Option{
 		nats.SetCustomDialer(cd),
 		nats.ReconnectWait(2 * time.Second),
 		nats.ReconnectHandler(func(c *nats.Conn) {
+			cd.nc = nc
 			logger.Info().Msgf("Reconnected to %s", c.ConnectedUrl())
+			go cd.startSubscribe()
 		}),
 		nats.DisconnectErrHandler(func(c *nats.Conn, disconnectionError error) {
 			if disconnectionError != nil {
@@ -63,7 +68,8 @@ func Connect() error {
 WaitForEstablishedConnection:
 	for {
 		if err != nil {
-			logger.Error().Err(err).Msg("")
+			logger.Error().Err(err).Msg("Connection error")
+			err = nil
 		}
 
 		// Wait for context to be canceled either by timeout
@@ -75,12 +81,19 @@ WaitForEstablishedConnection:
 		}
 
 		if nc == nil || !nc.IsConnected() {
-			logger.Warn().Msg("Connection not ready")
-			time.Sleep(200 * time.Millisecond)
+			if nc == nil {
+				logger.Warn().Msg("Connection not ready ")
+			} else {
+				logger.Warn().Msgf("Connection not ready %v ", nc)
+			}
+			time.Sleep(cd.connectTimeWait)
 			continue
 		}
+
 		break WaitForEstablishedConnection
 	}
+	cd.nc = nc
+	go cd.startSubscribe()
 	if ctx.Err() != nil {
 		log.Fatal(ctx.Err())
 	}
@@ -100,31 +113,10 @@ WaitForEstablishedConnection:
 
 	// Disconnect and flush pending messages
 	if err := nc.Drain(); err != nil {
-		logger.Error().Err(err).Msg("")
+		logger.Error().Err(err).Msg("Can't Drain")
 	}
 	logger.Info().Msg("Disconnected")
 
-	//
-	//// Normally, the library will return an error when trying to connect and
-	//// there is no server running. The RetryOnFailedConnect option will set
-	//// the connection in reconnecting state if it failed to connect right away.
-	//nc, err := nats.Connect(cfg.NatsServers(),
-	//	nats.RetryOnFailedConnect(true),
-	//	nats.MaxReconnects(10),
-	//	nats.ReconnectWait(time.Second),
-	//	nats.ReconnectHandler(func(connection *nats.Conn) {
-	//		logger.Info().Msgf("Connecting to to %s", connection.ConnectedUrl())
-	//		// Note that this will be invoked for the first asynchronous connect.
-	//	}))
-	//if err != nil {
-	//	// Should not return an error even if it can't connect, but you still
-	//	// need to check in case there are some configuration errors.
-	//}
-	//
-	//for !nc.IsConnected() {
-	//	time.Sleep(time.Second * 1)
-	//}
-	//logger.Info().Msgf("Connected to %s", nc.ConnectedUrl())
 	return nil
 }
 
@@ -145,11 +137,35 @@ func (cd *customDialer) Dial(network, address string) (net.Conn, error) {
 		default:
 			d := &net.Dialer{}
 			if conn, err := d.DialContext(ctx, network, address); err == nil {
-				logger.Info().Msgf("Connected to NATS successfully")
+				logger.Info().Msgf("Connected to NATS %s successfully", address)
+
 				return conn, nil
 			} else {
 				time.Sleep(cd.connectTimeWait)
 			}
 		}
 	}
+}
+
+var sub sync.Mutex
+
+func (cd customDialer) startSubscribe() {
+	sub.Lock()
+	logger := config.Logger()
+	defer sub.Unlock()
+
+	for _, sub := range *cd.subscriptions {
+		_ctx, _cancel := context.WithTimeout(cd.ctx, cd.connectTimeout)
+		err := sub.Subscribe(_ctx, _cancel, cd.nc)
+		if err != nil {
+			logger.Error().Err(err).Msgf("Subscription to %s failed", sub.String())
+			time.Sleep(cd.connectTimeWait)
+			go cd.startSubscribe()
+		}
+	}
+}
+
+type NatsSubscription interface {
+	String() string
+	Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error
 }

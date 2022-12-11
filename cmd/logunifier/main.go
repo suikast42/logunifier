@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/internal/model/ingress/journald"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 )
 
@@ -13,10 +14,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	logger := config.Logger()
-	err = bootstrap.Connect()
+
+	instance, err := config.Instance()
 	if err != nil {
-		logger.Error().Err(err).Msg("Can't connect to nats")
+		panic(err)
+	}
+	logger := config.Logger()
+	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournald", instance.IngressNatsJournald())
+	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
+	err = bootstrap.Connect(&subscriptions)
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
 	}
 }
 
