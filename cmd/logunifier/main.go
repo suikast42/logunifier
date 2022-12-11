@@ -22,10 +22,13 @@ func main() {
 	logger := config.Logger()
 	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald())
 	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
+
 	err = bootstrap.Connect(&subscriptions)
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
 	}
+
+	logger.Info().Msg("Alles gut")
 }
 
 func grokTest() {

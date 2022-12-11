@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/config"
@@ -107,73 +106,66 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		logger.Info().Msgf("Updated to stream streamName: %s", updateStream.Config.Name)
 	}
 
-	// Check if the consumer already exists; if not, create it.
-	consumerInfo, err := js.ConsumerInfo(r.streamName, r.durableSubscriptionName)
-	consumerCfg := &nats.ConsumerConfig{
-		Durable:       r.durableSubscriptionName,
-		DeliverPolicy: nats.DeliverAllPolicy,
-		ReplayPolicy:  nats.ReplayInstantPolicy,
-		AckPolicy:     nats.AckExplicitPolicy,
-	}
-	if consumerInfo == nil {
-		consumer, createError := js.AddConsumer(r.streamName, consumerCfg)
-		if createError != nil {
-			logger.Error().Err(createError).Msgf("Can't create consumer %s", consumerCfg.Name)
-			return createError
-		}
-		logger.Info().Msgf("Consumer %s created", consumer.Name)
-	} else {
-		updateConsumer, updateError := js.UpdateConsumer(r.streamName, consumerCfg)
-		if updateError != nil {
-			logger.Error().Err(updateError).Msgf("Can't update consumer %s", consumerCfg.Name)
-			return updateError
-		}
-		logger.Info().Msgf("Consumer %s updated", updateConsumer.Name)
-	}
-	subscribe, err := js.PullSubscribe(r.subscription, r.durableSubscriptionName)
-	f := func() {
-		for {
-			fetch, err := subscribe.Fetch(100)
-			if err != nil {
-				logger.Error().Err(err).Msg("Can't fetch")
-				continue
-			}
-			for _, msg := range fetch {
-
-				v := &IngressSubjectJournald{}
-				err := json.Unmarshal(msg.Data, v)
-				if err != nil {
-					logger.Error().Err(err).Msg("Can't unmarshal")
-					continue
-				}
-				logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
-				msg.Ack()
-			}
-		}
-
-	}
-	go f()
-	//subscribe, subError := js.Subscribe(r.subscription, func(msg *nats.Msg) {
-	//	logger.Info().Msgf("%v", string(msg.Data))
-	//	msg.Ack()
-	//},
-	//	nats.Context(ctx),
-	//	nats.Durable(r.durableSubscriptionName),
-	//	//nats.OrderedConsumer(),
-	//	//nats.Description("Test consumer"),
-	//	//nats.ManualAck(),
-	//)
-	//if subError != nil {
-	//	logger.Error().Err(subError).Msgf("Can't subscribe to %s", r.subscription)
-	//	return subError
+	//// Check if the consumer already exists; if not, create it.
+	//consumerInfo, err := js.ConsumerInfo(r.streamName, r.durableSubscriptionName)
+	//consumerCfg := &nats.ConsumerConfig{
+	//	Durable:       r.durableSubscriptionName,
+	//	DeliverPolicy: nats.DeliverAllPolicy,
+	//	ReplayPolicy:  nats.ReplayInstantPolicy,
+	//	AckPolicy:     nats.AckAllPolicy,
+	//	//MaxAckPending: 1000,
+	//	//MaxWaiting:    100,
+	//	//FlowControl:   true,
+	//	//FilterSubject: r.streamName,
 	//}
-	//info, infoerror := subscribe.ConsumerInfo()
-	//if infoerror != nil {
-	//	logger.Error().Err(infoerror).Msg("CanÄ't obtain consumer info")
-	//	return infoerror
+	//if consumerInfo == nil {
+	//	consumer, createError := js.AddConsumer(r.streamName, consumerCfg)
+	//	if createError != nil {
+	//		logger.Error().Err(createError).Msgf("Can't create consumer %s", consumerCfg.Name)
+	//		return createError
+	//	}
+	//	logger.Info().Msgf("Consumer %s created", consumer.Name)
+	//} else {
+	//	updateConsumer, updateError := js.UpdateConsumer(r.streamName, consumerCfg)
+	//	if updateError != nil {
+	//		logger.Error().Err(updateError).Msgf("Can't update consumer %s", consumerCfg.Name)
+	//		return updateError
+	//	}
+	//	logger.Info().Msgf("Consumer %s updated", updateConsumer.Name)
 	//}
-	//logger.Info().Msgf("Subscribed to %s with ", subscribe.Subject, info.Name)
+	//subscribe, err := js.PullSubscribe(r.subscription, "Hansi")
+	//if err != nil {
+	//	logger.Error().Err(err).Stack().Msg("Can't create subscription")
+	//	return err
+	//}
 
+	subOpts := []nats.SubOpt{
+		nats.BindStream(r.streamName),
+		nats.ManualAck(),
+		nats.ReplayInstant(),
+		nats.DeliverAll(),
+		nats.MaxAckPending(1),
+		nats.EnableFlowControl(),
+		nats.IdleHeartbeat(time.Second * 1),
+		nats.Durable(r.durableSubscriptionName),
+	}
+	subscribe, err := js.Subscribe("", func(msg *nats.Msg) {
+		//logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
+		logger.Info().Msgf("%s", msg.Data)
+		//msg.Ack()
+		msg.Nak()
+		time.Sleep(time.Second * 1)
+	}, subOpts...)
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't subscribe consumer %s", r.durableSubscriptionName)
+		return err
+	}
+	info, err := subscribe.ConsumerInfo()
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't obtain consumer info %s", r.durableSubscriptionName)
+		return err
+	}
+	logger.Info().Msgf("Subscription %s done", info.Name)
 	return nil
 }
 
