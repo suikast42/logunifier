@@ -165,6 +165,12 @@ func (cd customDialer) startSubscribe() {
 	}
 }
 
+func Disconnect() error {
+	logger := config.Logger()
+	logger.Warn().Msg("Implement nats disconnect")
+	return nil
+}
+
 type NatsSubscription interface {
 	String() string
 	Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error

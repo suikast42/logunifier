@@ -6,9 +6,20 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/model/ingress/journald"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		bootstrap.Disconnect()
+		os.Exit(1)
+	}()
+
 	config.ReadConfigs()
 	err := config.ConfigLogging()
 	if err != nil {

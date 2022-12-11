@@ -84,6 +84,7 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		//application for the message it is then removed from the stream.
 		NoAck:      false,
 		Duplicates: time.Minute * 5, // Duplicate time window
+
 	}
 	// Check if the stream already exists; if not, create it.
 	streamInfo, err := js.StreamInfo(streamcfg.Name)
@@ -141,10 +142,12 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 
 	subOpts := []nats.SubOpt{
 		nats.BindStream(r.streamName),
-		nats.ManualAck(),
-		nats.ReplayInstant(),
-		nats.DeliverAll(),
-		nats.MaxAckPending(1),
+		nats.AckWait(time.Second * 10), // Redeliver after
+		//nats.MaxDeliver(5),  // Redeliver max default is infinite
+		nats.ManualAck(),         // Control the ack inProgress and nack self
+		nats.ReplayInstant(),     // Replay so fast as possible
+		nats.DeliverAll(),        // Redeliver all not acked when restarted
+		nats.MaxAckPending(1024), // Max inflight ack
 		nats.EnableFlowControl(),
 		nats.IdleHeartbeat(time.Second * 1),
 		nats.Durable(r.durableSubscriptionName),
@@ -153,8 +156,10 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		//logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
 		logger.Info().Msgf("%s", msg.Data)
 		//msg.Ack()
-		msg.Nak()
-		time.Sleep(time.Second * 1)
+		//msg.NakWithDelay(time.Second * 10)
+		//time.Sleep(time.Second * 2)
+		//msg.Term()
+		msg.Ack()
 	}, subOpts...)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't subscribe consumer %s", r.durableSubscriptionName)
