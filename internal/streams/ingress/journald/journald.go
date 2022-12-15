@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"time"
 )
@@ -42,13 +44,17 @@ type IngressJournaldSubscription struct {
 	durableSubscriptionName string
 	streamName              string
 	subscription            string
+	subscriptionInstance    *nats.Subscription
+	logger                  *zerolog.Logger
 }
 
 func NewSubscription(name string, durableSubscriptionName string, subscription string) *IngressJournaldSubscription {
+	logger := config.Logger()
 	return &IngressJournaldSubscription{
 		durableSubscriptionName: durableSubscriptionName,
 		streamName:              name,
 		subscription:            subscription,
+		logger:                  &logger,
 	}
 }
 
@@ -57,13 +63,12 @@ func (r *IngressJournaldSubscription) String() string {
 }
 
 func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error {
-	logger := config.Logger()
-	logger.Info().Msgf("Subscribing to %s", r.String())
+	r.logger.Info().Msgf("Subscribing to %s", r.String())
 
 	js, err := connection.JetStream()
 
 	if err != nil {
-		logger.Error().Err(err).Msg("Can't create jetstream connection")
+		r.logger.Error().Err(err).Msg("Can't create jetstream connection")
 		return err
 	}
 
@@ -93,18 +98,18 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		// Create a stream
 		stream, err := js.AddStream(streamcfg)
 		if err != nil {
-			logger.Error().Err(err).Msgf("Can't add stream %s", streamcfg.Name)
+			r.logger.Error().Err(err).Msgf("Can't add stream %s", streamcfg.Name)
 			return err
 		}
-		logger.Info().Msgf("Connected to stream streamName: %s", stream.Config.Name)
+		r.logger.Info().Msgf("Connected to stream streamName: %s", stream.Config.Name)
 	} else {
 		// Update a stream
 		updateStream, err := js.UpdateStream(streamcfg)
 		if err != nil {
-			logger.Error().Err(err).Msgf("Can't update stream %s", streamcfg.Name)
+			r.logger.Error().Err(err).Msgf("Can't update stream %s", streamcfg.Name)
 			return err
 		}
-		logger.Info().Msgf("Updated to stream streamName: %s", updateStream.Config.Name)
+		r.logger.Info().Msgf("Updated to stream streamName: %s", updateStream.Config.Name)
 	}
 
 	//// Check if the consumer already exists; if not, create it.
@@ -153,24 +158,41 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		nats.Durable(r.durableSubscriptionName),
 	}
 	subscribe, err := js.Subscribe("", func(msg *nats.Msg) {
-		//logger.Info().Msgf("%s %s", v.Timestamp, v.Message)
-		logger.Info().Msgf("%s", msg.Data)
-		//msg.Ack()
-		//msg.NakWithDelay(time.Second * 10)
-		//time.Sleep(time.Second * 2)
-		//msg.Term()
+		msg.InProgress()
+		journald := IngressSubjectJournald{}
+		unmarsahlError := json.Unmarshal(msg.Data, &journald)
+		if unmarsahlError != nil {
+			r.logger.Error().Err(unmarsahlError).Msg("Can't unmarshal message fom journald channel")
+			err := msg.Term()
+			if err != nil {
+				return
+			}
+		}
+		r.logger.Info().Msgf("Received message %s - %s", journald.Timestamp, journald.Message)
 		msg.Ack()
 	}, subOpts...)
 	if err != nil {
-		logger.Error().Err(err).Msgf("Can't subscribe consumer %s", r.durableSubscriptionName)
+		r.logger.Error().Err(err).Msgf("Can't subscribe consumer %s", r.durableSubscriptionName)
 		return err
 	}
+	r.subscriptionInstance = subscribe
 	info, err := subscribe.ConsumerInfo()
 	if err != nil {
-		logger.Error().Err(err).Msgf("Can't obtain consumer info %s", r.durableSubscriptionName)
+		r.logger.Error().Err(err).Msgf("Can't obtain consumer info %s", r.durableSubscriptionName)
 		return err
 	}
-	logger.Info().Msgf("Subscription %s done", info.Name)
+	r.logger.Info().Msgf("Subscription %s done", info.Name)
+	return nil
+}
+
+func (r *IngressJournaldSubscription) Unsubscribe() error {
+	if r.subscriptionInstance != nil {
+		err := r.subscriptionInstance.Unsubscribe()
+		if err != nil {
+			return err
+		}
+		r.logger.Info().Msgf("Unsubscribed to %s", r.String())
+	}
 	return nil
 }
 

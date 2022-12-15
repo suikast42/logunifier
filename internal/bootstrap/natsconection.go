@@ -2,176 +2,146 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
-	"log"
-	"net"
 	"sync"
 	"time"
 )
 import _ "github.com/nats-io/nats.go"
 
-// use the custom dialer implementation from the nats tutorial
-// https://docs.nats.io/using-nats/developer/tutorials/custom_dialer
-type customDialer struct {
-	ctx             context.Context
-	nc              *nats.Conn
-	subscriptions   *[]NatsSubscription
-	connectTimeout  time.Duration
-	connectTimeWait time.Duration
+// NatsDialer Wraps the context of subscriptions and nats server connection
+type NatsDialer struct {
+	ctx               context.Context
+	logger            *zerolog.Logger
+	nc                *nats.Conn
+	subscriptions     []NatsSubscription
+	connectionTimeOut time.Duration
+	connectTimeWait   time.Duration
 }
 
-func Connect(subscriptions *[]NatsSubscription) error {
-	cfg, err := config.Instance()
+func New(subscriptions []NatsSubscription) *NatsDialer {
 	logger := config.Logger()
+	return &NatsDialer{
+		ctx:               context.Background(),
+		subscriptions:     subscriptions,
+		logger:            &logger,
+		connectionTimeOut: time.Second * 1,
+		connectTimeWait:   time.Second * 1,
+	}
+}
+
+var connectionMtx sync.Mutex
+
+func (nd *NatsDialer) Connect() error {
+	connectionMtx.Lock()
+	cfg, err := config.Instance()
 	if err != nil {
+		return err
+	}
+	if nd.nc != nil {
+		//Connection already established or establishing
 		return nil
 	}
+	defer connectionMtx.Unlock()
 
-	// Parent context cancels connecting/reconnecting altogether.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var nc *nats.Conn
-	cd := &customDialer{
-		ctx:             ctx,
-		connectTimeout:  10 * time.Second,
-		connectTimeWait: 3 * time.Second,
-		subscriptions:   subscriptions,
-	}
 	opts := []nats.Option{
-		nats.SetCustomDialer(cd),
-		nats.ReconnectWait(2 * time.Second),
+		nats.Name("logunifier"),
+		nats.Timeout(nd.connectionTimeOut),
+		nats.RetryOnFailedConnect(true),
+		nats.ConnectHandler(func(c *nats.Conn) {
+			nd.logger.Info().Msgf("Connected to  %s", c.ConnectedUrl())
+			go nd.startSubscribe()
+		}),
+		nats.ClosedHandler(func(c *nats.Conn) {
+			nd.logger.Info().Msgf("Connection closed to %s", c.ConnectedUrl())
+		}),
+		nats.ReconnectWait(nd.connectTimeWait),
 		nats.ReconnectHandler(func(c *nats.Conn) {
-			cd.nc = nc
-			logger.Info().Msgf("Reconnected to %s", c.ConnectedUrl())
-			go cd.startSubscribe()
+			nd.logger.Info().Msgf("Reconnected to %s", c.ConnectedUrl())
 		}),
 		nats.DisconnectErrHandler(func(c *nats.Conn, disconnectionError error) {
 			if disconnectionError != nil {
-				logger.Error().Err(disconnectionError).Msg("Disconnection with error")
+				nd.logger.Error().Err(disconnectionError).Msg("Disconnection with error")
 			} else {
-				logger.Info().Msg("Disconnected from NATS")
+				nd.logger.Info().Msgf("Disconnected from NATS %s", c.ConnectedUrl())
 			}
 		}),
-		nats.ClosedHandler(func(c *nats.Conn) {
-			logger.Info().Msg("NATS connection is closed.")
-		}),
+
 		//This will kill the client if the connection is lost
 		//We will keep the connection
 		//nats.NoReconnect(),
 	}
-	go func() {
-		nc, err = nats.Connect(cfg.NatsServers(), opts...)
-	}()
-
-WaitForEstablishedConnection:
-	for {
-		if err != nil {
-			logger.Error().Err(err).Msg("Connection error")
-			err = nil
-		}
-
-		// Wait for context to be canceled either by timeout
-		// or because of establishing a connection...
-		select {
-		case <-ctx.Done():
-			break WaitForEstablishedConnection
-		default:
-		}
-
-		if nc == nil || !nc.IsConnected() {
-			if nc == nil {
-				logger.Warn().Msg("Connection not ready ")
-			} else {
-				logger.Warn().Msgf("Connection not ready %v ", nc)
-			}
-			time.Sleep(cd.connectTimeWait)
-			continue
-		}
-
-		break WaitForEstablishedConnection
+	nc, err := nats.Connect(cfg.NatsServers(), opts...)
+	if err != nil {
+		return err
 	}
-	cd.nc = nc
-	go cd.startSubscribe()
-	if ctx.Err() != nil {
-		log.Fatal(ctx.Err())
-	}
-
-	for {
-		if nc.IsClosed() {
-			break
-		}
-		if err := nc.Publish("hello", []byte("world")); err != nil {
-			logger.Error().Err(err).Msg("")
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		logger.Debug().Msg("Published message")
-		time.Sleep(1 * time.Second)
-	}
-
-	// Disconnect and flush pending messages
-	if err := nc.Drain(); err != nil {
-		logger.Error().Err(err).Msg("Can't Drain")
-	}
-	logger.Info().Msg("Disconnected")
-
+	nd.nc = nc
 	return nil
-}
-
-func (cd *customDialer) Dial(network, address string) (net.Conn, error) {
-	ctx, cancel := context.WithTimeout(cd.ctx, cd.connectTimeout)
-	logger := config.Logger()
-	defer cancel()
-
-	for {
-		logger.Info().Msgf("Attempting to connect to %s", address)
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
-		select {
-		case <-cd.ctx.Done():
-			return nil, cd.ctx.Err()
-		default:
-			d := &net.Dialer{}
-			if conn, err := d.DialContext(ctx, network, address); err == nil {
-				logger.Info().Msgf("Connected to NATS %s successfully", address)
-
-				return conn, nil
-			} else {
-				time.Sleep(cd.connectTimeWait)
-			}
-		}
-	}
 }
 
 var sub sync.Mutex
 
-func (cd customDialer) startSubscribe() {
+func (nd *NatsDialer) startSubscribe() {
 	sub.Lock()
-	logger := config.Logger()
+
 	defer sub.Unlock()
 
-	for _, sub := range *cd.subscriptions {
-		_ctx, _cancel := context.WithTimeout(cd.ctx, cd.connectTimeout)
-		err := sub.Subscribe(_ctx, _cancel, cd.nc)
+	for _, sub := range nd.subscriptions {
+		_ctx, _cancel := context.WithTimeout(nd.ctx, nd.connectionTimeOut)
+		nd.logger.Info().Msgf("Start subscribing to %s", sub.String())
+		err := sub.Subscribe(_ctx, _cancel, nd.nc)
 		if err != nil {
-			logger.Error().Err(err).Msgf("Subscription to %s failed", sub.String())
-			time.Sleep(cd.connectTimeWait)
-			go cd.startSubscribe()
+			nd.logger.Error().Err(err).Msgf("Subscription to %s failed", sub.String())
+			time.Sleep(nd.connectTimeWait)
+			go nd.startSubscribe()
 		}
 	}
 }
 
-func Disconnect() error {
-	logger := config.Logger()
-	logger.Warn().Msg("Implement nats disconnect")
+func (nd *NatsDialer) startUnSubscribe() {
+	sub.Lock()
+
+	defer sub.Unlock()
+
+	for _, sub := range nd.subscriptions {
+		nd.logger.Info().Msgf("Start unsubscribing to %s", sub.String())
+		err := sub.Unsubscribe()
+		if err != nil {
+			nd.logger.Error().Err(err).Msgf("Delete subscription to %s failed", sub.String())
+		}
+	}
+}
+
+func (nd *NatsDialer) Disconnect() error {
+	nd.startUnSubscribe()
+	if nd.nc == nil || !nd.nc.IsConnected() {
+		nd.logger.Info().Msg("Not connected to server nothing todo")
+		return nil
+	}
+	// Disconnect and flush pending messages
+	if err := nd.nc.Drain(); err != nil {
+		nd.logger.Error().Err(err).Msg("Can't Drain")
+		return err
+	}
+	nd.logger.Info().Msg("Disconnected")
+	return nil
+}
+
+func (nd *NatsDialer) SendPing() error {
+	if nd.nc == nil || !nd.nc.IsConnected() {
+		return errors.New("not connected to server")
+	}
+	err := nd.nc.Publish("ping", []byte("ping"))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 type NatsSubscription interface {
 	String() string
 	Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error
+	Unsubscribe() error
 }
