@@ -12,6 +12,11 @@ type Config struct {
 	ingressNatsJournald string
 	natsServers         []string
 	loglevel            string
+	ackTimeoutS         int
+}
+
+func (c Config) AckTimeoutS() int {
+	return c.ackTimeoutS
 }
 
 func (c Config) String() string {
@@ -63,6 +68,11 @@ func (r *ConfigBuilder) withNatsServer(server string) *ConfigBuilder {
 
 func (r *ConfigBuilder) withLogLevel(loglevel *string) *ConfigBuilder {
 	r.cfg.loglevel = *loglevel
+	return r
+}
+
+func (r *ConfigBuilder) withAckTimeout(ackTimeout *int) *ConfigBuilder {
+	r.cfg.ackTimeoutS = *ackTimeout
 	return r
 }
 

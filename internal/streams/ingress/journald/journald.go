@@ -162,10 +162,10 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 	//	logger.Error().Err(err).Stack().Msg("Can't create subscription")
 	//	return err
 	//}
-
+	cfg, _ := config.Instance()
 	subOpts := []nats.SubOpt{
 		nats.BindStream(r.streamName),
-		nats.AckWait(time.Second * 10), // Redeliver after
+		nats.AckWait(time.Second * time.Duration(cfg.AckTimeoutS())), // Redeliver after
 		//nats.MaxDeliver(5),  // Redeliver max default is infinite
 		nats.ManualAck(),         // Control the ack inProgress and nack self
 		nats.ReplayInstant(),     // Replay so fast as possible
@@ -227,6 +227,7 @@ func (r *IngressJournaldSubscription) Convert(msg *nats.Msg) *model.EcsLogEntry 
 
 	}
 	return &model.EcsLogEntry{
+		Id:        journald.UID,
 		Message:   journald.Message,
 		Timestamp: timestamppb.New(journald.Timestamp),
 	}

@@ -19,6 +19,7 @@ type MsgContext struct {
 type Egress struct {
 	logger            *zerolog.Logger
 	validationChannel <-chan *MsgContext
+	ackTimeout        time.Duration
 }
 
 var lock = &sync.Mutex{}
@@ -27,11 +28,13 @@ var instance *Egress
 func Start(validationChannel <-chan *MsgContext) *Egress {
 	lock.Lock()
 	defer lock.Unlock()
+	cfg, _ := config.Instance()
 	if instance == nil {
 		logger := config.Logger()
 		instance = &Egress{
 			logger:            &logger,
 			validationChannel: validationChannel,
+			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
 		}
 		go instance.startReceiving()
 	}
@@ -69,8 +72,8 @@ func (eg *Egress) startReceiving() {
 			//}
 			continue
 
-		case <-time.After(time.Second * 2):
-			eg.logger.Debug().Msg("Nothing to validate after 2 seconds ")
+		case <-time.After(eg.ackTimeout):
+			eg.logger.Debug().Msgf("Nothing to validate after %v seconds ", eg.ackTimeout)
 			continue
 		}
 	}
@@ -81,6 +84,6 @@ func (eg *Egress) validate(msg *model.EcsLogEntry) error {
 	if err != nil {
 		return errors.New("can't create json from message")
 	}
-	//eg.logger.Info().Msgf("Received %s", marshal)
+	//eg.logger.Info().Msgf("Received %s", msg.Timestamp.AsTime().String())
 	return nil
 }
