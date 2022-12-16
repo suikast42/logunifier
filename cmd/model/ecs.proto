@@ -2,12 +2,13 @@
 // This log model is leaned against elastic common schema
 syntax = "proto3";
 import "cmd/model/ecsconstants.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/suikast42/logunifier/model";
 option java_multiple_files = true;
 option java_package = "com.github.suikast42.logunifier.model";
 
-option optimize_for= SPEED;
+option optimize_for = SPEED;
 package boundary;
 
 
@@ -16,7 +17,7 @@ message EcsLogEntry {
   // A unique id that identify the log entry
   string id = 1;
   // The creation time of the log by its' source
-  string timestamp = 2 [json_name = "@timestamp"];
+  google.protobuf.Timestamp  timestamp = 2 [json_name = "@timestamp"];
   // The message of the log
   string message = 3 ;
   repeated string tags = 4;
@@ -26,14 +27,12 @@ message EcsLogEntry {
   Container container = 7;
   Agent agent = 8;
   Host host = 9;
-  Trace trace = 10;
-  Transaction transaction = 11;
-  Span span = 12;
-  Organization organization = 13;
-  Service service = 14;
-  Error error = 15;
-  Log log = 16;
-
+  Tracing trace = 10;
+  Organization organization = 11;
+  Service service = 12;
+  Error error = 13;
+  Log log = 14;
+  ParseError parseError = 15;
 }
 
 
@@ -111,18 +110,23 @@ message Host {
 }
 
 // Apm trace
-message Trace {
-  string id = 1;
-}
+message Tracing{
+  message Transaction {
+    string id = 1;
+  }
 
-// Apm transaction
-message Transaction {
-  string id = 1;
-}
+  // Apm span
+  message Span {
+    string id = 1;
+  }
+  message Trace {
+    string id = 1;
+  }
 
-// Apm span
-message Span {
-  string id = 1;
+  Span span = 1;
+  Trace trace = 2;
+  Transaction transaction = 3;
+
 }
 
 // Information about the project
@@ -196,3 +200,15 @@ message Log {
   Syslog syslog = 7;
 }
 
+// Debug information about the parse error
+message ParseError{
+  enum Reason {
+    UNKNOWN = 0;
+    Unmarshal = 1;
+  }
+  Reason reason = 1;
+  // String representation of the raw data
+  string rawData = 2;
+  string subject =3;
+  map<string,string>  messageHeader=4;
+}

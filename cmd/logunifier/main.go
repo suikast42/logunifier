@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/internal/streams/egress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
@@ -13,12 +14,12 @@ import (
 )
 
 func main() {
+	//var validationChannel  = chan *egress.MsgContext
 
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
 	//Read the config file -> program flags
 	config.ReadConfigs()
 	err := config.ConfigLogging()
@@ -33,8 +34,10 @@ func main() {
 		panic(err)
 	}
 	logger := config.Logger()
+	egressChannel := make(chan *egress.MsgContext, 4096)
+	egress.Start(egressChannel)
 	//TODO find a nicer way to define the JetStream subscriptions
-	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald())
+	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald(), egressChannel)
 	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
 
 	// Connect to nats server(s) should be a save background process
@@ -56,6 +59,9 @@ func main() {
 			err := dialer.Disconnect()
 			if err != nil {
 				logger.Error().Err(err).Stack().Msg("Can't disconnect from nats")
+			}
+			if egressChannel != nil {
+				close(egressChannel)
 			}
 			os.Exit(1)
 		case <-time.After(time.Second * 1):
