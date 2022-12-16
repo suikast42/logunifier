@@ -5,7 +5,7 @@
 // versions:
 // 	protoc-gen-go v1.28.1
 // 	protoc        v3.21.12
-// source: cmd/model/ecs.proto
+// source: pkg/model/ecs.proto
 
 package model
 
@@ -54,11 +54,11 @@ func (x ParseError_Reason) String() string {
 }
 
 func (ParseError_Reason) Descriptor() protoreflect.EnumDescriptor {
-	return file_cmd_model_ecs_proto_enumTypes[0].Descriptor()
+	return file_pkg_model_ecs_proto_enumTypes[0].Descriptor()
 }
 
 func (ParseError_Reason) Type() protoreflect.EnumType {
-	return &file_cmd_model_ecs_proto_enumTypes[0]
+	return &file_pkg_model_ecs_proto_enumTypes[0]
 }
 
 func (x ParseError_Reason) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x ParseError_Reason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ParseError_Reason.Descriptor instead.
 func (ParseError_Reason) EnumDescriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{9, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{9, 0}
 }
 
 type EcsLogEntry struct {
@@ -98,7 +98,7 @@ type EcsLogEntry struct {
 func (x *EcsLogEntry) Reset() {
 	*x = EcsLogEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[0]
+		mi := &file_pkg_model_ecs_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -111,7 +111,7 @@ func (x *EcsLogEntry) String() string {
 func (*EcsLogEntry) ProtoMessage() {}
 
 func (x *EcsLogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[0]
+	mi := &file_pkg_model_ecs_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -124,7 +124,7 @@ func (x *EcsLogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EcsLogEntry.ProtoReflect.Descriptor instead.
 func (*EcsLogEntry) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *EcsLogEntry) GetId() string {
@@ -248,7 +248,7 @@ type Container struct {
 func (x *Container) Reset() {
 	*x = Container{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[1]
+		mi := &file_pkg_model_ecs_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -261,7 +261,7 @@ func (x *Container) String() string {
 func (*Container) ProtoMessage() {}
 
 func (x *Container) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[1]
+	mi := &file_pkg_model_ecs_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +274,7 @@ func (x *Container) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Container.ProtoReflect.Descriptor instead.
 func (*Container) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{1}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Container) GetId() string {
@@ -330,7 +330,7 @@ type Agent struct {
 func (x *Agent) Reset() {
 	*x = Agent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[2]
+		mi := &file_pkg_model_ecs_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -343,7 +343,7 @@ func (x *Agent) String() string {
 func (*Agent) ProtoMessage() {}
 
 func (x *Agent) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[2]
+	mi := &file_pkg_model_ecs_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +356,7 @@ func (x *Agent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Agent.ProtoReflect.Descriptor instead.
 func (*Agent) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{2}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Agent) GetBuild() *Agent_Build {
@@ -423,7 +423,7 @@ type Host struct {
 func (x *Host) Reset() {
 	*x = Host{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[3]
+		mi := &file_pkg_model_ecs_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -436,7 +436,7 @@ func (x *Host) String() string {
 func (*Host) ProtoMessage() {}
 
 func (x *Host) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[3]
+	mi := &file_pkg_model_ecs_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +449,7 @@ func (x *Host) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host.ProtoReflect.Descriptor instead.
 func (*Host) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{3}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Host) GetArchitecture() string {
@@ -543,7 +543,7 @@ type Tracing struct {
 func (x *Tracing) Reset() {
 	*x = Tracing{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[4]
+		mi := &file_pkg_model_ecs_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -556,7 +556,7 @@ func (x *Tracing) String() string {
 func (*Tracing) ProtoMessage() {}
 
 func (x *Tracing) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[4]
+	mi := &file_pkg_model_ecs_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -569,7 +569,7 @@ func (x *Tracing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tracing.ProtoReflect.Descriptor instead.
 func (*Tracing) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{4}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Tracing) GetSpan() *Tracing_Span {
@@ -606,7 +606,7 @@ type Organization struct {
 func (x *Organization) Reset() {
 	*x = Organization{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[5]
+		mi := &file_pkg_model_ecs_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -619,7 +619,7 @@ func (x *Organization) String() string {
 func (*Organization) ProtoMessage() {}
 
 func (x *Organization) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[5]
+	mi := &file_pkg_model_ecs_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -632,7 +632,7 @@ func (x *Organization) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Organization.ProtoReflect.Descriptor instead.
 func (*Organization) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{5}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Organization) GetId() string {
@@ -667,7 +667,7 @@ type Service struct {
 func (x *Service) Reset() {
 	*x = Service{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[6]
+		mi := &file_pkg_model_ecs_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -680,7 +680,7 @@ func (x *Service) String() string {
 func (*Service) ProtoMessage() {}
 
 func (x *Service) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[6]
+	mi := &file_pkg_model_ecs_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +693,7 @@ func (x *Service) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Service.ProtoReflect.Descriptor instead.
 func (*Service) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{6}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Service) GetEphemeralId() string {
@@ -761,7 +761,7 @@ type Error struct {
 func (x *Error) Reset() {
 	*x = Error{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[7]
+		mi := &file_pkg_model_ecs_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -774,7 +774,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[7]
+	mi := &file_pkg_model_ecs_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +787,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{7}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Error) GetCode() string {
@@ -843,7 +843,7 @@ type Log struct {
 func (x *Log) Reset() {
 	*x = Log{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[8]
+		mi := &file_pkg_model_ecs_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -856,7 +856,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[8]
+	mi := &file_pkg_model_ecs_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -869,7 +869,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Log) GetFile() *Log_File {
@@ -937,7 +937,7 @@ type ParseError struct {
 func (x *ParseError) Reset() {
 	*x = ParseError{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[9]
+		mi := &file_pkg_model_ecs_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -950,7 +950,7 @@ func (x *ParseError) String() string {
 func (*ParseError) ProtoMessage() {}
 
 func (x *ParseError) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[9]
+	mi := &file_pkg_model_ecs_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -963,7 +963,7 @@ func (x *ParseError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParseError.ProtoReflect.Descriptor instead.
 func (*ParseError) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{9}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ParseError) GetReason() ParseError_Reason {
@@ -1006,7 +1006,7 @@ type Container_Image struct {
 func (x *Container_Image) Reset() {
 	*x = Container_Image{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[11]
+		mi := &file_pkg_model_ecs_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1019,7 +1019,7 @@ func (x *Container_Image) String() string {
 func (*Container_Image) ProtoMessage() {}
 
 func (x *Container_Image) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[11]
+	mi := &file_pkg_model_ecs_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1032,7 +1032,7 @@ func (x *Container_Image) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Container_Image.ProtoReflect.Descriptor instead.
 func (*Container_Image) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{1, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{1, 0}
 }
 
 func (x *Container_Image) GetName() string {
@@ -1060,7 +1060,7 @@ type Agent_Build struct {
 func (x *Agent_Build) Reset() {
 	*x = Agent_Build{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[13]
+		mi := &file_pkg_model_ecs_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1073,7 +1073,7 @@ func (x *Agent_Build) String() string {
 func (*Agent_Build) ProtoMessage() {}
 
 func (x *Agent_Build) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[13]
+	mi := &file_pkg_model_ecs_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1086,7 +1086,7 @@ func (x *Agent_Build) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Agent_Build.ProtoReflect.Descriptor instead.
 func (*Agent_Build) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{2, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *Agent_Build) GetOriginal() string {
@@ -1113,7 +1113,7 @@ type Host_Os struct {
 func (x *Host_Os) Reset() {
 	*x = Host_Os{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[14]
+		mi := &file_pkg_model_ecs_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1126,7 +1126,7 @@ func (x *Host_Os) String() string {
 func (*Host_Os) ProtoMessage() {}
 
 func (x *Host_Os) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[14]
+	mi := &file_pkg_model_ecs_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1139,7 +1139,7 @@ func (x *Host_Os) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host_Os.ProtoReflect.Descriptor instead.
 func (*Host_Os) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{3, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Host_Os) GetFamily() string {
@@ -1209,7 +1209,7 @@ type Host_User struct {
 func (x *Host_User) Reset() {
 	*x = Host_User{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[15]
+		mi := &file_pkg_model_ecs_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1222,7 +1222,7 @@ func (x *Host_User) String() string {
 func (*Host_User) ProtoMessage() {}
 
 func (x *Host_User) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[15]
+	mi := &file_pkg_model_ecs_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1235,7 +1235,7 @@ func (x *Host_User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host_User.ProtoReflect.Descriptor instead.
 func (*Host_User) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{3, 1}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{3, 1}
 }
 
 func (x *Host_User) GetDomain() string {
@@ -1307,7 +1307,7 @@ type Host_User_Group struct {
 func (x *Host_User_Group) Reset() {
 	*x = Host_User_Group{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[16]
+		mi := &file_pkg_model_ecs_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1320,7 +1320,7 @@ func (x *Host_User_Group) String() string {
 func (*Host_User_Group) ProtoMessage() {}
 
 func (x *Host_User_Group) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[16]
+	mi := &file_pkg_model_ecs_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1333,7 +1333,7 @@ func (x *Host_User_Group) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host_User_Group.ProtoReflect.Descriptor instead.
 func (*Host_User_Group) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{3, 1, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{3, 1, 0}
 }
 
 func (x *Host_User_Group) GetDomain() string {
@@ -1368,7 +1368,7 @@ type Tracing_Transaction struct {
 func (x *Tracing_Transaction) Reset() {
 	*x = Tracing_Transaction{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[17]
+		mi := &file_pkg_model_ecs_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1381,7 +1381,7 @@ func (x *Tracing_Transaction) String() string {
 func (*Tracing_Transaction) ProtoMessage() {}
 
 func (x *Tracing_Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[17]
+	mi := &file_pkg_model_ecs_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1394,7 +1394,7 @@ func (x *Tracing_Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tracing_Transaction.ProtoReflect.Descriptor instead.
 func (*Tracing_Transaction) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{4, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *Tracing_Transaction) GetId() string {
@@ -1416,7 +1416,7 @@ type Tracing_Span struct {
 func (x *Tracing_Span) Reset() {
 	*x = Tracing_Span{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[18]
+		mi := &file_pkg_model_ecs_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1429,7 +1429,7 @@ func (x *Tracing_Span) String() string {
 func (*Tracing_Span) ProtoMessage() {}
 
 func (x *Tracing_Span) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[18]
+	mi := &file_pkg_model_ecs_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1442,7 +1442,7 @@ func (x *Tracing_Span) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tracing_Span.ProtoReflect.Descriptor instead.
 func (*Tracing_Span) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{4, 1}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{4, 1}
 }
 
 func (x *Tracing_Span) GetId() string {
@@ -1463,7 +1463,7 @@ type Tracing_Trace struct {
 func (x *Tracing_Trace) Reset() {
 	*x = Tracing_Trace{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[19]
+		mi := &file_pkg_model_ecs_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1476,7 +1476,7 @@ func (x *Tracing_Trace) String() string {
 func (*Tracing_Trace) ProtoMessage() {}
 
 func (x *Tracing_Trace) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[19]
+	mi := &file_pkg_model_ecs_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1489,7 +1489,7 @@ func (x *Tracing_Trace) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tracing_Trace.ProtoReflect.Descriptor instead.
 func (*Tracing_Trace) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{4, 2}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{4, 2}
 }
 
 func (x *Tracing_Trace) GetId() string {
@@ -1510,7 +1510,7 @@ type Service_Node struct {
 func (x *Service_Node) Reset() {
 	*x = Service_Node{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[20]
+		mi := &file_pkg_model_ecs_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1523,7 +1523,7 @@ func (x *Service_Node) String() string {
 func (*Service_Node) ProtoMessage() {}
 
 func (x *Service_Node) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[20]
+	mi := &file_pkg_model_ecs_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1536,7 +1536,7 @@ func (x *Service_Node) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Service_Node.ProtoReflect.Descriptor instead.
 func (*Service_Node) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{6, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{6, 0}
 }
 
 func (x *Service_Node) GetName() string {
@@ -1557,7 +1557,7 @@ type Log_File struct {
 func (x *Log_File) Reset() {
 	*x = Log_File{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[21]
+		mi := &file_pkg_model_ecs_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1570,7 +1570,7 @@ func (x *Log_File) String() string {
 func (*Log_File) ProtoMessage() {}
 
 func (x *Log_File) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[21]
+	mi := &file_pkg_model_ecs_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1583,7 +1583,7 @@ func (x *Log_File) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_File.ProtoReflect.Descriptor instead.
 func (*Log_File) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 0}
 }
 
 func (x *Log_File) GetPath() string {
@@ -1605,7 +1605,7 @@ type Log_Origin struct {
 func (x *Log_Origin) Reset() {
 	*x = Log_Origin{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[22]
+		mi := &file_pkg_model_ecs_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1618,7 +1618,7 @@ func (x *Log_Origin) String() string {
 func (*Log_Origin) ProtoMessage() {}
 
 func (x *Log_Origin) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[22]
+	mi := &file_pkg_model_ecs_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1631,7 +1631,7 @@ func (x *Log_Origin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_Origin.ProtoReflect.Descriptor instead.
 func (*Log_Origin) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 1}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 1}
 }
 
 func (x *Log_Origin) GetFile() *Log_Origin_File {
@@ -1661,7 +1661,7 @@ type Log_Syslog struct {
 func (x *Log_Syslog) Reset() {
 	*x = Log_Syslog{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[23]
+		mi := &file_pkg_model_ecs_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1674,7 +1674,7 @@ func (x *Log_Syslog) String() string {
 func (*Log_Syslog) ProtoMessage() {}
 
 func (x *Log_Syslog) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[23]
+	mi := &file_pkg_model_ecs_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1687,7 +1687,7 @@ func (x *Log_Syslog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_Syslog.ProtoReflect.Descriptor instead.
 func (*Log_Syslog) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 2}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 2}
 }
 
 func (x *Log_Syslog) GetFacility() *Log_Syslog_Facility {
@@ -1723,7 +1723,7 @@ type Log_Origin_File struct {
 func (x *Log_Origin_File) Reset() {
 	*x = Log_Origin_File{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[24]
+		mi := &file_pkg_model_ecs_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1736,7 +1736,7 @@ func (x *Log_Origin_File) String() string {
 func (*Log_Origin_File) ProtoMessage() {}
 
 func (x *Log_Origin_File) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[24]
+	mi := &file_pkg_model_ecs_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1749,7 +1749,7 @@ func (x *Log_Origin_File) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_Origin_File.ProtoReflect.Descriptor instead.
 func (*Log_Origin_File) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 1, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 1, 0}
 }
 
 func (x *Log_Origin_File) GetLine() int32 {
@@ -1778,7 +1778,7 @@ type Log_Syslog_Facility struct {
 func (x *Log_Syslog_Facility) Reset() {
 	*x = Log_Syslog_Facility{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[25]
+		mi := &file_pkg_model_ecs_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1791,7 +1791,7 @@ func (x *Log_Syslog_Facility) String() string {
 func (*Log_Syslog_Facility) ProtoMessage() {}
 
 func (x *Log_Syslog_Facility) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[25]
+	mi := &file_pkg_model_ecs_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1804,7 +1804,7 @@ func (x *Log_Syslog_Facility) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_Syslog_Facility.ProtoReflect.Descriptor instead.
 func (*Log_Syslog_Facility) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 2, 0}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 2, 0}
 }
 
 func (x *Log_Syslog_Facility) GetCode() int64 {
@@ -1833,7 +1833,7 @@ type Log_Syslog_Severity struct {
 func (x *Log_Syslog_Severity) Reset() {
 	*x = Log_Syslog_Severity{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_cmd_model_ecs_proto_msgTypes[26]
+		mi := &file_pkg_model_ecs_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1846,7 +1846,7 @@ func (x *Log_Syslog_Severity) String() string {
 func (*Log_Syslog_Severity) ProtoMessage() {}
 
 func (x *Log_Syslog_Severity) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_model_ecs_proto_msgTypes[26]
+	mi := &file_pkg_model_ecs_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1859,7 +1859,7 @@ func (x *Log_Syslog_Severity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log_Syslog_Severity.ProtoReflect.Descriptor instead.
 func (*Log_Syslog_Severity) Descriptor() ([]byte, []int) {
-	return file_cmd_model_ecs_proto_rawDescGZIP(), []int{8, 2, 1}
+	return file_pkg_model_ecs_proto_rawDescGZIP(), []int{8, 2, 1}
 }
 
 func (x *Log_Syslog_Severity) GetCode() int64 {
@@ -1876,12 +1876,12 @@ func (x *Log_Syslog_Severity) GetName() string {
 	return ""
 }
 
-var File_cmd_model_ecs_proto protoreflect.FileDescriptor
+var File_pkg_model_ecs_proto protoreflect.FileDescriptor
 
-var file_cmd_model_ecs_proto_rawDesc = []byte{
-	0x0a, 0x13, 0x63, 0x6d, 0x64, 0x2f, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x2f, 0x65, 0x63, 0x73, 0x2e,
+var file_pkg_model_ecs_proto_rawDesc = []byte{
+	0x0a, 0x13, 0x70, 0x6b, 0x67, 0x2f, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x2f, 0x65, 0x63, 0x73, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x62, 0x6f, 0x75, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x1a,
-	0x1c, 0x63, 0x6d, 0x64, 0x2f, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x2f, 0x65, 0x63, 0x73, 0x63, 0x6f,
+	0x1c, 0x70, 0x6b, 0x67, 0x2f, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x2f, 0x65, 0x63, 0x73, 0x63, 0x6f,
 	0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67,
 	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74,
 	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb9,
@@ -2107,29 +2107,29 @@ var file_cmd_model_ecs_proto_rawDesc = []byte{
 	0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x24, 0x0a, 0x06, 0x52, 0x65, 0x61,
 	0x73, 0x6f, 0x6e, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00,
 	0x12, 0x0d, 0x0a, 0x09, 0x55, 0x6e, 0x6d, 0x61, 0x72, 0x73, 0x68, 0x61, 0x6c, 0x10, 0x01, 0x42,
-	0x52, 0x0a, 0x25, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x73, 0x75,
+	0x56, 0x0a, 0x25, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x73, 0x75,
 	0x69, 0x6b, 0x61, 0x73, 0x74, 0x34, 0x32, 0x2e, 0x6c, 0x6f, 0x67, 0x75, 0x6e, 0x69, 0x66, 0x69,
-	0x65, 0x72, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x48, 0x01, 0x50, 0x01, 0x5a, 0x25, 0x67, 0x69,
+	0x65, 0x72, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x48, 0x01, 0x50, 0x01, 0x5a, 0x29, 0x67, 0x69,
 	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x75, 0x69, 0x6b, 0x61, 0x73, 0x74,
-	0x34, 0x32, 0x2f, 0x6c, 0x6f, 0x67, 0x75, 0x6e, 0x69, 0x66, 0x69, 0x65, 0x72, 0x2f, 0x6d, 0x6f,
-	0x64, 0x65, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x34, 0x32, 0x2f, 0x6c, 0x6f, 0x67, 0x75, 0x6e, 0x69, 0x66, 0x69, 0x65, 0x72, 0x2f, 0x70, 0x6b,
+	0x67, 0x2f, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_cmd_model_ecs_proto_rawDescOnce sync.Once
-	file_cmd_model_ecs_proto_rawDescData = file_cmd_model_ecs_proto_rawDesc
+	file_pkg_model_ecs_proto_rawDescOnce sync.Once
+	file_pkg_model_ecs_proto_rawDescData = file_pkg_model_ecs_proto_rawDesc
 )
 
-func file_cmd_model_ecs_proto_rawDescGZIP() []byte {
-	file_cmd_model_ecs_proto_rawDescOnce.Do(func() {
-		file_cmd_model_ecs_proto_rawDescData = protoimpl.X.CompressGZIP(file_cmd_model_ecs_proto_rawDescData)
+func file_pkg_model_ecs_proto_rawDescGZIP() []byte {
+	file_pkg_model_ecs_proto_rawDescOnce.Do(func() {
+		file_pkg_model_ecs_proto_rawDescData = protoimpl.X.CompressGZIP(file_pkg_model_ecs_proto_rawDescData)
 	})
-	return file_cmd_model_ecs_proto_rawDescData
+	return file_pkg_model_ecs_proto_rawDescData
 }
 
-var file_cmd_model_ecs_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_cmd_model_ecs_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
-var file_cmd_model_ecs_proto_goTypes = []interface{}{
+var file_pkg_model_ecs_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_pkg_model_ecs_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_pkg_model_ecs_proto_goTypes = []interface{}{
 	(ParseError_Reason)(0),        // 0: boundary.ParseError.Reason
 	(*EcsLogEntry)(nil),           // 1: boundary.EcsLogEntry
 	(*Container)(nil),             // 2: boundary.Container
@@ -2162,7 +2162,7 @@ var file_cmd_model_ecs_proto_goTypes = []interface{}{
 	(*timestamppb.Timestamp)(nil), // 29: google.protobuf.Timestamp
 	(*Constants_Ecs)(nil),         // 30: boundary.Constants.Ecs
 }
-var file_cmd_model_ecs_proto_depIdxs = []int32{
+var file_pkg_model_ecs_proto_depIdxs = []int32{
 	29, // 0: boundary.EcsLogEntry.timestamp:type_name -> google.protobuf.Timestamp
 	11, // 1: boundary.EcsLogEntry.labels:type_name -> boundary.EcsLogEntry.LabelsEntry
 	30, // 2: boundary.EcsLogEntry.version:type_name -> boundary.Constants.Ecs
@@ -2200,14 +2200,14 @@ var file_cmd_model_ecs_proto_depIdxs = []int32{
 	0,  // [0:30] is the sub-list for field type_name
 }
 
-func init() { file_cmd_model_ecs_proto_init() }
-func file_cmd_model_ecs_proto_init() {
-	if File_cmd_model_ecs_proto != nil {
+func init() { file_pkg_model_ecs_proto_init() }
+func file_pkg_model_ecs_proto_init() {
+	if File_pkg_model_ecs_proto != nil {
 		return
 	}
-	file_cmd_model_ecsconstants_proto_init()
+	file_pkg_model_ecsconstants_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_cmd_model_ecs_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EcsLogEntry); i {
 			case 0:
 				return &v.state
@@ -2219,7 +2219,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Container); i {
 			case 0:
 				return &v.state
@@ -2231,7 +2231,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Agent); i {
 			case 0:
 				return &v.state
@@ -2243,7 +2243,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Host); i {
 			case 0:
 				return &v.state
@@ -2255,7 +2255,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Tracing); i {
 			case 0:
 				return &v.state
@@ -2267,7 +2267,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Organization); i {
 			case 0:
 				return &v.state
@@ -2279,7 +2279,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Service); i {
 			case 0:
 				return &v.state
@@ -2291,7 +2291,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Error); i {
 			case 0:
 				return &v.state
@@ -2303,7 +2303,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log); i {
 			case 0:
 				return &v.state
@@ -2315,7 +2315,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ParseError); i {
 			case 0:
 				return &v.state
@@ -2327,7 +2327,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Container_Image); i {
 			case 0:
 				return &v.state
@@ -2339,7 +2339,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Agent_Build); i {
 			case 0:
 				return &v.state
@@ -2351,7 +2351,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Host_Os); i {
 			case 0:
 				return &v.state
@@ -2363,7 +2363,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Host_User); i {
 			case 0:
 				return &v.state
@@ -2375,7 +2375,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Host_User_Group); i {
 			case 0:
 				return &v.state
@@ -2387,7 +2387,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Tracing_Transaction); i {
 			case 0:
 				return &v.state
@@ -2399,7 +2399,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Tracing_Span); i {
 			case 0:
 				return &v.state
@@ -2411,7 +2411,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Tracing_Trace); i {
 			case 0:
 				return &v.state
@@ -2423,7 +2423,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Service_Node); i {
 			case 0:
 				return &v.state
@@ -2435,7 +2435,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_File); i {
 			case 0:
 				return &v.state
@@ -2447,7 +2447,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_Origin); i {
 			case 0:
 				return &v.state
@@ -2459,7 +2459,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_Syslog); i {
 			case 0:
 				return &v.state
@@ -2471,7 +2471,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_Origin_File); i {
 			case 0:
 				return &v.state
@@ -2483,7 +2483,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_Syslog_Facility); i {
 			case 0:
 				return &v.state
@@ -2495,7 +2495,7 @@ func file_cmd_model_ecs_proto_init() {
 				return nil
 			}
 		}
-		file_cmd_model_ecs_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+		file_pkg_model_ecs_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Log_Syslog_Severity); i {
 			case 0:
 				return &v.state
@@ -2512,19 +2512,19 @@ func file_cmd_model_ecs_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_cmd_model_ecs_proto_rawDesc,
+			RawDescriptor: file_pkg_model_ecs_proto_rawDesc,
 			NumEnums:      1,
 			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_cmd_model_ecs_proto_goTypes,
-		DependencyIndexes: file_cmd_model_ecs_proto_depIdxs,
-		EnumInfos:         file_cmd_model_ecs_proto_enumTypes,
-		MessageInfos:      file_cmd_model_ecs_proto_msgTypes,
+		GoTypes:           file_pkg_model_ecs_proto_goTypes,
+		DependencyIndexes: file_pkg_model_ecs_proto_depIdxs,
+		EnumInfos:         file_pkg_model_ecs_proto_enumTypes,
+		MessageInfos:      file_pkg_model_ecs_proto_msgTypes,
 	}.Build()
-	File_cmd_model_ecs_proto = out.File
-	file_cmd_model_ecs_proto_rawDesc = nil
-	file_cmd_model_ecs_proto_goTypes = nil
-	file_cmd_model_ecs_proto_depIdxs = nil
+	File_pkg_model_ecs_proto = out.File
+	file_pkg_model_ecs_proto_rawDesc = nil
+	file_pkg_model_ecs_proto_goTypes = nil
+	file_pkg_model_ecs_proto_depIdxs = nil
 }

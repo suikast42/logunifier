@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
-	"github.com/suikast42/logunifier/cmd/model"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/egress"
+	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"sync"
 	"time"
@@ -90,44 +90,20 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 		return err
 	}
 
-	// stream cfg
-	streamcfg := &nats.StreamConfig{
-		Name:         r.streamName,
-		Description:  "Ingress Processor for journald logs comes over vector",
-		Subjects:     []string{r.subscription},
-		MaxBytes:     1024 * 1024 * 1_000, // 1GB ingress topic
-		MaxAge:       time.Hour * 24 * 30, // 30 days
-		MaxConsumers: 5,
-		Discard:      nats.DiscardOld,
-		Retention:    nats.InterestPolicy, //Messages are kept as long as there are Consumers on the stream
-		// (matching the message's subject if they are filtered consumers)
-		//for which the message has not yet been ACKed.
-		//Once all currently defined consumers have received explicit
-		//acknowledgement from a subscribing
-		//application for the message it is then removed from the stream.
-		NoAck:      false,
-		Duplicates: time.Minute * 5, // Duplicate time window
-
+	cfg, err := config.Instance()
+	if err != nil {
+		return err
 	}
-	// Check if the stream already exists; if not, create it.
-	streamInfo, err := js.StreamInfo(streamcfg.Name)
-
-	if streamInfo == nil {
-		// Create a stream
-		stream, err := js.AddStream(streamcfg)
-		if err != nil {
-			r.logger.Error().Err(err).Msgf("Can't add stream %s", streamcfg.Name)
-			return err
-		}
-		r.logger.Info().Msgf("Connected to stream streamName: %s", stream.Config.Name)
-	} else {
-		// Update a stream
-		updateStream, err := js.UpdateStream(streamcfg)
-		if err != nil {
-			r.logger.Error().Err(err).Msgf("Can't update stream %s", streamcfg.Name)
-			return err
-		}
-		r.logger.Info().Msgf("Updated to stream streamName: %s", updateStream.Config.Name)
+	// stream cfg
+	streamCfg, err := cfg.IngressJournalDConfig(r.streamName)
+	if err != nil {
+		r.logger.Error().Err(err).Msgf("Can't create stream config %s", r.streamName)
+		return err
+	}
+	err = cfg.CreateOrUpdateStream(streamCfg, js)
+	if err != nil {
+		r.logger.Error().Err(err).Msgf("Can't create stream %s", r.streamName)
+		return err
 	}
 
 	//// Check if the consumer already exists; if not, create it.
@@ -162,7 +138,6 @@ func (r *IngressJournaldSubscription) Subscribe(ctx context.Context, cancel cont
 	//	logger.Error().Err(err).Stack().Msg("Can't create subscription")
 	//	return err
 	//}
-	cfg, _ := config.Instance()
 	subOpts := []nats.SubOpt{
 		nats.BindStream(r.streamName),
 		nats.AckWait(time.Second * time.Duration(cfg.AckTimeoutS())), // Redeliver after
@@ -230,6 +205,10 @@ func (r *IngressJournaldSubscription) Convert(msg *nats.Msg) *model.EcsLogEntry 
 		Id:        journald.UID,
 		Message:   journald.Message,
 		Timestamp: timestamppb.New(journald.Timestamp),
+		Host: &model.Host{
+			Hostname: journald.Host,
+			Id:       journald.MACHINEID,
+		},
 	}
 
 }

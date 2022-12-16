@@ -34,6 +34,9 @@ func New(subscriptions []NatsSubscription) *NatsDialer {
 
 var connectionMtx sync.Mutex
 
+func (nd *NatsDialer) Connection() *nats.Conn {
+	return nd.nc
+}
 func (nd *NatsDialer) Connect() error {
 	connectionMtx.Lock()
 	cfg, err := config.Instance()

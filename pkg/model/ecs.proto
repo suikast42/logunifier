@@ -1,10 +1,10 @@
 // Data model for define a unified log model
 // This log model is leaned against elastic common schema
 syntax = "proto3";
-import "cmd/model/ecsconstants.proto";
+import "pkg/model/ecsconstants.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/suikast42/logunifier/model";
+option go_package = "github.com/suikast42/logunifier/pkg/model";
 option java_multiple_files = true;
 option java_package = "com.github.suikast42.logunifier.model";
 

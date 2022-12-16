@@ -2,7 +2,7 @@ package converter
 
 import (
 	"github.com/nats-io/nats.go"
-	"github.com/suikast42/logunifier/cmd/model"
+	"github.com/suikast42/logunifier/pkg/model"
 )
 
 type EcsConverter interface {

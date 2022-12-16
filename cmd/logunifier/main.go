@@ -35,7 +35,7 @@ func main() {
 	}
 	logger := config.Logger()
 	egressChannel := make(chan *egress.MsgContext, 4096)
-	egress.Start(egressChannel)
+
 	//TODO find a nicer way to define the JetStream subscriptions
 	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald(), egressChannel)
 	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
@@ -50,7 +50,12 @@ func main() {
 		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
 		os.Exit(1)
 	}
-
+	// Start egress channel
+	err = egress.Start(egressChannel, instance.EgressSubject(), dialer.Connection())
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't start egress stream")
+		os.Exit(1)
+	}
 	// Handle interrupt and send ping to nats
 	for {
 		select {
