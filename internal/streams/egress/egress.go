@@ -66,14 +66,14 @@ func (eg *Egress) startReceiving() {
 				}
 				continue
 			}
-			//err = receivedCtx.Orig.Ack()
-			//if err != nil {
-			//	eg.logger.Error().Err(err).Msg("Can't ack message")
-			//}
+			err = receivedCtx.Orig.Ack()
+			if err != nil {
+				eg.logger.Error().Err(err).Msg("Can't ack message")
+			}
 			continue
 
 		case <-time.After(eg.ackTimeout):
-			eg.logger.Debug().Msgf("Nothing to validate after %v seconds ", eg.ackTimeout)
+			eg.logger.Debug().Msgf("Nothing to validate after %v ", eg.ackTimeout)
 			continue
 		}
 	}
