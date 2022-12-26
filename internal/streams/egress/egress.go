@@ -38,8 +38,10 @@ func Start(validationChannel <-chan *MsgContext, egress string, connection *nats
 		f := func(stream nats.JetStream, msg *nats.Msg, _err error) {
 			logger.Error().Err(_err).Msgf("PublishAsyncErrHandler: %s. Error in send msg", egress)
 		}
-		opts := []nats.JSOpt{nats.PublishAsyncErrHandler(f),
-			nats.PublishAsyncMaxPending(2 * 1024)}
+		opts := []nats.JSOpt{
+			nats.PublishAsyncErrHandler(f),
+			nats.PublishAsyncMaxPending(2 * 1024),
+		}
 		js, err := connection.JetStream(opts...)
 		if err != nil {
 			logger.Error().Err(err).Msg("Can't create jetstream connection")
@@ -47,12 +49,12 @@ func Start(validationChannel <-chan *MsgContext, egress string, connection *nats
 		}
 
 		// create a strem cfg
-		streamcfg, err := cfg.EgressStreamCfg()
+		streamCfg, err := cfg.EgressStreamCfg()
 		if err != nil {
 			logger.Error().Err(err).Msg("Can't create egress stream cfg")
 			return err
 		}
-		err = cfg.CreateOrUpdateStream(streamcfg, js)
+		err = cfg.CreateOrUpdateStream(streamCfg, js)
 		if err != nil {
 			logger.Error().Err(err).Msg("Can't create egress stream")
 			return err
@@ -123,8 +125,8 @@ func (eg *Egress) startReceiving() {
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't nack message")
 					}
-				case <-time.After(ackTimeout):
-					eg.logger.Error().Msgf("This should not happened. Timeout on send msg after  %v ", ackTimeout)
+				case <-time.After(ackTimeout + time.Second*1):
+					eg.logger.Error().Msgf("This should not happened. Timeout on send msg after  %v ", ackTimeout+time.Second*1)
 					err = msgctx.Orig.NakWithDelay(eg.ackTimeout)
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't nack message")

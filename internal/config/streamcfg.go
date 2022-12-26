@@ -1,12 +1,13 @@
 package config
 
 import (
+	"errors"
 	"github.com/nats-io/nats.go"
 	"time"
 )
 
 func (c Config) IngressJournalDConfig(streamName string) (*nats.StreamConfig, error) {
-	streamcfg := &nats.StreamConfig{
+	streamCfg := &nats.StreamConfig{
 		Name:         streamName,
 		Description:  "Ingress Processor for journald logs comes over vector",
 		Subjects:     []string{c.ingressNatsJournald},
@@ -22,13 +23,13 @@ func (c Config) IngressJournalDConfig(streamName string) (*nats.StreamConfig, er
 		//application for the message it is then removed from the stream.
 		NoAck:      false,
 		Duplicates: time.Minute * 5, // Duplicate time window
-
+		Storage:    nats.FileStorage,
 	}
-	return streamcfg, nil
+	return streamCfg, nil
 }
 
 func (c Config) EgressStreamCfg() (*nats.StreamConfig, error) {
-	streamcfg := &nats.StreamConfig{
+	streamCfg := &nats.StreamConfig{
 		Name:         "EgressStream",
 		Description:  "Egress stream from ecs logs",
 		Subjects:     []string{c.egressSubject},
@@ -36,7 +37,7 @@ func (c Config) EgressStreamCfg() (*nats.StreamConfig, error) {
 		MaxAge:       time.Hour * 24 * 30, // 30 days
 		MaxConsumers: 5,
 		Discard:      nats.DiscardOld,
-		Retention:    nats.InterestPolicy, //Messages are kept as long as there are Consumers on the stream
+		Retention:    nats.WorkQueuePolicy, // specifies that when the first worker or subscriber acknowledges the message it can be removed.
 		// (matching the message's subject if they are filtered consumers)
 		//for which the message has not yet been ACKed.
 		//Once all currently defined consumers have received explicit
@@ -44,9 +45,9 @@ func (c Config) EgressStreamCfg() (*nats.StreamConfig, error) {
 		//application for the message it is then removed from the stream.
 		NoAck:      false,
 		Duplicates: time.Minute * 5, // Duplicate time window
-
+		Storage:    nats.FileStorage,
 	}
-	return streamcfg, nil
+	return streamCfg, nil
 }
 
 func (c Config) CreateOrUpdateStream(streamcfg *nats.StreamConfig, js nats.JetStreamContext) error {
@@ -55,8 +56,12 @@ func (c Config) CreateOrUpdateStream(streamcfg *nats.StreamConfig, js nats.JetSt
 	logger := Logger()
 	streamInfo, err := js.StreamInfo(streamcfg.Name)
 	if err != nil {
-		return err
+		apiErr := &nats.APIError{}
+		if !errors.As(err, &apiErr) || apiErr.ErrorCode != nats.JSErrCodeStreamNotFound {
+			return err
+		}
 	}
+
 	if streamInfo == nil {
 		// Create a stream
 		stream, err := js.AddStream(streamcfg)
