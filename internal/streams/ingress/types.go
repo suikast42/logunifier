@@ -8,6 +8,7 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/converter"
 	"github.com/suikast42/logunifier/internal/streams/egress"
+	"strings"
 	"sync"
 	"time"
 )
@@ -18,7 +19,7 @@ type IngresSubscriber interface {
 type IngresSubscription struct {
 	durableSubscriptionName string
 	streamName              string
-	subscription            string
+	subscription            []string
 	subscriptionInstance    *nats.Subscription
 	logger                  *zerolog.Logger
 	ctx                     context.Context
@@ -30,7 +31,7 @@ type IngresSubscription struct {
 
 func NewIngresSubscription(durableSubscriptionName string,
 	streamName string,
-	subscription string,
+	subscription []string,
 	logger *zerolog.Logger,
 	pushChannel chan<- *egress.MsgContext,
 	ecsConverter converter.EcsConverter,
@@ -44,7 +45,7 @@ func NewIngresSubscription(durableSubscriptionName string,
 }
 
 func (r *IngresSubscription) String() string {
-	return fmt.Sprintf("%s@%s --> %s", r.durableSubscriptionName, r.streamName, r.subscription)
+	return fmt.Sprintf("%s@%s --> %s", r.durableSubscriptionName, r.streamName, strings.Join(r.subscription, ","))
 }
 
 var subscriptionMtx sync.Mutex

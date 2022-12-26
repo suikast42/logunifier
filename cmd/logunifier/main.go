@@ -38,13 +38,13 @@ func main() {
 	egressChannel := make(chan *egress.MsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
-	subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald(), egressChannel)
+	subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, egressChannel)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngressNatsJournald())
 		os.Exit(1)
 	}
 
-	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", instance.IngresNatsTest(), egressChannel)
+	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, egressChannel)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
 		os.Exit(1)
