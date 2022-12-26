@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func (c Config) IngressJournalDConfig(streamName string) (*nats.StreamConfig, error) {
+func (c Config) IngressSubscription(streamName string, description string, subjects []string) (*nats.StreamConfig, error) {
 	streamCfg := &nats.StreamConfig{
 		Name:         streamName,
-		Description:  "Ingress channel for journald logs comes over vector",
-		Subjects:     []string{c.ingressNatsJournald},
+		Description:  description,
+		Subjects:     subjects,
 		MaxBytes:     1024 * 1024 * 1_000, // 1GB ingress topic
 		MaxAge:       time.Hour * 24 * 30, // 30 days
 		MaxConsumers: 5,

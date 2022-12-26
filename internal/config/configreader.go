@@ -19,6 +19,7 @@ func ReadConfigs() {
 	var (
 		natsServers     arrayFlags
 		ingressJournalD = fs.String("ingressJournalD", "ingress.logs.journald", "Nats subscription for journald logs")
+		ingressTest     = fs.String("ingressTest", "ingress.logs.test", "Nats subscription for test logs")
 		egressSubject   = fs.String("egressSubject", "egress.logs.ecs", "Standardized logs output")
 		loglevel        = fs.String("loglevel", "info", "Default log level")
 		ackTimeoutIns   = fs.Int("ackTimeoutIns", 10, "Ack timeout of ingress channels")
@@ -33,7 +34,9 @@ func ReadConfigs() {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
-	builder := newBuilder().withIngress(ingressJournalD, IngressLogsJournald)
+	builder := newBuilder().
+		withIngressNatsJournald(ingressJournalD).
+		withIngresNatsTest(ingressTest)
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
 	}

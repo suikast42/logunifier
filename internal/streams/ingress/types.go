@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+type IngresSubscriber interface {
+	NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) (*IngresSubscription, error)
+}
 type IngresSubscription struct {
 	durableSubscriptionName string
 	streamName              string
@@ -22,6 +25,7 @@ type IngresSubscription struct {
 	cancel                  context.CancelFunc
 	pushChannel             chan<- *egress.MsgContext
 	ecsConverter            converter.EcsConverter
+	streamConfig            *nats.StreamConfig
 }
 
 func NewIngresSubscription(durableSubscriptionName string,
@@ -29,8 +33,14 @@ func NewIngresSubscription(durableSubscriptionName string,
 	subscription string,
 	logger *zerolog.Logger,
 	pushChannel chan<- *egress.MsgContext,
-	ecsConverter converter.EcsConverter) *IngresSubscription {
-	return &IngresSubscription{durableSubscriptionName: durableSubscriptionName, streamName: streamName, subscription: subscription, logger: logger, pushChannel: pushChannel, ecsConverter: ecsConverter}
+	ecsConverter converter.EcsConverter,
+	streamConfig *nats.StreamConfig) *IngresSubscription {
+	return &IngresSubscription{durableSubscriptionName: durableSubscriptionName,
+		streamName:   streamName,
+		subscription: subscription,
+		logger:       logger, pushChannel: pushChannel,
+		ecsConverter: ecsConverter,
+		streamConfig: streamConfig}
 }
 
 func (r *IngresSubscription) String() string {
@@ -62,12 +72,12 @@ func (r *IngresSubscription) Subscribe(ctx context.Context, cancel context.Cance
 		return err
 	}
 	// stream cfg
-	streamCfg, err := cfg.IngressJournalDConfig(r.streamName)
-	if err != nil {
-		r.logger.Error().Err(err).Msgf("Can't create stream config %s", r.streamName)
-		return err
-	}
-	err = cfg.CreateOrUpdateStream(streamCfg, js)
+	//streamCfg, err := cfg.IngressJournalDConfig(r.streamName)
+	//if err != nil {
+	//	r.logger.Error().Err(err).Msgf("Can't create stream config %s", r.streamName)
+	//	return err
+	//}
+	err = cfg.CreateOrUpdateStream(r.streamConfig, js)
 	if err != nil {
 		r.logger.Error().Err(err).Msgf("Can't create stream %s", r.streamName)
 		return err

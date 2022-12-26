@@ -13,9 +13,21 @@ import (
 type TestEcsConverter struct {
 }
 
-func NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) *ingress.IngresSubscription {
+func NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) (*ingress.IngresSubscription, error) {
 	logger := config.Logger()
-	return ingress.NewIngresSubscription(durableSubscriptionName, name, subscription, &logger, pushChannel, &TestEcsConverter{})
+	cfg, err := config.Instance()
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't obtain config in NewSubscription for  %s", name)
+		return nil, err
+	}
+	//stream cfg
+	streamCfg, err := cfg.IngressSubscription(name, "Test ingress for nats cli", []string{cfg.IngressNatsJournald()})
+
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't create stream config %s", name)
+		return nil, err
+	}
+	return ingress.NewIngresSubscription(durableSubscriptionName, name, subscription, &logger, pushChannel, &TestEcsConverter{}, streamCfg), nil
 }
 
 func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {

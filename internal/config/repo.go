@@ -10,6 +10,7 @@ import (
 // region type Config
 type Config struct {
 	ingressNatsJournald string
+	ingresNatsTest      string
 	natsServers         []string
 	loglevel            string
 	egressSubject       string
@@ -32,6 +33,9 @@ func (c Config) IngressNatsJournald() string {
 	return c.ingressNatsJournald
 }
 
+func (c Config) IngresNatsTest() string {
+	return c.ingresNatsTest
+}
 func (c Config) NatsServers() string {
 	return strings.Join(c.natsServers, ",")
 }
@@ -48,10 +52,6 @@ func (c Config) EgressSubject() string {
 
 // region enums
 type IngressSubject string
-
-const (
-	IngressLogsJournald IngressSubject = "ingress.logs.journald"
-)
 
 //endregion
 
@@ -86,11 +86,12 @@ func (r *ConfigBuilder) withEgressSubject(egressSubject *string) *ConfigBuilder 
 	return r
 }
 
-func (r *ConfigBuilder) withIngress(ingress *string, _type IngressSubject) *ConfigBuilder {
-	switch _type {
-	case IngressLogsJournald:
-		r.cfg.ingressNatsJournald = *ingress
-	}
+func (r *ConfigBuilder) withIngressNatsJournald(ingressNatsJournald *string) *ConfigBuilder {
+	r.cfg.ingressNatsJournald = *ingressNatsJournald
+	return r
+}
+func (r *ConfigBuilder) withIngresNatsTest(ingresNatsTest *string) *ConfigBuilder {
+	r.cfg.ingresNatsTest = *ingresNatsTest
 	return r
 }
 

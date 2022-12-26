@@ -6,6 +6,7 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/egress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
+	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
 	"os/signal"
@@ -37,8 +38,22 @@ func main() {
 	egressChannel := make(chan *egress.MsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
-	subscriptionIngressJournald := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald(), egressChannel)
-	subscriptions := []bootstrap.NatsSubscription{subscriptionIngressJournald}
+	subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", instance.IngressNatsJournald(), egressChannel)
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngressNatsJournald())
+		os.Exit(1)
+	}
+
+	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", instance.IngresNatsTest(), egressChannel)
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
+		os.Exit(1)
+	}
+
+	subscriptions := []bootstrap.NatsSubscription{
+		subscriptionIngressJournald,
+		subscriptionIngressTest,
+	}
 
 	// Connect to nats server(s) should be a save background process
 	// It handles reconnection logic itself

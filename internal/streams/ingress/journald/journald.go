@@ -43,9 +43,22 @@ type IngressSubjectJournald struct {
 	Timestamp           time.Time `json:"timestamp"`
 }
 
-func NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) *ingress.IngresSubscription {
+func NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) (*ingress.IngresSubscription, error) {
 	logger := config.Logger()
-	return ingress.NewIngresSubscription(durableSubscriptionName, name, subscription, &logger, pushChannel, &JournaldDToEcsConverter{})
+	cfg, err := config.Instance()
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't obtain config in NewSubscription for  %s", name)
+		return nil, err
+	}
+
+	//stream cfg
+	streamCfg, err := cfg.IngressSubscription(name, "Ingress channel for journald logs comes over vector", []string{cfg.IngresNatsTest()})
+
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't create stream config %s", name)
+		return nil, err
+	}
+	return ingress.NewIngresSubscription(durableSubscriptionName, name, subscription, &logger, pushChannel, &JournaldDToEcsConverter{}, streamCfg), nil
 }
 
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
