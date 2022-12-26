@@ -9,7 +9,7 @@ import (
 func (c Config) IngressJournalDConfig(streamName string) (*nats.StreamConfig, error) {
 	streamCfg := &nats.StreamConfig{
 		Name:         streamName,
-		Description:  "Ingress Processor for journald logs comes over vector",
+		Description:  "Ingress channel for journald logs comes over vector",
 		Subjects:     []string{c.ingressNatsJournald},
 		MaxBytes:     1024 * 1024 * 1_000, // 1GB ingress topic
 		MaxAge:       time.Hour * 24 * 30, // 30 days
