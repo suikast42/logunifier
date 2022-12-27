@@ -3,6 +3,7 @@ module github.com/suikast42/logunifier
 go 1.19
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats.go v1.22.1
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/rs/zerolog v1.28.0

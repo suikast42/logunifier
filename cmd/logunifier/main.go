@@ -5,7 +5,6 @@ import (
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/egress"
-	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
@@ -35,23 +34,23 @@ func main() {
 		panic(err)
 	}
 	logger := config.Logger()
-	egressChannel := make(chan *egress.MsgContext, 4096)
+	processChannel := make(chan *egress.MsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
-	subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, egressChannel)
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngressNatsJournald())
-		os.Exit(1)
-	}
+	//subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, processChannel)
+	//if err != nil {
+	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngressNatsJournald())
+	//	os.Exit(1)
+	//}
 
-	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, egressChannel)
+	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, processChannel)
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
 		os.Exit(1)
 	}
 
 	subscriptions := []bootstrap.NatsSubscription{
-		subscriptionIngressJournald,
+		//subscriptionIngressJournald,
 		subscriptionIngressTest,
 	}
 
@@ -66,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 	// Start egress channel
-	err = egress.Start(egressChannel, instance.EgressSubject(), dialer.Connection())
+	err = egress.Start(processChannel, instance.EgressSubject(), dialer.Connection())
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't start egress stream")
 		os.Exit(1)
@@ -80,8 +79,8 @@ func main() {
 			if err != nil {
 				logger.Error().Err(err).Stack().Msg("Can't disconnect from nats")
 			}
-			if egressChannel != nil {
-				close(egressChannel)
+			if processChannel != nil {
+				close(processChannel)
 			}
 			os.Exit(1)
 		case <-time.After(time.Second * 1):

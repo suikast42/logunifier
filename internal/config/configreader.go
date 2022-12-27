@@ -17,16 +17,18 @@ func ReadConfigs() {
 	fs := flag.NewFlagSet("logunifer", flag.ContinueOnError)
 
 	var (
-		natsServers     arrayFlags
-		ingressJournalD = fs.String("ingressJournalD", "ingress.logs.journald", "Nats subscription for journald logs")
-		ingressTest     = fs.String("ingressTest", "ingress.logs.test", "Nats subscription for test logs")
-		egressSubject   = fs.String("egressSubject", "egress.logs.ecs", "Standardized logs output")
-		loglevel        = fs.String("loglevel", "info", "Default log level")
-		ackTimeoutIns   = fs.Int("ackTimeoutIns", 10, "Ack timeout of ingress channels")
-		_               = fs.String("config", "internal/config/local.cfg", "config file (optional)")
+		natsServers            arrayFlags
+		lokiServer             = fs.String("lokiServer", "http://loki.service.consul:3100", "Nats subscription for journald logs")
+		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "loki server host and port")
+		ingressSubjectTest     = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
+		egressSubjectEcs       = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
+		loglevel               = fs.String("loglevel", "info", "Default log level")
+		ackTimeoutIns          = fs.Int("ackTimeoutIns", 10, "Ack timeout of ingress channels")
+		_                      = fs.String("config", "internal/config/local.cfg", "config file (optional)")
 	)
 
-	fs.Var(&natsServers, "natsServers", "list of server host and port")
+	// Default defined in local.cfg
+	fs.Var(&natsServers, "natsServers", "list of nats server(s) host and port")
 	if err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("LOGU"),
 		ff.WithConfigFileFlag("config"),
@@ -35,15 +37,16 @@ func ReadConfigs() {
 		os.Exit(1)
 	}
 	builder := newBuilder().
-		withIngressNatsJournald(ingressJournalD).
-		withIngresNatsTest(ingressTest)
+		withIngressSubjectJournald(ingressSubjectJournalD).
+		withIngresSubjectTest(ingressSubjectTest)
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
 	}
 	_ = builder.
 		withLogLevel(loglevel).
 		withAckTimeout(ackTimeoutIns).
-		withEgressSubject(egressSubject).
+		withEgressSubjectEcs(egressSubjectEcs).
+		withLokiServer(lokiServer).
 		build()
 
 }

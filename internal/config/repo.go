@@ -10,10 +10,11 @@ import (
 // region type Config
 type Config struct {
 	ingressNatsJournald string
-	ingresNatsTest      string
+	ingresSubjectTest   string
 	natsServers         []string
+	lokiServer          string
 	loglevel            string
-	egressSubject       string
+	egressSubjectEcs    string
 	ackTimeoutS         int
 }
 
@@ -34,10 +35,14 @@ func (c Config) IngressNatsJournald() string {
 }
 
 func (c Config) IngresNatsTest() string {
-	return c.ingresNatsTest
+	return c.ingresSubjectTest
 }
 func (c Config) NatsServers() string {
 	return strings.Join(c.natsServers, ",")
+}
+
+func (c Config) LokiServer() string {
+	return c.lokiServer
 }
 
 func (c Config) Loglevel() string {
@@ -45,7 +50,7 @@ func (c Config) Loglevel() string {
 }
 
 func (c Config) EgressSubject() string {
-	return c.egressSubject
+	return c.egressSubjectEcs
 }
 
 //endregion
@@ -71,6 +76,11 @@ func (r *ConfigBuilder) withNatsServer(server string) *ConfigBuilder {
 	return r
 }
 
+func (r *ConfigBuilder) withLokiServer(server *string) *ConfigBuilder {
+	r.cfg.lokiServer = *server
+	return r
+}
+
 func (r *ConfigBuilder) withLogLevel(loglevel *string) *ConfigBuilder {
 	r.cfg.loglevel = *loglevel
 	return r
@@ -81,17 +91,17 @@ func (r *ConfigBuilder) withAckTimeout(ackTimeout *int) *ConfigBuilder {
 	return r
 }
 
-func (r *ConfigBuilder) withEgressSubject(egressSubject *string) *ConfigBuilder {
-	r.cfg.egressSubject = *egressSubject
+func (r *ConfigBuilder) withEgressSubjectEcs(egressSubjectEcs *string) *ConfigBuilder {
+	r.cfg.egressSubjectEcs = *egressSubjectEcs
 	return r
 }
 
-func (r *ConfigBuilder) withIngressNatsJournald(ingressNatsJournald *string) *ConfigBuilder {
+func (r *ConfigBuilder) withIngressSubjectJournald(ingressNatsJournald *string) *ConfigBuilder {
 	r.cfg.ingressNatsJournald = *ingressNatsJournald
 	return r
 }
-func (r *ConfigBuilder) withIngresNatsTest(ingresNatsTest *string) *ConfigBuilder {
-	r.cfg.ingresNatsTest = *ingresNatsTest
+func (r *ConfigBuilder) withIngresSubjectTest(ingresSubjectTest *string) *ConfigBuilder {
+	r.cfg.ingresSubjectTest = *ingresSubjectTest
 	return r
 }
 

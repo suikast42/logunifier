@@ -118,17 +118,18 @@ func (r *IngresSubscription) Subscribe(ctx context.Context, cancel context.Cance
 	//}
 	subOpts := []nats.SubOpt{
 		nats.BindStream(r.streamName),
+		nats.Durable(r.durableSubscriptionName),
 		nats.AckWait(time.Second * time.Duration(cfg.AckTimeoutS())), // Redeliver after
 		//nats.MaxDeliver(5),  // Redeliver max default is infinite
 		nats.ManualAck(),         // Control the ack inProgress and nack self
 		nats.ReplayInstant(),     // Replay so fast as possible
 		nats.DeliverAll(),        // Redeliver all not acked when restarted
 		nats.MaxAckPending(1024), // Max inflight ack
-		nats.EnableFlowControl(),
-		nats.IdleHeartbeat(time.Second * 1),
-		nats.Durable(r.durableSubscriptionName),
+		nats.Description(r.streamConfig.Description),
+		//nats.EnableFlowControl(),
+		//nats.IdleHeartbeat(time.Second * 1),
 	}
-	subscribe, err := js.Subscribe("", func(msg *nats.Msg) {
+	subscribe, err := js.QueueSubscribe("", r.streamName, func(msg *nats.Msg) {
 		msgContext := egress.MsgContext{
 			Orig:      msg,
 			Converter: r.ecsConverter,

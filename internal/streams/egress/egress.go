@@ -15,7 +15,7 @@ type MsgContext struct {
 	Orig      *nats.Msg
 	Converter converter.EcsConverter
 }
-type Egress struct {
+type LogProcessor struct {
 	logger            *zerolog.Logger
 	validationChannel <-chan *MsgContext
 	ackTimeout        time.Duration
@@ -24,9 +24,9 @@ type Egress struct {
 }
 
 var lock = &sync.Mutex{}
-var instance *Egress
+var instance *LogProcessor
 
-func Start(validationChannel <-chan *MsgContext, egress string, connection *nats.Conn) error {
+func Start(processChannel <-chan *MsgContext, egress string, connection *nats.Conn) error {
 	lock.Lock()
 	defer lock.Unlock()
 	cfg, _ := config.Instance()
@@ -60,9 +60,9 @@ func Start(validationChannel <-chan *MsgContext, egress string, connection *nats
 			return err
 		}
 
-		instance = &Egress{
+		instance = &LogProcessor{
 			logger:            &logger,
-			validationChannel: validationChannel,
+			validationChannel: processChannel,
 			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
 			egressDestination: egress,
 			egressStream:      js,
@@ -73,7 +73,7 @@ func Start(validationChannel <-chan *MsgContext, egress string, connection *nats
 	return nil
 }
 
-func (eg *Egress) startReceiving() {
+func (eg *LogProcessor) startReceiving() {
 
 	eg.logger.Info().Msgf("Start validation channel")
 	for {
@@ -143,7 +143,7 @@ func (eg *Egress) startReceiving() {
 
 }
 
-func (eg *Egress) analyze(msg *model.EcsLogEntry) {
+func (eg *LogProcessor) analyze(msg *model.EcsLogEntry) {
 	if msg.HasParseErrors() {
 		return
 	}

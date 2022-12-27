@@ -32,12 +32,12 @@ func (c Config) EgressStreamCfg() (*nats.StreamConfig, error) {
 	streamCfg := &nats.StreamConfig{
 		Name:         "EgressStream",
 		Description:  "Egress stream from ecs logs",
-		Subjects:     []string{c.egressSubject},
+		Subjects:     []string{c.egressSubjectEcs},
 		MaxBytes:     1024 * 1024 * 1_000, // 1GB egress topic
 		MaxAge:       time.Hour * 24 * 30, // 30 days
 		MaxConsumers: 5,
 		Discard:      nats.DiscardOld,
-		Retention:    nats.WorkQueuePolicy, // specifies that when the first worker or subscriber acknowledges the message it can be removed.
+		Retention:    nats.InterestPolicy, //Messages are kept as long as there are Consumers on the stream
 		// (matching the message's subject if they are filtered consumers)
 		//for which the message has not yet been ACKed.
 		//Once all currently defined consumers have received explicit
