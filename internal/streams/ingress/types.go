@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
@@ -11,6 +12,14 @@ import (
 	"sync"
 	"time"
 )
+
+type EgressLogHandler interface {
+
+	// Handle receives the converted messages from the egress channel and is responsible for
+	// sending them to the sink. After the sink accepts the messages the handler is responsible for
+	// acknowledging the msg
+	Handle(msg *nats.Msg, ecs *model.EcsLogEntry)
+}
 
 type EcsConverter interface {
 
@@ -38,6 +47,11 @@ type NatsSubscription struct {
 	cancel                  context.CancelFunc
 	streamConfig            *nats.StreamConfig
 	msgHandler              nats.MsgHandler
+	jCtx                    nats.JetStreamContext
+}
+
+func (r *NatsSubscription) JCtx() nats.JetStreamContext {
+	return r.jCtx
 }
 
 func NewIngresSubscription(durableSubscriptionName string,
@@ -69,10 +83,22 @@ func NewEgressSubscription(durableSubscriptionName string,
 	streamName string,
 	subscription []string,
 	logger *zerolog.Logger,
-	streamConfig *nats.StreamConfig) *NatsSubscription {
+	streamConfig *nats.StreamConfig,
+	handler EgressLogHandler,
+) *NatsSubscription {
 
 	msgHandler := func(msg *nats.Msg) {
-
+		ecs := &model.EcsLogEntry{}
+		err := json.Unmarshal(msg.Data, ecs)
+		if err != nil {
+			logger.Error().Err(err).Msgf("Can't unmarshal ecs log entry: %s", string(msg.Data))
+			err := msg.Ack()
+			if err != nil {
+				logger.Error().Err(err).Msgf("Can't Ack ecs log entry: %s", string(msg.Data))
+			}
+			return
+		}
+		handler.Handle(msg, ecs)
 	}
 
 	return &NatsSubscription{durableSubscriptionName: durableSubscriptionName,
@@ -101,7 +127,15 @@ func (r *NatsSubscription) Subscribe(ctx context.Context, cancel context.CancelF
 	defer subscriptionMtx.Unlock()
 	r.logger.Info().Msgf("Subscribing to %s", r.String())
 
-	js, err := connection.JetStream()
+	f := func(stream nats.JetStream, msg *nats.Msg, _err error) {
+		r.logger.Error().Err(_err).Msgf("PublishAsyncErrHandler: %s. Error in send msg", r.streamName)
+	}
+	opts := []nats.JSOpt{
+		nats.PublishAsyncErrHandler(f),
+		nats.PublishAsyncMaxPending(2 * 1024),
+	}
+
+	js, err := connection.JetStream(opts...)
 
 	if err != nil {
 		r.logger.Error().Err(err).Msg("Can't create jetstream connection")
@@ -175,6 +209,7 @@ func (r *NatsSubscription) Subscribe(ctx context.Context, cancel context.CancelF
 		return err
 	}
 	r.subscriptionInstance = subscribe
+	r.jCtx = js
 	info, err := subscribe.ConsumerInfo()
 	if err != nil {
 		r.logger.Error().Err(err).Msgf("Can't obtain consumer info %s", r.durableSubscriptionName)
@@ -195,5 +230,6 @@ func (r *NatsSubscription) Unsubscribe() error {
 	//	}
 	//	r.logger.Info().Msgf("Unsubscribed to %s", r.String())
 	//}
+	r.subscriptionInstance = nil
 	return nil
 }

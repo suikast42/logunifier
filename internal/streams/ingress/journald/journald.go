@@ -51,7 +51,7 @@ func NewSubscription(name string, durableSubscriptionName string, subscription [
 	}
 
 	//stream cfg
-	streamCfg, err := cfg.IngressSubscription(name, "Ingress channel for journald logs comes over vector", subscription)
+	streamCfg, err := cfg.StreamConfig(name, "Ingress channel for journald logs comes over vector", subscription)
 
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't create stream config %s", name)

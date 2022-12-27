@@ -49,7 +49,7 @@ func (c Config) Loglevel() string {
 	return c.loglevel
 }
 
-func (c Config) EgressSubject() string {
+func (c Config) EgressSubjectEcs() string {
 	return c.egressSubjectEcs
 }
 

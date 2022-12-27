@@ -21,7 +21,7 @@ func NewSubscription(name string, durableSubscriptionName string, subscription [
 		return nil, err
 	}
 	//stream cfg
-	streamCfg, err := cfg.IngressSubscription(name, "Test ingress for nats cli", subscription)
+	streamCfg, err := cfg.StreamConfig(name, "Test ingress for nats cli", subscription)
 
 	if err != nil {
 		logger.Error().Err(err).Msgf("Can't create stream config %s", name)

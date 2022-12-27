@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
-
 	//"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
@@ -22,7 +22,7 @@ func main() {
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
 	//Read the config file -> program flags
 	config.ReadConfigs()
 	err := config.ConfigLogging()
@@ -52,9 +52,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	subscriptionEgressEcsToLoki, err := lokishipper.NewSubscription("EcsToLoki", "EcsToLokiProcessor", []string{instance.EgressSubjectEcs()})
+	if err != nil {
+		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
+		os.Exit(1)
+	}
+
+	//subscriptionEgressEcsToLoki2, err := lokishipper.NewSubscriptionLokiShipper2("EcsToLoki2", "EcsToLokiProcessor2", []string{instance.EgressSubjectEcs()})
+	//if err != nil {
+	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
+	//	os.Exit(1)
+	//}
+
 	subscriptions := []bootstrap.NatsSubscription{
 		//subscriptionIngressJournald,
 		subscriptionIngressTest,
+		subscriptionEgressEcsToLoki,
+		//subscriptionEgressEcsToLoki2,
 	}
 
 	// Connect to nats server(s) should be a save background process
@@ -67,8 +81,11 @@ func main() {
 		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
 		os.Exit(1)
 	}
+	for subscriptionEgressEcsToLoki.JCtx() == nil {
+		time.Sleep(time.Second * 1)
+	}
 	// Start egress channel
-	err = process.Start(processChannel, instance.EgressSubject(), dialer.Connection())
+	err = process.Start(processChannel, instance.EgressSubjectEcs(), subscriptionEgressEcsToLoki.JCtx())
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't start egress stream")
 		os.Exit(1)

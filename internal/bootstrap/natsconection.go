@@ -91,6 +91,7 @@ func (nd *NatsDialer) startSubscribe() {
 
 	defer sub.Unlock()
 
+	var failed = false
 	for _, sub := range nd.subscriptions {
 		_ctx, _cancel := context.WithTimeout(nd.ctx, nd.connectionTimeOut)
 		nd.logger.Info().Msgf("Start subscribing to %s", sub.String())
@@ -98,15 +99,22 @@ func (nd *NatsDialer) startSubscribe() {
 		if err != nil {
 			nd.logger.Error().Err(err).Msgf("Subscription to %s failed", sub.String())
 			time.Sleep(nd.connectTimeWait)
-			go nd.startSubscribe()
+			failed = true
+			break
 		}
+	}
+	if failed {
+		nd.startUnSubscribe()
+		go nd.startSubscribe()
 	}
 }
 
-func (nd *NatsDialer) startUnSubscribe() {
-	sub.Lock()
+var unsub sync.Mutex
 
-	defer sub.Unlock()
+func (nd *NatsDialer) startUnSubscribe() {
+	unsub.Lock()
+
+	defer unsub.Unlock()
 
 	for _, sub := range nd.subscriptions {
 		nd.logger.Info().Msgf("Start unsubscribing to %s", sub.String())

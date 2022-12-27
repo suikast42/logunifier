@@ -15,53 +15,72 @@ type LogProcessor struct {
 	logger            *zerolog.Logger
 	validationChannel <-chan *ingress.IngressMsgContext
 	ackTimeout        time.Duration
-	egressDestination string
+	pushSubject       string
 	egressStream      nats.JetStreamContext
 }
 
 var lock = &sync.Mutex{}
 var instance *LogProcessor
 
-func Start(processChannel <-chan *ingress.IngressMsgContext, egress string, connection *nats.Conn) error {
+//func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string, connection *nats.Conn) error {
+//	lock.Lock()
+//	defer lock.Unlock()
+//	cfg, _ := config.Instance()
+//	if instance == nil {
+//		logger := config.Logger()
+//
+//		// create a Js instance
+//		f := func(stream nats.JetStream, msg *nats.Msg, _err error) {
+//			logger.Error().Err(_err).Msgf("PublishAsyncErrHandler: %s. Error in send msg", pushSubject)
+//		}
+//		opts := []nats.JSOpt{
+//			nats.PublishAsyncErrHandler(f),
+//			nats.PublishAsyncMaxPending(2 * 1024),
+//		}
+//		js, err := connection.JetStream(opts...)
+//		if err != nil {
+//			logger.Error().Err(err).Msg("Can't create jetstream connection")
+//			return err
+//		}
+//
+//		// create a strem cfg
+//		streamCfg, err := cfg.StreamConfig("EcsProcessPushStream", "PushStream processed ECS logentries that are ready to process in json", []string{cfg.EgressSubjectEcs()})
+//		if err != nil {
+//			logger.Error().Err(err).Msg("Can't create egress stream cfg")
+//			return err
+//		}
+//		err = cfg.CreateOrUpdateStream(streamCfg, js)
+//		if err != nil {
+//			logger.Error().Err(err).Msg("Can't create egress stream")
+//			return err
+//		}
+//
+//		instance = &LogProcessor{
+//			logger:            &logger,
+//			validationChannel: processChannel,
+//			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
+//			pushSubject:       pushSubject,
+//			egressStream:      js,
+//		}
+//		go instance.startReceiving()
+//	}
+//
+//	return nil
+//}
+
+func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string, pushStream nats.JetStreamContext) error {
 	lock.Lock()
 	defer lock.Unlock()
 	cfg, _ := config.Instance()
-
 	if instance == nil {
 		logger := config.Logger()
-
-		// create a Js instance
-		f := func(stream nats.JetStream, msg *nats.Msg, _err error) {
-			logger.Error().Err(_err).Msgf("PublishAsyncErrHandler: %s. Error in send msg", egress)
-		}
-		opts := []nats.JSOpt{
-			nats.PublishAsyncErrHandler(f),
-			nats.PublishAsyncMaxPending(2 * 1024),
-		}
-		js, err := connection.JetStream(opts...)
-		if err != nil {
-			logger.Error().Err(err).Msg("Can't create jetstream connection")
-			return err
-		}
-
-		// create a strem cfg
-		streamCfg, err := cfg.EgressStreamCfg()
-		if err != nil {
-			logger.Error().Err(err).Msg("Can't create egress stream cfg")
-			return err
-		}
-		err = cfg.CreateOrUpdateStream(streamCfg, js)
-		if err != nil {
-			logger.Error().Err(err).Msg("Can't create egress stream")
-			return err
-		}
 
 		instance = &LogProcessor{
 			logger:            &logger,
 			validationChannel: processChannel,
 			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
-			egressDestination: egress,
-			egressStream:      js,
+			pushSubject:       pushSubject,
+			egressStream:      pushStream,
 		}
 		go instance.startReceiving()
 	}
@@ -98,7 +117,7 @@ func (eg *LogProcessor) startReceiving() {
 				continue
 			}
 
-			async, err := eg.egressStream.PublishAsync(eg.egressDestination, marshal)
+			async, err := eg.egressStream.PublishAsync(eg.pushSubject, marshal)
 			if err != nil {
 				eg.logger.Error().Err(err).Msg("Can't publish message")
 				err := receivedCtx.Orig.NakWithDelay(eg.ackTimeout)
@@ -116,7 +135,7 @@ func (eg *LogProcessor) startReceiving() {
 					}
 					//eg.logger.Debug().Msg("Msg Acked")
 				case err, _ := <-ack.Err():
-					eg.logger.Error().Err(err).Msgf("Can't to egress %s. Try to nack with a delay of %v", eg.egressDestination, eg.ackTimeout)
+					eg.logger.Error().Err(err).Msgf("Can't to egress %s. Try to nack with a delay of %v", eg.pushSubject, eg.ackTimeout)
 					err = msgctx.Orig.NakWithDelay(eg.ackTimeout)
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't nack message")
