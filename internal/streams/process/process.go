@@ -1,23 +1,19 @@
-package egress
+package process
 
 import (
 	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/converter"
+	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"sync"
 	"time"
 )
 
-type MsgContext struct {
-	Orig      *nats.Msg
-	Converter converter.EcsConverter
-}
 type LogProcessor struct {
 	logger            *zerolog.Logger
-	validationChannel <-chan *MsgContext
+	validationChannel <-chan *ingress.IngressMsgContext
 	ackTimeout        time.Duration
 	egressDestination string
 	egressStream      nats.JetStreamContext
@@ -26,7 +22,7 @@ type LogProcessor struct {
 var lock = &sync.Mutex{}
 var instance *LogProcessor
 
-func Start(processChannel <-chan *MsgContext, egress string, connection *nats.Conn) error {
+func Start(processChannel <-chan *ingress.IngressMsgContext, egress string, connection *nats.Conn) error {
 	lock.Lock()
 	defer lock.Unlock()
 	cfg, _ := config.Instance()
@@ -111,7 +107,7 @@ func (eg *LogProcessor) startReceiving() {
 				}
 				continue
 			}
-			go func(ack nats.PubAckFuture, msgctx *MsgContext, ackTimeout time.Duration) {
+			go func(ack nats.PubAckFuture, msgctx *ingress.IngressMsgContext, ackTimeout time.Duration) {
 				select {
 				case <-ack.Ok():
 					err = msgctx.Orig.Ack()

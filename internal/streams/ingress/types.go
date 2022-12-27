@@ -6,17 +6,29 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/converter"
-	"github.com/suikast42/logunifier/internal/streams/egress"
+	"github.com/suikast42/logunifier/pkg/model"
 	"strings"
 	"sync"
 	"time"
 )
 
-type IngresSubscriber interface {
-	NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *egress.MsgContext) (*IngresSubscription, error)
+type EcsConverter interface {
+
+	// Convert a nats message comes from a Subscription to an EcsLogEntry
+	// In case of a marshalling error the converter have fill information in
+	// model.ParseError of model.EcsLogEntry
+	Convert(msg *nats.Msg) *model.EcsLogEntry
 }
-type IngresSubscription struct {
+
+type IngressMsgContext struct {
+	Orig      *nats.Msg
+	Converter EcsConverter
+}
+
+type IngresSubscriber interface {
+	NewSubscription(name string, durableSubscriptionName string, subscription string, pushChannel chan<- *IngressMsgContext) (*NatsSubscription, error)
+}
+type NatsSubscription struct {
 	durableSubscriptionName string
 	streamName              string
 	subscription            []string
@@ -24,33 +36,61 @@ type IngresSubscription struct {
 	logger                  *zerolog.Logger
 	ctx                     context.Context
 	cancel                  context.CancelFunc
-	pushChannel             chan<- *egress.MsgContext
-	ecsConverter            converter.EcsConverter
 	streamConfig            *nats.StreamConfig
+	msgHandler              nats.MsgHandler
 }
 
 func NewIngresSubscription(durableSubscriptionName string,
 	streamName string,
 	subscription []string,
 	logger *zerolog.Logger,
-	pushChannel chan<- *egress.MsgContext,
-	ecsConverter converter.EcsConverter,
-	streamConfig *nats.StreamConfig) *IngresSubscription {
-	return &IngresSubscription{durableSubscriptionName: durableSubscriptionName,
+	pushChannel chan<- *IngressMsgContext,
+	ecsConverter EcsConverter,
+	streamConfig *nats.StreamConfig) *NatsSubscription {
+
+	msgHandler := func(msg *nats.Msg) {
+		msgContext := IngressMsgContext{
+			Orig:      msg,
+			Converter: ecsConverter,
+		}
+		pushChannel <- &msgContext
+	}
+
+	return &NatsSubscription{durableSubscriptionName: durableSubscriptionName,
 		streamName:   streamName,
 		subscription: subscription,
-		logger:       logger, pushChannel: pushChannel,
-		ecsConverter: ecsConverter,
-		streamConfig: streamConfig}
+		logger:       logger,
+		streamConfig: streamConfig,
+		msgHandler:   msgHandler,
+	}
 }
 
-func (r *IngresSubscription) String() string {
+func NewEgressSubscription(durableSubscriptionName string,
+	streamName string,
+	subscription []string,
+	logger *zerolog.Logger,
+	streamConfig *nats.StreamConfig) *NatsSubscription {
+
+	msgHandler := func(msg *nats.Msg) {
+
+	}
+
+	return &NatsSubscription{durableSubscriptionName: durableSubscriptionName,
+		streamName:   streamName,
+		subscription: subscription,
+		logger:       logger,
+		streamConfig: streamConfig,
+		msgHandler:   msgHandler,
+	}
+}
+
+func (r *NatsSubscription) String() string {
 	return fmt.Sprintf("%s@%s --> %s", r.durableSubscriptionName, r.streamName, strings.Join(r.subscription, ","))
 }
 
 var subscriptionMtx sync.Mutex
 
-func (r *IngresSubscription) Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error {
+func (r *NatsSubscription) Subscribe(ctx context.Context, cancel context.CancelFunc, connection *nats.Conn) error {
 	subscriptionMtx.Lock()
 	if r.subscriptionInstance != nil {
 		r.logger.Error().Msg("Subscription already initialized")
@@ -129,25 +169,7 @@ func (r *IngresSubscription) Subscribe(ctx context.Context, cancel context.Cance
 		//nats.EnableFlowControl(),
 		//nats.IdleHeartbeat(time.Second * 1),
 	}
-	subscribe, err := js.QueueSubscribe("", r.streamName, func(msg *nats.Msg) {
-		msgContext := egress.MsgContext{
-			Orig:      msg,
-			Converter: r.ecsConverter,
-		}
-		r.pushChannel <- &msgContext
-		//msg.InProgress()
-		//journald := IngressSubjectJournald{}
-		//unmarsahlError := json.Unmarshal(msg.Data, &journald)
-		//if unmarsahlError != nil {
-		//	r.logger.Error().Err(unmarsahlError).Msg("Can't unmarshal message fom journald channel")
-		//	err := msg.Term()
-		//	if err != nil {
-		//		return
-		//	}
-		//}
-		//r.logger.Info().Msgf("Received message %s - %s", journald.Timestamp, journald.Message)
-		//msg.Ack()
-	}, subOpts...)
+	subscribe, err := js.QueueSubscribe("", r.streamName, r.msgHandler, subOpts...)
 	if err != nil {
 		r.logger.Error().Err(err).Msgf("Can't subscribe consumer %s", r.durableSubscriptionName)
 		return err
@@ -162,7 +184,7 @@ func (r *IngresSubscription) Subscribe(ctx context.Context, cancel context.Cance
 	return nil
 }
 
-func (r *IngresSubscription) Unsubscribe() error {
+func (r *NatsSubscription) Unsubscribe() error {
 	// Do not use for jet stream subscription.
 	// With the subscription created above this unsubscribe will delete the consumer
 	// See the doc of r.subscriptionInstance.Unsubscribe()

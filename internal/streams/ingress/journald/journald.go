@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/egress"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -43,7 +42,7 @@ type IngressSubjectJournald struct {
 	Timestamp           time.Time `json:"timestamp"`
 }
 
-func NewSubscription(name string, durableSubscriptionName string, subscription []string, pushChannel chan<- *egress.MsgContext) (*ingress.IngresSubscription, error) {
+func NewSubscription(name string, durableSubscriptionName string, subscription []string, pushChannel chan<- *ingress.IngressMsgContext) (*ingress.NatsSubscription, error) {
 	logger := config.Logger()
 	cfg, err := config.Instance()
 	if err != nil {

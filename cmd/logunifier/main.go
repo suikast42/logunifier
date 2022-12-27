@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/egress"
+	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
+
+	//"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
+	"github.com/suikast42/logunifier/internal/streams/process"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
 	"os/signal"
@@ -14,7 +17,7 @@ import (
 )
 
 func main() {
-	//var validationChannel  = chan *egress.MsgContext
+	//var validationChannel  = chan *egress.IngressMsgContext
 
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
@@ -34,7 +37,7 @@ func main() {
 		panic(err)
 	}
 	logger := config.Logger()
-	processChannel := make(chan *egress.MsgContext, 4096)
+	processChannel := make(chan *ingress.IngressMsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
 	//subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, processChannel)
@@ -65,7 +68,7 @@ func main() {
 		os.Exit(1)
 	}
 	// Start egress channel
-	err = egress.Start(processChannel, instance.EgressSubject(), dialer.Connection())
+	err = process.Start(processChannel, instance.EgressSubject(), dialer.Connection())
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't start egress stream")
 		os.Exit(1)
