@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func (c Config) StreamConfig(streamName string, description string, subjects []string) (*nats.StreamConfig, error) {
-	streamCfg := &nats.StreamConfig{
+func (c Config) StreamConfig(streamName string, description string, subjects []string) nats.StreamConfig {
+	streamCfg := nats.StreamConfig{
 		Name:         streamName,
 		Description:  description,
 		Subjects:     subjects,
@@ -25,7 +25,7 @@ func (c Config) StreamConfig(streamName string, description string, subjects []s
 		Duplicates: time.Minute * 5, // Duplicate time window
 		Storage:    nats.FileStorage,
 	}
-	return streamCfg, nil
+	return streamCfg
 }
 
 func (c Config) CreateOrUpdateStream(streamcfg *nats.StreamConfig, js nats.JetStreamContext) error {

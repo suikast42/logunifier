@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/nats-io/nats.go"
-	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
@@ -40,24 +38,6 @@ type IngressSubjectJournald struct {
 	Message             string    `json:"message"`
 	SourceType          string    `json:"source_type"`
 	Timestamp           time.Time `json:"timestamp"`
-}
-
-func NewSubscription(name string, durableSubscriptionName string, subscription []string, pushChannel chan<- *ingress.IngressMsgContext) (*ingress.NatsSubscription, error) {
-	logger := config.Logger()
-	cfg, err := config.Instance()
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't obtain config in NewSubscription for  %s", name)
-		return nil, err
-	}
-
-	//stream cfg
-	streamCfg, err := cfg.StreamConfig(name, "Ingress channel for journald logs comes over vector", subscription)
-
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't create stream config %s", name)
-		return nil, err
-	}
-	return ingress.NewIngresSubscription(durableSubscriptionName, name, subscription, &logger, pushChannel, &JournaldDToEcsConverter{}, streamCfg), nil
 }
 
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {

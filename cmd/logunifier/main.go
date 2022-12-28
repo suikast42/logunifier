@@ -6,8 +6,8 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
+	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
-	//"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
@@ -17,8 +17,7 @@ import (
 )
 
 func main() {
-	//var validationChannel  = chan *egress.IngressMsgContext
-
+	processChannel := make(chan ingress.IngressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
 	c := make(chan os.Signal)
@@ -31,13 +30,101 @@ func main() {
 		panic(err)
 	}
 
-	instance, err := config.Instance()
+	cfg, err := config.Instance()
 	// The second  panic point. Must be sure that the config is done
 	if err != nil {
 		panic(err)
 	}
 	logger := config.Logger()
-	processChannel := make(chan *ingress.IngressMsgContext, 4096)
+	logger.Info().Msgf("Starting with config: %s", cfg.String())
+
+	err = process.Start(processChannel, cfg.EgressSubjectEcs())
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't start process channel")
+		os.Exit(1)
+	}
+	//Stream definitions
+	const (
+		streamNameLogStreamIngress = "LogStreamIngress"
+		streamNameLogStreamEgress  = "LogStreamEgress"
+	)
+
+	streamDefinitions := make(map[string]bootstrap.NatsStreamConfiguration)
+
+	streamDefinitions[streamNameLogStreamIngress] = bootstrap.NatsStreamConfiguration{
+		StreamConfiguration: bootstrap.StreamConfig(streamNameLogStreamIngress,
+			"Ingress stream for unify and enrich logs from various formats to ecs",
+			[]string{
+				cfg.IngressNatsJournald(),
+				cfg.IngresNatsTest(),
+			}),
+	}
+	streamDefinitions[streamNameLogStreamEgress] = bootstrap.NatsStreamConfiguration{
+		StreamConfiguration: bootstrap.StreamConfig(streamNameLogStreamEgress,
+			"Egress stream that contains ecs logs in json format for ship in various sinks",
+			[]string{
+				cfg.EgressSubjectEcs(),
+			}),
+	}
+
+	const (
+		ingressConsumerTest     = "ConsumerIngressTest"
+		ingressConsumerJournalD = "ConsumerIngressJournalD"
+		ingressConsumerDocker   = "ConsumerIngressDocker"
+		egressLokiShipper       = "ConsumerEgressLokiShipper"
+		egressLokiShipper2      = "ConsumerEgressLokiShipper2"
+	)
+
+	// Ingress stream Consumer configuration
+	streamConsumerDefinitions := make(map[string]bootstrap.NatsConsumerConfiguration)
+	// Egress stream Consumer configuration
+
+	streamConsumerDefinitions[ingressConsumerTest] = bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			ingressConsumerTest,
+			ingressConsumerTest+"_Group",
+			streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
+			cfg.IngresNatsTest(),
+		),
+		StreamName: streamNameLogStreamIngress,
+		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &testingress.TestEcsConverter{}),
+	}
+	streamConsumerDefinitions[ingressConsumerJournalD] = bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			ingressConsumerJournalD,
+			ingressConsumerJournalD+"_Group",
+			streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
+			cfg.IngressNatsJournald(),
+		),
+		StreamName: streamNameLogStreamIngress,
+		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
+	}
+	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			egressLokiShipper,
+			egressLokiShipper+"_Group",
+			streamDefinitions[streamNameLogStreamEgress].StreamConfiguration,
+			cfg.EgressSubjectEcs(),
+		),
+		StreamName: streamNameLogStreamEgress,
+		MsgHandler: bootstrap.EgressMessageHandler(&lokishipper.LokiShipper{
+			Logger: config.Logger(),
+		}),
+	}
+
+	dialer, err := bootstrap.New(streamDefinitions, streamConsumerDefinitions)
+	if err != nil {
+		logger.Error().Err(err).Msg("Instantiation error during bootstrap")
+		os.Exit(1)
+	}
+	//Connect to nats server
+	err = dialer.Connect()
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
+		os.Exit(1)
+	}
+
+	//processChannel := make(chan *ingress.IngressMsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
 	//subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, processChannel)
@@ -46,50 +133,50 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, processChannel)
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
-		os.Exit(1)
-	}
-
-	subscriptionEgressEcsToLoki, err := lokishipper.NewSubscription("EcsToLoki", "EcsToLokiProcessor", []string{instance.EgressSubjectEcs()})
-	if err != nil {
-		logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
-		os.Exit(1)
-	}
-
-	//subscriptionEgressEcsToLoki2, err := lokishipper.NewSubscriptionLokiShipper2("EcsToLoki2", "EcsToLokiProcessor2", []string{instance.EgressSubjectEcs()})
+	//subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, processChannel)
+	//if err != nil {
+	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
+	//	os.Exit(1)
+	//}
+	//
+	//subscriptionEgressEcsToLoki, err := lokishipper.NewSubscription("EcsToLoki", "EcsToLokiProcessor", []string{instance.EgressSubjectEcs()})
 	//if err != nil {
 	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
 	//	os.Exit(1)
 	//}
-
-	subscriptions := []bootstrap.NatsSubscription{
-		//subscriptionIngressJournald,
-		subscriptionIngressTest,
-		subscriptionEgressEcsToLoki,
-		//subscriptionEgressEcsToLoki2,
-	}
-
-	// Connect to nats server(s) should be a save background process
-	// It handles reconnection logic itself
-	// If an error occurs here then something is general wrong.
-	// Exit here
-	dialer := bootstrap.New(subscriptions)
-	err = dialer.Connect()
-	if err != nil {
-		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
-		os.Exit(1)
-	}
-	for subscriptionEgressEcsToLoki.JCtx() == nil {
-		time.Sleep(time.Second * 1)
-	}
-	// Start egress channel
-	err = process.Start(processChannel, instance.EgressSubjectEcs(), subscriptionEgressEcsToLoki.JCtx())
-	if err != nil {
-		logger.Error().Err(err).Stack().Msg("Can't start egress stream")
-		os.Exit(1)
-	}
+	//
+	////subscriptionEgressEcsToLoki2, err := lokishipper.NewSubscriptionLokiShipper2("EcsToLoki2", "EcsToLokiProcessor2", []string{instance.EgressSubjectEcs()})
+	////if err != nil {
+	////	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
+	////	os.Exit(1)
+	////}
+	//
+	//subscriptions := []bootstrap.NatsSubscription{
+	//	//subscriptionIngressJournald,
+	//	subscriptionIngressTest,
+	//	subscriptionEgressEcsToLoki,
+	//	//subscriptionEgressEcsToLoki2,
+	//}
+	//
+	//// Connect to nats server(s) should be a save background process
+	//// It handles reconnection logic itself
+	//// If an error occurs here then something is general wrong.
+	//// Exit here
+	//dialer := bootstrap.New(subscriptions)
+	//err = dialer.Connect()
+	//if err != nil {
+	//	logger.Error().Err(err).Stack().Msg("Can't connect to nats")
+	//	os.Exit(1)
+	//}
+	//for subscriptionEgressEcsToLoki.JCtx() == nil {
+	//	time.Sleep(time.Second * 1)
+	//}
+	//// Start egress channel
+	//err = process.Start(processChannel, instance.EgressSubjectEcs(), subscriptionEgressEcsToLoki.JCtx())
+	//if err != nil {
+	//	logger.Error().Err(err).Stack().Msg("Can't start egress stream")
+	//	os.Exit(1)
+	//}
 	// Handle interrupt and send ping to nats
 	for {
 		select {

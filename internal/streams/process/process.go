@@ -1,74 +1,30 @@
 package process
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
+	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
+	"os"
 	"sync"
 	"time"
 )
 
 type LogProcessor struct {
 	logger            *zerolog.Logger
-	validationChannel <-chan *ingress.IngressMsgContext
+	validationChannel <-chan ingress.IngressMsgContext
 	ackTimeout        time.Duration
 	pushSubject       string
-	egressStream      nats.JetStreamContext
 }
 
 var lock = &sync.Mutex{}
 var instance *LogProcessor
 
-//func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string, connection *nats.Conn) error {
-//	lock.Lock()
-//	defer lock.Unlock()
-//	cfg, _ := config.Instance()
-//	if instance == nil {
-//		logger := config.Logger()
-//
-//		// create a Js instance
-//		f := func(stream nats.JetStream, msg *nats.Msg, _err error) {
-//			logger.Error().Err(_err).Msgf("PublishAsyncErrHandler: %s. Error in send msg", pushSubject)
-//		}
-//		opts := []nats.JSOpt{
-//			nats.PublishAsyncErrHandler(f),
-//			nats.PublishAsyncMaxPending(2 * 1024),
-//		}
-//		js, err := connection.JetStream(opts...)
-//		if err != nil {
-//			logger.Error().Err(err).Msg("Can't create jetstream connection")
-//			return err
-//		}
-//
-//		// create a strem cfg
-//		streamCfg, err := cfg.StreamConfig("EcsProcessPushStream", "PushStream processed ECS logentries that are ready to process in json", []string{cfg.EgressSubjectEcs()})
-//		if err != nil {
-//			logger.Error().Err(err).Msg("Can't create egress stream cfg")
-//			return err
-//		}
-//		err = cfg.CreateOrUpdateStream(streamCfg, js)
-//		if err != nil {
-//			logger.Error().Err(err).Msg("Can't create egress stream")
-//			return err
-//		}
-//
-//		instance = &LogProcessor{
-//			logger:            &logger,
-//			validationChannel: processChannel,
-//			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
-//			pushSubject:       pushSubject,
-//			egressStream:      js,
-//		}
-//		go instance.startReceiving()
-//	}
-//
-//	return nil
-//}
-
-func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string, pushStream nats.JetStreamContext) error {
+func Start(processChannel <-chan ingress.IngressMsgContext, pushSubject string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	cfg, _ := config.Instance()
@@ -80,7 +36,6 @@ func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string,
 			validationChannel: processChannel,
 			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
 			pushSubject:       pushSubject,
-			egressStream:      pushStream,
 		}
 		go instance.startReceiving()
 	}
@@ -90,6 +45,25 @@ func Start(processChannel <-chan *ingress.IngressMsgContext, pushSubject string,
 
 func (eg *LogProcessor) startReceiving() {
 
+	instance, _ := bootstrap.Intance()
+	for instance == nil {
+		instance, _ = bootstrap.Intance()
+		eg.logger.Info().Msgf("Waiting for boostrap is done")
+		time.Sleep(time.Second * 1)
+	}
+
+	nc := instance.Connection()
+	for nc == nil {
+		nc = instance.Connection()
+		eg.logger.Info().Msgf("Waiting connection to nats established")
+		time.Sleep(time.Second * 1)
+	}
+
+	egressStream, err := bootstrap.ProducerStream(context.Background(), nc)
+	if err != nil {
+		eg.logger.Error().Err(err).Msg("Can't create producer for egress stream")
+		os.Exit(1)
+	}
 	eg.logger.Info().Msgf("Start validation channel")
 	for {
 		select {
@@ -106,6 +80,7 @@ func (eg *LogProcessor) startReceiving() {
 			}
 			converted := receivedCtx.Converter.Convert(receivedCtx.Orig)
 			eg.analyze(converted)
+
 			marshal, err := json.Marshal(converted)
 
 			if err != nil {
@@ -116,8 +91,7 @@ func (eg *LogProcessor) startReceiving() {
 				}
 				continue
 			}
-
-			async, err := eg.egressStream.PublishAsync(eg.pushSubject, marshal)
+			async, err := egressStream.PublishAsync(eg.pushSubject, marshal)
 			if err != nil {
 				eg.logger.Error().Err(err).Msg("Can't publish message")
 				err := receivedCtx.Orig.NakWithDelay(eg.ackTimeout)
@@ -126,7 +100,7 @@ func (eg *LogProcessor) startReceiving() {
 				}
 				continue
 			}
-			go func(ack nats.PubAckFuture, msgctx *ingress.IngressMsgContext, ackTimeout time.Duration) {
+			go func(ack nats.PubAckFuture, msgctx ingress.IngressMsgContext, ackTimeout time.Duration) {
 				select {
 				case <-ack.Ok():
 					err = msgctx.Orig.Ack()
