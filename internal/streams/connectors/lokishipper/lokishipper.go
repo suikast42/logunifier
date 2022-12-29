@@ -11,7 +11,7 @@ type LokiShipper struct {
 }
 
 func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
-	loki.Logger.Info().Msgf("LokiShipper Received message: %s", ecs.Message)
+	//loki.Logger.Info().Msgf("LokiShipper Received message: %s", ecs.Message)
 	err := msg.Ack()
 	if err != nil {
 		loki.Logger.Err(err).Msg("Can't ack message")
