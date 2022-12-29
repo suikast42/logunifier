@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
@@ -17,6 +16,7 @@ import (
 )
 
 func main() {
+
 	processChannel := make(chan ingress.IngressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
@@ -41,6 +41,12 @@ func main() {
 	err = process.Start(processChannel, cfg.EgressSubjectEcs())
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't start process channel")
+		os.Exit(1)
+	}
+	//Initialize pattern factory
+	_, err = internalPatterns.Initialize()
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't initialize pattern factory")
 		os.Exit(1)
 	}
 	//Stream definitions
@@ -201,10 +207,10 @@ func main() {
 }
 
 func grokTest() {
-	factory, err := internalPatterns.New()
-	if err != nil {
-		panic(err)
-	}
+	//factory, err := internalPatterns.Initialize()
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//{ // compile once
 	//	if err != nil {
@@ -231,31 +237,31 @@ func grokTest() {
 	//	log.Printf("Pre compiled tooks %s", elapsed)
 	//}
 
-	{
-		parse, err := factory.Parse("NOMAD_LOG", "2022-12-08T12:21:02.594Z [ERROR] nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3")
-		//parse, err := factory.Parse("NOMAD_LOG", " 2022-12-08T12:21:02.594Z [ERROR] 😜")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("---------- NOMAD_LOG ----------------")
-		for k, v := range parse {
-			fmt.Printf("%+15s: %s\n", k, v)
-		}
-		//t, err := time.Parse("2006-01-02T15:04:05.000Z", "2022-12-08T12:21:02.594Z")
-		//if err != nil {
-		//	panic(err)
-		//}
-		//fmt.Printf("Parsed date is: %v", t)
-	}
-
-	{
-		parse, err := factory.Parse("MSG", "pam_unix(sudo:session): session opened for user root(uid=0)\n by cloudmaster(uid=1001)")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("---------- MSG_LOG  ----------------")
-		for k, v := range parse {
-			fmt.Printf("%+15s: %s\n", k, v)
-		}
-	}
+	//{
+	//	parse, err := factory.Parse("NOMAD_LOG", "2022-12-08T12:21:02.594Z [ERROR] nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3")
+	//	//parse, err := factory.Parse("NOMAD_LOG", " 2022-12-08T12:21:02.594Z [ERROR] 😜")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	fmt.Println("---------- NOMAD_LOG ----------------")
+	//	for k, v := range parse {
+	//		fmt.Printf("%+15s: %s\n", k, v)
+	//	}
+	//	//t, err := time.Parse("2006-01-02T15:04:05.000Z", "2022-12-08T12:21:02.594Z")
+	//	//if err != nil {
+	//	//	panic(err)
+	//	//}
+	//	//fmt.Printf("Parsed date is: %v", t)
+	//}
+	//
+	//{
+	//	parse, err := factory.Parse("MSG", "pam_unix(sudo:session): session opened for user root(uid=0)\n by cloudmaster(uid=1001)")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	fmt.Println("---------- MSG_LOG  ----------------")
+	//	for k, v := range parse {
+	//		fmt.Printf("%+15s: %s\n", k, v)
+	//	}
+	//}
 }

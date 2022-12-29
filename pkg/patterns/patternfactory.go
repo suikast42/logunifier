@@ -6,12 +6,36 @@ import (
 	"github.com/trivago/grok"
 	additionalPatterns "github.com/trivago/grok/patterns"
 	"strings"
+	"sync"
+)
+
+type ParseResult struct {
+	LogLevel  string
+	TimeStamp string
+	Msg       string
+}
+
+func (p ParseResult) String() string {
+	return fmt.Sprintf("LogLevel: %s Timestamp: %s Message: %s", p.TimeStamp, p.LogLevel, p.Msg)
+}
+
+type PatternKey string
+type atributeKeys string
+
+const (
+	timestamp atributeKeys = "timestamp"
+	message   atributeKeys = "message"
+	level     atributeKeys = "level"
+)
+const (
+	TS_LEVEL_MSG PatternKey = "TS_LEVEL_MSG"
+	MSG_ONLY     PatternKey = "MSG"
 )
 
 var APPLOGS = map[string]string{
-	"MULTILINE": `((\s)*(.*))*`,
-	"MSG":       `%{MULTILINE:message}`,
-	"NOMAD_LOG": `%{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:level}\] %{MULTILINE:message}`,
+	"MULTILINE":          `((\s)*(.*))*`,
+	string(MSG_ONLY):     `%{MULTILINE:message}`,
+	string(TS_LEVEL_MSG): `%{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:level}\] %{MULTILINE:message}`,
 }
 
 type PatternFactory struct {
@@ -19,7 +43,20 @@ type PatternFactory struct {
 	compilers map[string]*grok.CompiledGrok
 }
 
-func New() (*PatternFactory, error) {
+var mtx sync.Mutex
+
+var instance *PatternFactory
+
+func Instance() *PatternFactory {
+	return instance
+}
+func Initialize() (*PatternFactory, error) {
+	mtx.Lock()
+	defer mtx.Unlock()
+	if instance != nil {
+		return instance, nil
+	}
+
 	// end::tagname[]
 	addPatterns := make(map[string]string)
 	compiledPatterns := make(map[string]*grok.CompiledGrok)
@@ -108,10 +145,12 @@ func New() (*PatternFactory, error) {
 		compiledPatterns[k] = compiled
 	}
 
-	return &PatternFactory{
+	instance = &PatternFactory{
 		patterns:  addPatterns,
 		compilers: compiledPatterns,
-	}, nil
+	}
+
+	return instance, nil
 }
 
 func add(source map[string]string, new map[string]string) error {
@@ -128,10 +167,17 @@ func add(source map[string]string, new map[string]string) error {
 	return nil
 }
 
-func (factory *PatternFactory) Parse(patternkey string, text string) (map[string]string, error) {
-	compiledGrok := factory.compilers[patternkey]
+func (factory *PatternFactory) Parse(patternkey PatternKey, text string) (ParseResult, error) {
+	compiledGrok := factory.compilers[string(patternkey)]
 	if compiledGrok == nil {
-		return nil, errors.New(fmt.Sprintf("No compiler found for key %s", patternkey))
+		return ParseResult{}, errors.New(fmt.Sprintf("No compiler found for key %s", patternkey))
 	}
-	return compiledGrok.ParseString(text), nil
+	parsed := compiledGrok.ParseString(text)
+
+	return ParseResult{
+		LogLevel:  parsed[string(level)],
+		TimeStamp: parsed[string(timestamp)],
+		Msg:       parsed[string(message)],
+	}, nil
+
 }
