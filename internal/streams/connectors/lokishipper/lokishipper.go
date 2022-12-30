@@ -22,6 +22,7 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 		if err != nil {
 			loki.Logger.Error().Err(err).Msg("Can't nack message")
 		}
+		return
 	}
 	//loki.Logger.Info().Msgf("LokiShipper Received message: %s", ecs.Message)
 	err := msg.Ack()

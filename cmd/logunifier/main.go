@@ -83,7 +83,6 @@ func main() {
 
 	// Ingress stream Consumer configuration
 	streamConsumerDefinitions := make(map[string]bootstrap.NatsConsumerConfiguration)
-	// Egress stream Consumer configuration
 
 	streamConsumerDefinitions[ingressConsumerTest] = bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
@@ -112,6 +111,8 @@ func main() {
 	// Do not wait for connection is established
 	// The shipper must handle this
 	go lokiShipper.Connect()
+
+	// Egress stream Consumer configuration
 	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 			egressLokiShipper,
