@@ -70,11 +70,13 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	} else {
 		parsed = def
 	}
+
 	return &model.EcsLogEntry{
 		Id:        model.UUID(),
 		Message:   parsed.Msg,
-		Labels:    make(map[string]string),
+		Labels:    map[string]string{"app": journald.SYSTEMDUNIT, "ingress": "vector-journald"},
 		Timestamp: timestamppb.New(parsed.TimeStamp),
+		Tags:      []string{journald.SourceType},
 		Log: &model.Log{
 			Level: model.StringToLogLevel(parsed.LogLevel),
 		},
