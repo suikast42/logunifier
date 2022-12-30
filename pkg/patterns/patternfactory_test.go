@@ -3,6 +3,7 @@ package patterns
 import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/pkg/model"
 	"os"
 	"reflect"
 	"testing"
@@ -83,4 +84,17 @@ func TestParseMSG_ONLY_With_Defaults(t *testing.T) {
 		t.Errorf("Expected %+v but got %+v", expected, parsed)
 	}
 	//logger.Info().Msgf("%s", parsed)
+}
+
+func TestEcsAggTags(t *testing.T) {
+	entry := &model.EcsLogEntry{}
+	if entry.GetTags() == nil {
+		t.Error("Tags should be nil")
+	}
+	entry.Tags = append(entry.Tags, "1")
+	entry.Tags = append(entry.Tags, "2")
+	entry.Tags = append(entry.Tags, "3")
+	if len(entry.Tags) != 3 {
+		t.Errorf("Expect 3 elements bu got %d", len(entry.Tags))
+	}
 }

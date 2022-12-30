@@ -79,7 +79,7 @@ func (eg *LogProcessor) startReceiving() {
 				continue
 			}
 			converted := receivedCtx.Converter.Convert(receivedCtx.Orig)
-			eg.analyze(converted)
+			eg.analyzeAndEnrich(converted)
 
 			marshal, err := json.Marshal(converted)
 
@@ -132,9 +132,21 @@ func (eg *LogProcessor) startReceiving() {
 
 }
 
-func (eg *LogProcessor) analyze(msg *model.EcsLogEntry) {
+func (eg *LogProcessor) analyzeAndEnrich(msg *model.EcsLogEntry) {
 	if msg.HasParseErrors() {
-		return
+		msg.Tags = append(msg.Tags, "ParseError")
 	}
+	if msg.Log == nil {
+		msg.Tags = append(msg.Tags, "EmptyLog")
+		msg.Log = &model.Log{
+			Level: model.LogLevel_UNKNOWN,
+		}
+	}
+
+	if msg.Log.Level == model.LogLevel_UNKNOWN {
+		msg.Tags = append(msg.Tags, "NoLevel")
+	}
+
+	msg.Log.LevelEmoji = model.LogLevelToEmoji(msg.Log.Level)
 	//eg.logger.Info().Msgf("Received %s", msg.Timestamp.AsTime().String())
 }

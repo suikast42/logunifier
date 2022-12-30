@@ -73,9 +73,10 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	return &model.EcsLogEntry{
 		Id:        model.UUID(),
 		Message:   parsed.Msg,
+		Labels:    make(map[string]string),
 		Timestamp: timestamppb.New(parsed.TimeStamp),
 		Log: &model.Log{
-			Level: parsed.LogLevel,
+			Level: model.StringToLogLevel(parsed.LogLevel),
 		},
 		Host: &model.Host{
 			Hostname: journald.Host,
