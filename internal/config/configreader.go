@@ -18,7 +18,7 @@ func ReadConfigs() {
 
 	var (
 		natsServers            arrayFlags
-		lokiServer             = fs.String("lokiServer", "http://loki.service.consul:3100", "Nats subscription for journald logs")
+		lokiServers            arrayFlags
 		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "loki server host and port")
 		ingressSubjectTest     = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
 		egressSubjectEcs       = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
@@ -29,6 +29,7 @@ func ReadConfigs() {
 
 	// Default defined in local.cfg
 	fs.Var(&natsServers, "natsServers", "list of nats server(s) host and port")
+	fs.Var(&natsServers, "lokiServers", "list of loki server(s) host and port")
 	if err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("LOGU"),
 		ff.WithConfigFileFlag("config"),
@@ -42,11 +43,13 @@ func ReadConfigs() {
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
 	}
+	for _, s := range lokiServers {
+		builder.withLokiServers(s)
+	}
 	_ = builder.
 		withLogLevel(loglevel).
 		withAckTimeout(ackTimeoutIns).
 		withEgressSubjectEcs(egressSubjectEcs).
-		withLokiServer(lokiServer).
 		build()
 
 }

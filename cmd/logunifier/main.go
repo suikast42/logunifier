@@ -16,7 +16,6 @@ import (
 )
 
 func main() {
-
 	processChannel := make(chan ingress.IngressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
@@ -49,6 +48,7 @@ func main() {
 		logger.Error().Err(err).Stack().Msg("Can't initialize pattern factory")
 		os.Exit(1)
 	}
+
 	//Stream definitions
 	const (
 		streamNameLogStreamIngress = "LogStreamIngress"
@@ -105,6 +105,13 @@ func main() {
 		StreamName: streamNameLogStreamIngress,
 		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
 	}
+	lokiShipper := &lokishipper.LokiShipper{
+		Logger:        config.Logger(),
+		LokiAddresses: cfg.LokiServers(),
+	}
+	// Do not wait for connection is established
+	// The shipper must handle this
+	go lokiShipper.Connect()
 	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 			egressLokiShipper,
@@ -113,9 +120,7 @@ func main() {
 			cfg.EgressSubjectEcs(),
 		),
 		StreamName: streamNameLogStreamEgress,
-		MsgHandler: bootstrap.EgressMessageHandler(&lokishipper.LokiShipper{
-			Logger: config.Logger(),
-		}),
+		MsgHandler: bootstrap.EgressMessageHandler(lokiShipper),
 	}
 
 	dialer, err := bootstrap.New(streamDefinitions, streamConsumerDefinitions)
@@ -194,6 +199,9 @@ func main() {
 			}
 			if processChannel != nil {
 				close(processChannel)
+			}
+			if lokiShipper != nil {
+				lokiShipper.DisConnect()
 			}
 			os.Exit(1)
 		case <-time.After(time.Second * 1):

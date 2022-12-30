@@ -12,3 +12,11 @@ type EgressLogHandler interface {
 	// acknowledging the msg
 	Handle(msg *nats.Msg, ecs *model.EcsLogEntry)
 }
+
+type ExternalConnection interface {
+	// Connect Emit the connection request
+	Connect()
+
+	// DisConnect if the connection is established
+	DisConnect()
+}

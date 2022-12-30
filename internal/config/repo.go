@@ -12,7 +12,7 @@ type Config struct {
 	ingressNatsJournald string
 	ingresSubjectTest   string
 	natsServers         []string
-	lokiServer          string
+	lokiServers         []string
 	loglevel            string
 	egressSubjectEcs    string
 	ackTimeoutS         int
@@ -41,8 +41,8 @@ func (c Config) NatsServers() string {
 	return strings.Join(c.natsServers, ",")
 }
 
-func (c Config) LokiServer() string {
-	return c.lokiServer
+func (c Config) LokiServers() []string {
+	return c.lokiServers
 }
 
 func (c Config) Loglevel() string {
@@ -76,8 +76,13 @@ func (r *ConfigBuilder) withNatsServer(server string) *ConfigBuilder {
 	return r
 }
 
-func (r *ConfigBuilder) withLokiServer(server *string) *ConfigBuilder {
-	r.cfg.lokiServer = *server
+func (r *ConfigBuilder) withLokiServers(server string) *ConfigBuilder {
+	for _, s := range r.cfg.lokiServers {
+		if strings.Compare(s, server) == 0 {
+			return r
+		}
+	}
+	r.cfg.lokiServers = append(r.cfg.lokiServers, server)
 	return r
 }
 
