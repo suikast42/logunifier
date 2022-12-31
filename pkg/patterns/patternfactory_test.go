@@ -25,22 +25,62 @@ func init() {
 	patternfactory = Instance()
 }
 func TestParseTS_LEVEL_MSG(t *testing.T) {
-	var log = "2022-12-08T12:21:02.594Z [ERROR] nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3"
-	ts, _ := time.Parse(time.RFC3339, "2022-12-08T12:21:02.594Z")
-	expected := ParseResult{
-		LogLevel:    "ERROR",
-		TimeStamp:   ts,
-		Msg:         "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
-		UsedPattern: string(TS_LEVEL_MSG),
-	}
-	parsed, err := patternfactory.Parse(TS_LEVEL_MSG, log)
+	{
+		var log = "2022-12-08T12:21:02.594Z [ERROR] nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-08T12:21:02.594Z")
+		expected := ParseResult{
+			LogLevel:    "ERROR",
+			TimeStamp:   ts,
+			Msg:         "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
+			UsedPattern: string(TS_LEVEL_MSG),
+		}
+		parsed, err := patternfactory.Parse(TS_LEVEL_MSG, log)
 
-	if err != nil {
-		t.Error(err)
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
 	}
-	equal := reflect.DeepEqual(expected, parsed)
-	if !equal {
-		t.Errorf("Expected %+v but got %+v", expected, parsed)
+	{
+		var log = "2022-12-08T12:21:02.594Z ERROR nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-08T12:21:02.594Z")
+		expected := ParseResult{
+			LogLevel:    "ERROR",
+			TimeStamp:   ts,
+			Msg:         "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
+			UsedPattern: string(TS_LEVEL_MSG),
+		}
+		parsed, err := patternfactory.Parse(TS_LEVEL_MSG, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
+	}
+	{
+		var log = "2022-12-08T12:21:02.594Z \"ERROR\" nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-08T12:21:02.594Z")
+		expected := ParseResult{
+			LogLevel:    "ERROR",
+			TimeStamp:   ts,
+			Msg:         "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
+			UsedPattern: string(TS_LEVEL_MSG),
+		}
+		parsed, err := patternfactory.Parse(TS_LEVEL_MSG, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
 	}
 	//logger.Info().Msgf("%s", parsed)
 }

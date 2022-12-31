@@ -43,7 +43,7 @@ var tsFormatMap = map[PatternKey]string{
 var APPLOGS = map[string]string{
 	"MULTILINE":                 `((\s)*(.*))*`,
 	string(MSG_ONLY):            `%{MULTILINE:message}`,
-	string(TS_LEVEL_MSG):        `%{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:level}\] %{MULTILINE:message}`,
+	string(TS_LEVEL_MSG):        `%{TIMESTAMP_ISO8601:timestamp} .?%{LOGLEVEL:level}.? %{MULTILINE:message}`,
 	string(LOGFMT_TS_LEVEL_MSG): `(time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']? level=%{LOGLEVEL:level} (msg|message)=%{MULTILINE:message}`,
 }
 
