@@ -11,9 +11,10 @@ import (
 )
 
 type ParseResult struct {
-	LogLevel  string
-	TimeStamp time.Time
-	Msg       string
+	LogLevel    string
+	TimeStamp   time.Time
+	Msg         string
+	UsedPattern string
 }
 
 func (p ParseResult) String() string {
@@ -179,7 +180,9 @@ func add(source map[string]string, new map[string]string) error {
 func (factory *PatternFactory) Parse(patternkey PatternKey, text string) (ParseResult, error) {
 	compiledGrok := factory.compilers[string(patternkey)]
 	if compiledGrok == nil {
-		return ParseResult{}, errors.New(fmt.Sprintf("No compiler found for key %s", patternkey))
+		return ParseResult{
+			UsedPattern: string(patternkey),
+		}, errors.New(fmt.Sprintf("No compiler found for key %s", patternkey))
 	}
 	parsed := compiledGrok.ParseString(text)
 	tsFormat, found := tsFormatMap[patternkey]
@@ -191,9 +194,10 @@ func (factory *PatternFactory) Parse(patternkey PatternKey, text string) (ParseR
 		}
 	}
 	return ParseResult{
-		LogLevel:  parsed[string(level)],
-		TimeStamp: ts,
-		Msg:       parsed[string(message)],
+		LogLevel:    parsed[string(level)],
+		TimeStamp:   ts,
+		Msg:         parsed[string(message)],
+		UsedPattern: string(patternkey),
 	}, nil
 
 }
