@@ -47,6 +47,7 @@ func init() {
 	unitToPattern = make(map[string]patterns.PatternKey)
 	unitToPattern["nomad.service"] = patterns.TS_LEVEL_MSG
 	unitToPattern["consul.service"] = patterns.TS_LEVEL_MSG
+	unitToPattern["docker.service"] = patterns.LOGFMT_TS_LEVEL_MSG
 }
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	journald := IngressSubjectJournald{}

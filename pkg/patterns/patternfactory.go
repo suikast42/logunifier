@@ -29,18 +29,21 @@ const (
 	level     atributeKeys = "level"
 )
 const (
-	TS_LEVEL_MSG PatternKey = "TS_LEVEL_MSG"
-	MSG_ONLY     PatternKey = "MSG"
+	LOGFMT_TS_LEVEL_MSG PatternKey = "LOGFMT_TS_LEVEL_MSG"
+	TS_LEVEL_MSG        PatternKey = "TS_LEVEL_MSG"
+	MSG_ONLY            PatternKey = "MSG"
 )
 
-var (
-	tsFormatMap map[PatternKey]string
-)
+var tsFormatMap = map[PatternKey]string{
+	TS_LEVEL_MSG:        time.RFC3339,
+	LOGFMT_TS_LEVEL_MSG: time.RFC3339,
+}
 
 var APPLOGS = map[string]string{
-	"MULTILINE":          `((\s)*(.*))*`,
-	string(MSG_ONLY):     `%{MULTILINE:message}`,
-	string(TS_LEVEL_MSG): `%{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:level}\] %{MULTILINE:message}`,
+	"MULTILINE":                 `((\s)*(.*))*`,
+	string(MSG_ONLY):            `%{MULTILINE:message}`,
+	string(TS_LEVEL_MSG):        `%{TIMESTAMP_ISO8601:timestamp} \[%{LOGLEVEL:level}\] %{MULTILINE:message}`,
+	string(LOGFMT_TS_LEVEL_MSG): `(time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']? level=%{LOGLEVEL:level} (msg|message)=%{MULTILINE:message}`,
 }
 
 type PatternFactory struct {
@@ -62,8 +65,7 @@ func Initialize() (*PatternFactory, error) {
 	if instance != nil {
 		return instance, nil
 	}
-	tsFormatMap = make(map[PatternKey]string)
-	tsFormatMap[TS_LEVEL_MSG] = time.RFC3339
+
 	// end::tagname[]
 	addPatterns := make(map[string]string)
 	compiledPatterns := make(map[string]*grok.CompiledGrok)

@@ -86,11 +86,95 @@ func TestParseMSG_ONLY_With_Defaults(t *testing.T) {
 	//logger.Info().Msgf("%s", parsed)
 }
 
+func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
+	{
+		var log = "time=\"2022-12-31T15:55:54.762121247Z\" level=warning msg=\"got error while decoding json\" error=\"unexpected EOF\" retries=1"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
+
+		expected := ParseResult{
+			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp: ts,
+			LogLevel:  "warning",
+		}
+		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
+	}
+	{
+		var log = "ts=\"2022-12-31T15:55:54.762121247Z\" level=warning msg=\"got error while decoding json\" error=\"unexpected EOF\" retries=1"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
+
+		expected := ParseResult{
+			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp: ts,
+			LogLevel:  "warning",
+		}
+		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
+	}
+	{
+		var log = "ts=\"2022-12-31T15:55:54.762121247Z\" level=warning message=\"got error while decoding json\" error=\"unexpected EOF\" retries=1"
+		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
+
+		expected := ParseResult{
+			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp: ts,
+			LogLevel:  "warning",
+		}
+		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
+	}
+	//logger.Info().Msgf("%s", parsed)
+}
+
+//func TestParseLOGFMT_TS_LEVEL_MSG_With_Defaults(t *testing.T) {
+//	var log = "time=\"2022-12-31T15:55:54.762121247Z\" level=warning msg=\"got error while decoding json\" error=\"unexpected EOF\" retries=1"
+//	ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
+//	defaults := ParseResult{
+//		TimeStamp: ts,
+//		LogLevel:  "FakeLevel",
+//		Msg:       "That should be overwritten",
+//	}
+//	expected := ParseResult{
+//		Msg:       "sudo journalctl -f -u vector.service --since \"1 seconds ago\"",
+//		TimeStamp: ts,
+//		LogLevel:  "FakeLevel",
+//	}
+//	parsed, err := patternfactory.ParseWitDefaults(defaults, MSG_ONLY, log)
+//
+//	if err != nil {
+//		t.Error(err)
+//	}
+//	equal := reflect.DeepEqual(expected, parsed)
+//	if !equal {
+//		t.Errorf("Expected %+v but got %+v", expected, parsed)
+//	}
+//	//logger.Info().Msgf("%s", parsed)
+//}
+
 func TestEcsAggTags(t *testing.T) {
 	entry := &model.EcsLogEntry{}
-	if entry.GetTags() == nil {
-		t.Error("Tags should be nil")
-	}
+
 	entry.Tags = append(entry.Tags, "1")
 	entry.Tags = append(entry.Tags, "2")
 	entry.Tags = append(entry.Tags, "3")
