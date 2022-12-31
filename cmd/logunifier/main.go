@@ -108,9 +108,7 @@ func main() {
 		Logger:        config.Logger(),
 		LokiAddresses: cfg.LokiServers(),
 	}
-	// Do not wait for connection is established
-	// The shipper must handle this
-	go lokiShipper.Connect()
+	lokiShipper.Connect()
 
 	// Egress stream Consumer configuration
 	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{

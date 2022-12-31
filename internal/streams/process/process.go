@@ -139,11 +139,11 @@ func (eg *LogProcessor) analyzeAndEnrich(msg *model.EcsLogEntry) {
 	if msg.Log == nil {
 		msg.Tags = append(msg.Tags, "EmptyLog")
 		msg.Log = &model.Log{
-			Level: model.LogLevel_UNKNOWN,
+			Level: model.LogLevel_unknown,
 		}
 	}
 
-	if msg.Log.Level == model.LogLevel_UNKNOWN {
+	if msg.Log.Level == model.LogLevel_unknown {
 		msg.Tags = append(msg.Tags, "NoLevel")
 	}
 

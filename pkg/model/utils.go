@@ -17,7 +17,7 @@ func ToUnmarshalError(msg *nats.Msg, err error) *EcsLogEntry {
 	return &EcsLogEntry{
 		Message: err.Error(),
 		Log: &Log{
-			Level: LogLevel_ERROR,
+			Level: LogLevel_error,
 		},
 		ParseError: &ParseError{
 			Reason:        ParseError_Unmarshal,
@@ -29,67 +29,66 @@ func ToUnmarshalError(msg *nats.Msg, err error) *EcsLogEntry {
 }
 
 func StringToLogLevel(level string) LogLevel {
-
 	lowercased := strings.ToLower(level)
-
-	switch lowercased {
-	case "trace", "trc":
-		return LogLevel_TRACE
-	case "debug", "dbg":
-		return LogLevel_DEBUG
-	case "info", "inf":
-		return LogLevel_INFO
-	case "warn", "warning":
-		return LogLevel_WARN
-	case "error", "alert":
-		return LogLevel_ERROR
-	case "fatal":
-		return LogLevel_FATAL
-	default:
-		return LogLevel_UNKNOWN
+	loglevel, found := stringToLogLevelMap[lowercased]
+	if !found {
+		return stringToLogLevelMap[lowercased]
 	}
+	return loglevel
+}
+
+var logLevelToStringMap = map[LogLevel]string{
+	LogLevel_trace:   "trace",
+	LogLevel_debug:   "debug",
+	LogLevel_info:    "info",
+	LogLevel_warn:    "warn",
+	LogLevel_error:   "error",
+	LogLevel_fatal:   "fatal",
+	LogLevel_unknown: "unknown",
+}
+
+var stringToLogLevelMap = map[string]LogLevel{
+	"trace":    LogLevel_trace,
+	"trc":      LogLevel_trace,
+	"debug":    LogLevel_debug,
+	"dbg":      LogLevel_debug,
+	"dbug":     LogLevel_debug,
+	"info":     LogLevel_info,
+	"inf":      LogLevel_info,
+	"notice":   LogLevel_info,
+	"warn":     LogLevel_warn,
+	"warning":  LogLevel_warn,
+	"error":    LogLevel_error,
+	"err":      LogLevel_error,
+	"alert":    LogLevel_error,
+	"fatal":    LogLevel_fatal,
+	"emerg":    LogLevel_fatal,
+	"crit":     LogLevel_fatal,
+	"critical": LogLevel_fatal,
+}
+
+var loglevelToEmoji = map[LogLevel]string{
+	LogLevel_trace:   "👀",
+	LogLevel_debug:   "🐞",
+	LogLevel_info:    "✅",
+	LogLevel_warn:    "⚠",
+	LogLevel_error:   "❌",
+	LogLevel_fatal:   "📛",
+	LogLevel_unknown: "🤷",
 }
 
 func LogLevelToString(level LogLevel) string {
-
-	switch level {
-	case LogLevel_TRACE:
-		return "TRACE"
-	case LogLevel_DEBUG:
-		return "DEBUG"
-	case LogLevel_INFO:
-		return "INFO"
-	case LogLevel_WARN:
-		return "WARN"
-	case LogLevel_ERROR:
-		return "ERROR"
-	case LogLevel_FATAL:
-		return "FATAL"
-	case LogLevel_UNKNOWN:
-		return "UNKNOWN"
-	default:
-		return "UNKNOWN"
+	loglevel, found := logLevelToStringMap[level]
+	if !found {
+		return logLevelToStringMap[LogLevel_unknown]
 	}
+	return loglevel
 }
 
 func LogLevelToEmoji(level LogLevel) string {
-
-	switch level {
-	case LogLevel_TRACE:
-		return "👓"
-	case LogLevel_DEBUG:
-		return "🐞"
-	case LogLevel_INFO:
-		return "✔"
-	case LogLevel_WARN:
-		return "⚠"
-	case LogLevel_ERROR:
-		return "❌"
-	case LogLevel_FATAL:
-		return "📛"
-	case LogLevel_UNKNOWN:
-		return "🤷"
-	default:
-		return "🤷"
+	loglevel, found := loglevelToEmoji[level]
+	if !found {
+		return loglevelToEmoji[LogLevel_unknown]
 	}
+	return loglevel
 }
