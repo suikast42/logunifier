@@ -28,9 +28,10 @@ func TestParseTS_LEVEL_MSG(t *testing.T) {
 	var log = "2022-12-08T12:21:02.594Z [ERROR] nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3"
 	ts, _ := time.Parse(time.RFC3339, "2022-12-08T12:21:02.594Z")
 	expected := ParseResult{
-		LogLevel:  "ERROR",
-		TimeStamp: ts,
-		Msg:       "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
+		LogLevel:    "ERROR",
+		TimeStamp:   ts,
+		Msg:         "nomad.autopilot: 😜 Failed\nto reconcile current state with the desired state\nthird line mf\n1\n3",
+		UsedPattern: string(TS_LEVEL_MSG),
 	}
 	parsed, err := patternfactory.Parse(TS_LEVEL_MSG, log)
 
@@ -47,7 +48,8 @@ func TestParseTS_LEVEL_MSG(t *testing.T) {
 func TestParseMSG_ONLY(t *testing.T) {
 	var log = "sudo journalctl -f -u vector.service --since \"1 seconds ago\""
 	expected := ParseResult{
-		Msg: "sudo journalctl -f -u vector.service --since \"1 seconds ago\"",
+		Msg:         "sudo journalctl -f -u vector.service --since \"1 seconds ago\"",
+		UsedPattern: string(MSG_ONLY),
 	}
 	parsed, err := patternfactory.Parse(MSG_ONLY, log)
 
@@ -70,9 +72,10 @@ func TestParseMSG_ONLY_With_Defaults(t *testing.T) {
 		Msg:       "That should be overwritten",
 	}
 	expected := ParseResult{
-		Msg:       "sudo journalctl -f -u vector.service --since \"1 seconds ago\"",
-		TimeStamp: ts,
-		LogLevel:  "FakeLevel",
+		Msg:         "sudo journalctl -f -u vector.service --since \"1 seconds ago\"",
+		TimeStamp:   ts,
+		LogLevel:    "FakeLevel",
+		UsedPattern: string(MSG_ONLY),
 	}
 	parsed, err := patternfactory.ParseWitDefaults(defaults, MSG_ONLY, log)
 
@@ -92,9 +95,10 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
 
 		expected := ParseResult{
-			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
-			TimeStamp: ts,
-			LogLevel:  "warning",
+			Msg:         "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp:   ts,
+			LogLevel:    "warning",
+			UsedPattern: string(LOGFMT_TS_LEVEL_MSG),
 		}
 		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
 
@@ -111,9 +115,10 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
 
 		expected := ParseResult{
-			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
-			TimeStamp: ts,
-			LogLevel:  "warning",
+			Msg:         "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp:   ts,
+			LogLevel:    "warning",
+			UsedPattern: string(LOGFMT_TS_LEVEL_MSG),
 		}
 		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
 
@@ -130,9 +135,10 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 		ts, _ := time.Parse(time.RFC3339, "2022-12-31T15:55:54.762121247Z")
 
 		expected := ParseResult{
-			Msg:       "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
-			TimeStamp: ts,
-			LogLevel:  "warning",
+			Msg:         "\"got error while decoding json\" error=\"unexpected EOF\" retries=1",
+			TimeStamp:   ts,
+			LogLevel:    "warning",
+			UsedPattern: string(LOGFMT_TS_LEVEL_MSG),
 		}
 		parsed, err := patternfactory.Parse(LOGFMT_TS_LEVEL_MSG, log)
 
