@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/nats-io/nats.go"
+	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -73,9 +74,13 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	}
 
 	return &model.EcsLogEntry{
-		Id:        model.UUID(),
-		Message:   parsed.Msg,
-		Labels:    map[string]string{"ingress": "vector-journald", "used_grok": parsed.UsedPattern},
+		Id:      model.UUID(),
+		Message: parsed.Msg,
+		Labels: map[string]string{
+			ingress.IndexedLabelIngress:     "vector-journald",
+			ingress.IndexedLabelUsedPattern: parsed.UsedPattern,
+			ingress.IndexedLabelJob:         journald.SYSTEMDUNIT,
+		},
 		Timestamp: timestamppb.New(parsed.TimeStamp),
 		Tags:      []string{journald.SourceType},
 		Log: &model.Log{

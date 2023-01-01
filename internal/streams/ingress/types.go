@@ -20,3 +20,37 @@ type IngressMsgContext struct {
 	Orig      *nats.Msg
 	Converter EcsConverter
 }
+
+// IndexedLabels expected in ecs.Labels
+var IndexedLabels = map[IndexedLabel]IndexedLabel{
+	//IndexedLabelLevel:       IndexedLabelLevel,
+	IndexedLabelJob:         IndexedLabelJob,
+	IndexedLabelIngress:     IndexedLabelIngress,
+	IndexedLabelUsedPattern: IndexedLabelUsedPattern,
+}
+
+// IndexedContainerLabels expected in ecs.Container.Labels
+var IndexedContainerLabels = map[IndexedContainerLabel]IndexedContainerLabel{
+	IndexedContainerLabelStackName: IndexedContainerLabelStackName,
+	IndexedContainerLabelNamespace: IndexedContainerLabelNamespace,
+	IndexedContainerLabelTaskGroup: IndexedContainerLabelTaskGroup,
+	IndexedContainerLabelTask:      IndexedContainerLabelTask,
+}
+
+type IndexedLabel string
+
+const (
+	IndexedLabelLevel       = "level"
+	IndexedLabelJob         = "job"
+	IndexedLabelIngress     = "ingress"
+	IndexedLabelUsedPattern = "used_grok"
+)
+
+type IndexedContainerLabel string
+
+const (
+	IndexedContainerLabelStackName = "stack"
+	IndexedContainerLabelNamespace = "namespace"
+	IndexedContainerLabelTaskGroup = "task_group"
+	IndexedContainerLabelTask      = "task"
+)

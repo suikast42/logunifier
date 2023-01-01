@@ -3,13 +3,13 @@ package dockerlogs
 import (
 	"encoding/json"
 	"github.com/nats-io/nats.go"
+	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"strings"
 	"time"
 )
-
-var unitToPattern map[string]patterns.PatternKey
 
 type DockerToEcsConverter struct {
 }
@@ -38,9 +38,13 @@ type IngessSubjectDockerLogs struct {
 	Timestamp  time.Time `json:"timestamp"`
 }
 
-func init() {
-	unitToPattern = make(map[string]patterns.PatternKey)
-
+var containerToPattern = map[string]patterns.PatternKey{
+	"traefik":     patterns.LOGFMT_TS_LEVEL_MSG,
+	"forwardauth": patterns.LOGFMT_TS_LEVEL_MSG,
+	"keycloak":    patterns.TS_LEVEL_MSG,
+	"loki":        patterns.LOGFMT_LEVEL_TS_MSG,
+	"tempo":       patterns.LOGFMT_LEVEL_TS_MSG,
+	"mimir":       patterns.LOGFMT_TS_LEVEL_MSG2,
 }
 
 func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
@@ -49,10 +53,62 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	if err != err {
 		return model.ToUnmarshalError(msg, err)
 	}
+	pattern, patternFound := containerToPattern[dockerLogEntry.Label.ComHashicorpNomadTaskName]
+
+	// nomad consul add for every connect sidecar a connect-proxy suffix
+	// Register dynamically for every connect sidecar proxy the log pattern
+	if !patternFound && strings.HasPrefix(dockerLogEntry.Label.ComHashicorpNomadTaskName, "connect-proxy-") {
+		var proxykey = "connect-proxy-" + dockerLogEntry.Label.ComHashicorpNomadTaskName
+		containerToPattern[proxykey] = patterns.CONNECT_LOG
+		pattern, patternFound = containerToPattern[proxykey]
+	}
+
+	var parsed patterns.ParseResult
+	// A registered pattern found for message
+	def := patterns.ParseResult{
+		LogLevel:  "UNKNOWN",
+		TimeStamp: dockerLogEntry.Timestamp,
+		Msg:       dockerLogEntry.Message,
+	}
+	if patternFound {
+		parsed, err = patterns.Instance().ParseWitDefaults(def, pattern, dockerLogEntry.Message)
+		if err != nil {
+			return model.ToUnmarshalError(msg, err)
+		}
+	} else {
+		parsed = def
+	}
 	return &model.EcsLogEntry{
 		Id:        model.UUID(),
-		Message:   dockerLogEntry.Message,
-		Labels:    map[string]string{"ingress": "vector-docker"},
-		Timestamp: timestamppb.New(dockerLogEntry.Timestamp),
+		Timestamp: timestamppb.New(parsed.TimeStamp),
+		Tags:      []string{dockerLogEntry.SourceType},
+		Log: &model.Log{
+			Level: model.StringToLogLevel(parsed.LogLevel),
+		},
+		Message: parsed.Msg,
+		Container: &model.Container{
+			Id:        dockerLogEntry.ContainerId,
+			Name:      dockerLogEntry.ContainerName,
+			CreatedAt: timestamppb.New(dockerLogEntry.ContainerCreatedAt),
+			Image: &model.Container_Image{
+				Name: dockerLogEntry.Image,
+				Tag:  nil,
+			},
+			Labels: map[string]string{
+				ingress.IndexedContainerLabelStackName: dockerLogEntry.Label.ComHashicorpNomadJobName,
+				ingress.IndexedContainerLabelTaskGroup: dockerLogEntry.Label.ComHashicorpNomadTaskGroupName,
+				ingress.IndexedContainerLabelTask:      dockerLogEntry.Label.ComHashicorpNomadTaskName,
+				ingress.IndexedContainerLabelNamespace: dockerLogEntry.Label.ComHashicorpNomadNamespace,
+			},
+			Runtime: "",
+		},
+		Host: &model.Host{
+			Name: dockerLogEntry.Host,
+		},
+
+		Labels: map[string]string{
+			ingress.IndexedLabelIngress:     "vector-docker",
+			ingress.IndexedLabelUsedPattern: parsed.UsedPattern,
+		},
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/nats-io/nats.go"
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
+	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -148,17 +149,27 @@ func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string
 	return req
 }
 
-// toLokiLabels extract indexed fields from the log entry
+// toLokiLabels extract indexed fields from the ecs labels
 func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	labelsMap := make(map[string]string)
-	for k, v := range ecs.Labels {
-		labelsMap[k] = v
+	for k := range ingress.IndexedLabels {
+		value, found := ecs.Labels[string(k)]
+		if found {
+			labelsMap[string(k)] = value
+		}
 	}
 
-	labelsMap["job"] = ecs.Service.Name
+	if ecs.Container != nil {
+		for k := range ingress.IndexedContainerLabels {
+			value, found := ecs.Container.Labels[string(k)]
+			if found {
+				labelsMap[string(k)] = value
+			}
+		}
+	}
 	// The level label is autodetected by grafana log panel
 	// Thus we duplicate this
-	labelsMap["level"] = model.LogLevelToString(ecs.Log.Level)
+	labelsMap[ingress.IndexedLabelLevel] = model.LogLevelToString(ecs.Log.Level)
 	//fmt.Printf("%s %s ",  ecs.Service.Name, ecs.Message)
 	return labelsMap
 }

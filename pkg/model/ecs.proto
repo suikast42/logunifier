@@ -49,6 +49,7 @@ message Container {
   map <string, string> labels = 3;
   string name = 4;
   string runtime = 5;
+  google.protobuf.Timestamp  createdAt = 6;
 }
 
 // The agent information of the client

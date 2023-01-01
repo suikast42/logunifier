@@ -22,29 +22,45 @@ func (p ParseResult) String() string {
 }
 
 type PatternKey string
-type atributeKeys string
+type attributeKeys string
+type TimeFormat string
 
 const (
-	timestamp atributeKeys = "timestamp"
-	message   atributeKeys = "message"
-	level     atributeKeys = "level"
+	TimeFormatConsulConnect = "2006-01-02 15:04:05.000"
 )
 const (
-	LOGFMT_TS_LEVEL_MSG PatternKey = "LOGFMT_TS_LEVEL_MSG"
-	TS_LEVEL_MSG        PatternKey = "TS_LEVEL_MSG"
-	MSG_ONLY            PatternKey = "MSG"
+	timestamp attributeKeys = "timestamp"
+	message   attributeKeys = "message"
+	level     attributeKeys = "level"
+)
+const (
+	CONNECT_LOG          PatternKey = "CONNECT_LOG"
+	LOGFMT_TS_LEVEL_MSG  PatternKey = "LOGFMT_TS_LEVEL_MSG"
+	LOGFMT_TS_LEVEL_MSG2 PatternKey = "LOGFMT_TS_LEVEL_MSG2"
+	LOGFMT_LEVEL_TS_MSG  PatternKey = "LOGFMT_LEVEL_TS_MSG"
+	TS_LEVEL_MSG         PatternKey = "TS_LEVEL_MSG"
+	MSG_ONLY             PatternKey = "MSG"
 )
 
 var tsFormatMap = map[PatternKey]string{
-	TS_LEVEL_MSG:        time.RFC3339,
-	LOGFMT_TS_LEVEL_MSG: time.RFC3339,
+	TS_LEVEL_MSG:         time.RFC3339,
+	LOGFMT_TS_LEVEL_MSG:  time.RFC3339,
+	LOGFMT_LEVEL_TS_MSG:  time.RFC3339,
+	LOGFMT_TS_LEVEL_MSG2: time.RFC3339,
+	CONNECT_LOG:          TimeFormatConsulConnect,
 }
 
 var APPLOGS = map[string]string{
-	"MULTILINE":                 `((\s)*(.*))*`,
-	string(MSG_ONLY):            `%{MULTILINE:message}`,
-	string(TS_LEVEL_MSG):        `%{TIMESTAMP_ISO8601:timestamp} .?%{LOGLEVEL:level}.? %{MULTILINE:message}`,
-	string(LOGFMT_TS_LEVEL_MSG): `(time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']? level=%{LOGLEVEL:level} (msg|message)=%{MULTILINE:message}`,
+	"MULTILINE":                  `((\s)*(.*))*`,
+	string(MSG_ONLY):             `%{MULTILINE:message}`,
+	string(TS_LEVEL_MSG):         `%{TIMESTAMP_ISO8601:timestamp} .?%{LOGLEVEL:level}.? %{MULTILINE:message}`,
+	string(LOGFMT_TS_LEVEL_MSG):  `(time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']? level=%{LOGLEVEL:level} (msg|message)=%{MULTILINE:message}`,
+	string(LOGFMT_TS_LEVEL_MSG2): `(time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']?.*level=%{LOGLEVEL:level}`,
+	string(LOGFMT_LEVEL_TS_MSG):  `level=%{LOGLEVEL:level} (time|ts)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']? %{MULTILINE:message}`,
+	// This pattern captures the full elements of connect logs.
+	//string(CONNECT_LOG):         `\[%{TIMESTAMP_ISO8601:timestamp}\]\[%{INT:thread_id}\]\[%{LOGLEVEL:level}\]\[%{DATA:module}\] \[%{DATA:source_file}:%{INT:line_number}\] \[%{DATA:connection_id}\] %{MULTILINE:message}`,
+	// This pattern captures a lite version of connect logs and ignores the thread_id
+	string(CONNECT_LOG): `\[%{TIMESTAMP_ISO8601:timestamp}\].*\[%{LOGLEVEL:level}\]%{MULTILINE:message}`,
 }
 
 type PatternFactory struct {
@@ -212,7 +228,7 @@ func (factory *PatternFactory) ParseWitDefaults(defaults ParseResult, patternkey
 	}
 
 	if len(parsed.Msg) == 0 {
-		parsed.LogLevel = defaults.Msg
+		parsed.Msg = defaults.Msg
 	}
 
 	if parsed.TimeStamp.IsZero() {

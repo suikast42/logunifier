@@ -17,6 +17,8 @@ import (
 )
 
 func main() {
+	//fmt.Printf("GRPC_GO_LOG_VERBOSITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")) // 99
+	//fmt.Printf("GRPC_GO_LOG_SEVERITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL"))  // info
 	processChannel := make(chan ingress.IngressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals

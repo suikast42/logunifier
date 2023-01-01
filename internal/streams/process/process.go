@@ -143,13 +143,6 @@ func (eg *LogProcessor) analyzeAndEnrich(msg *model.EcsLogEntry) {
 		}
 	}
 
-	if msg.Service == nil {
-		msg.Service = &model.Service{
-			Name: "NoDefinied",
-		}
-		msg.Tags = append(msg.Tags, "NoServiceDefined")
-	}
-
 	if msg.Log.Level == model.LogLevel_unknown {
 		msg.Tags = append(msg.Tags, "NoLevel")
 	}
