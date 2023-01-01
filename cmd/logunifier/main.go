@@ -5,6 +5,7 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
+	"github.com/suikast42/logunifier/internal/streams/ingress/dockerlogs"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
@@ -63,6 +64,7 @@ func main() {
 			[]string{
 				cfg.IngressNatsJournald(),
 				cfg.IngresNatsTest(),
+				cfg.IngressNatsDocker(),
 			}),
 	}
 	streamDefinitions[streamNameLogStreamEgress] = bootstrap.NatsStreamConfiguration{
@@ -104,13 +106,23 @@ func main() {
 		StreamName: streamNameLogStreamIngress,
 		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
 	}
+	streamConsumerDefinitions[ingressConsumerDocker] = bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			ingressConsumerDocker,
+			ingressConsumerDocker+"_Group",
+			streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
+			cfg.IngressNatsDocker(),
+		),
+		StreamName: streamNameLogStreamIngress,
+		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &dockerlogs.DockerToEcsConverter{}),
+	}
+	// Egress stream Consumer configuration
 	lokiShipper := &lokishipper.LokiShipper{
 		Logger:        config.Logger(),
 		LokiAddresses: cfg.LokiServers(),
 	}
 	lokiShipper.Connect()
 
-	// Egress stream Consumer configuration
 	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 			egressLokiShipper,

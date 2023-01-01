@@ -154,9 +154,11 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	for k, v := range ecs.Labels {
 		labelsMap[k] = v
 	}
+
 	labelsMap["job"] = ecs.Service.Name
 	// The level label is autodetected by grafana log panel
 	// Thus we duplicate this
 	labelsMap["level"] = model.LogLevelToString(ecs.Log.Level)
+	//fmt.Printf("%s %s ",  ecs.Service.Name, ecs.Message)
 	return labelsMap
 }

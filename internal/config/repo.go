@@ -10,6 +10,7 @@ import (
 // region type Config
 type Config struct {
 	ingressNatsJournald string
+	ingressNatsDocker   string
 	ingresSubjectTest   string
 	natsServers         []string
 	lokiServers         []string
@@ -32,6 +33,10 @@ loglevel: %v,
 
 func (c Config) IngressNatsJournald() string {
 	return c.ingressNatsJournald
+}
+
+func (c Config) IngressNatsDocker() string {
+	return c.ingressNatsDocker
 }
 
 func (c Config) IngresNatsTest() string {
@@ -110,6 +115,10 @@ func (r *ConfigBuilder) withIngresSubjectTest(ingresSubjectTest *string) *Config
 	return r
 }
 
+func (r *ConfigBuilder) withIngressSubjectDocker(ingressNatsDocker *string) *ConfigBuilder {
+	r.cfg.ingressNatsDocker = *ingressNatsDocker
+	return r
+}
 func (r *ConfigBuilder) build() *Config {
 	lock.Lock()
 	defer lock.Unlock()

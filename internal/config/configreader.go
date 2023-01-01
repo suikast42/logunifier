@@ -19,7 +19,8 @@ func ReadConfigs() {
 	var (
 		natsServers            arrayFlags
 		lokiServers            arrayFlags
-		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "loki server host and port")
+		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "ingress subject journald logs shipped by vector")
+		ingressSubjectDocker   = fs.String("ingressSubjectDocker", "ingress.logs.docker", "ingress subject docker container logs shipped by vector")
 		ingressSubjectTest     = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
 		egressSubjectEcs       = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
 		loglevel               = fs.String("loglevel", "info", "Default log level")
@@ -39,7 +40,8 @@ func ReadConfigs() {
 	}
 	builder := newBuilder().
 		withIngressSubjectJournald(ingressSubjectJournalD).
-		withIngresSubjectTest(ingressSubjectTest)
+		withIngresSubjectTest(ingressSubjectTest).
+		withIngressSubjectDocker(ingressSubjectDocker)
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
 	}
