@@ -12,7 +12,7 @@ type EcsConverter interface {
 	// model.ParseError of model.EcsLogEntry
 	// This step have to add following labels:
 	// 		ingress: the semantic name of ingress stream like journald, container
-	// 		pattern: the used pattern for that EcsLogEntry see patterns.PatternKey
+	// 		used_grok: the used pattern for that EcsLogEntry see patterns.PatternKey
 	Convert(msg *nats.Msg) *model.EcsLogEntry
 }
 
