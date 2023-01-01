@@ -46,9 +46,9 @@ var unitToPattern map[string]patterns.PatternKey
 
 func init() {
 	unitToPattern = make(map[string]patterns.PatternKey)
-	unitToPattern["nomad.service"] = patterns.TS_LEVEL_MSG
-	unitToPattern["consul.service"] = patterns.TS_LEVEL_MSG
-	unitToPattern["docker.service"] = patterns.LOGFMT_TS_LEVEL_MSG
+	unitToPattern["nomad.service"] = patterns.TS_LEVEL
+	unitToPattern["consul.service"] = patterns.TS_LEVEL
+	unitToPattern["docker.service"] = patterns.LOGFMT_TS_LEVEL
 }
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	journald := IngressSubjectJournald{}
@@ -62,7 +62,6 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	def := patterns.ParseResult{
 		LogLevel:  "UNKNOWN",
 		TimeStamp: journald.Timestamp,
-		Msg:       journald.Message,
 	}
 	if patternFound {
 		parsed, err = patterns.Instance().ParseWitDefaults(def, pattern, journald.Message)
@@ -75,7 +74,7 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 
 	return &model.EcsLogEntry{
 		Id:      model.UUID(),
-		Message: parsed.Msg,
+		Message: journald.Message,
 		Labels: map[string]string{
 			ingress.IndexedLabelIngress:     "vector-journald",
 			ingress.IndexedLabelUsedPattern: parsed.UsedPattern,

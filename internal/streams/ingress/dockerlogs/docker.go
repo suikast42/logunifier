@@ -39,12 +39,14 @@ type IngessSubjectDockerLogs struct {
 }
 
 var containerToPattern = map[string]patterns.PatternKey{
-	"traefik":     patterns.LOGFMT_TS_LEVEL_MSG,
-	"forwardauth": patterns.LOGFMT_TS_LEVEL_MSG,
-	"keycloak":    patterns.TS_LEVEL_MSG,
-	"loki":        patterns.LOGFMT_LEVEL_TS_MSG,
-	"tempo":       patterns.LOGFMT_LEVEL_TS_MSG,
-	"mimir":       patterns.LOGFMT_TS_LEVEL_MSG2,
+	"traefik":       patterns.LOGFMT_TS_LEVEL,
+	"forwardauth":   patterns.LOGFMT_TS_LEVEL,
+	"keycloak":      patterns.TS_LEVEL,
+	"loki":          patterns.LOGFMT_LEVEL_TS,
+	"tempo":         patterns.LOGFMT_LEVEL_TS,
+	"mimir":         patterns.LOGFMT_TS_LEVEL,
+	"grafana":       patterns.LOGFMT_TS_LEVEL,
+	"grafana-agent": patterns.LOGFMT_TS_LEVEL,
 }
 
 func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
@@ -68,7 +70,6 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	def := patterns.ParseResult{
 		LogLevel:  "UNKNOWN",
 		TimeStamp: dockerLogEntry.Timestamp,
-		Msg:       dockerLogEntry.Message,
 	}
 	if patternFound {
 		parsed, err = patterns.Instance().ParseWitDefaults(def, pattern, dockerLogEntry.Message)
@@ -85,7 +86,7 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		Log: &model.Log{
 			Level: model.StringToLogLevel(parsed.LogLevel),
 		},
-		Message: parsed.Msg,
+		Message: dockerLogEntry.Message,
 		Container: &model.Container{
 			Id:        dockerLogEntry.ContainerId,
 			Name:      dockerLogEntry.ContainerName,
