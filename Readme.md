@@ -5,3 +5,5 @@ Logunifier receives logs over nats subscription(s) and converts and enrich logs 
 The shipment of logs to loki is implemented by this module. 
 
 ## How its works
+
+![Architecture](docs/arch.svg)
