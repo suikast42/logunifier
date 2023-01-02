@@ -36,7 +36,7 @@ func TestParseTS_LEVEL(t *testing.T) {
 			TimeStamp:   ts,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -57,7 +57,7 @@ func TestParseTS_LEVEL(t *testing.T) {
 			TimeStamp:   ts,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -81,7 +81,7 @@ func TestParseTS_LEVEL(t *testing.T) {
 			TimeStamp:   ts,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -111,7 +111,7 @@ func TestParseTsKeyCloakStyle(t *testing.T) {
 			TimeStamp:   ts,
 			UsedPattern: KeyCloakPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", KeyCloakPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", KeyCloakPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -137,7 +137,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_warn,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -158,7 +158,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_warn,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -179,7 +179,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_warn,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -200,7 +200,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -221,7 +221,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -243,7 +243,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			TimeStamp:   ts,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -265,7 +265,7 @@ func TestParseLOGFMT_TS_LEVEL_MSG(t *testing.T) {
 			LogLevel:    model.LogLevel_info,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -293,7 +293,7 @@ func TestParseLOGFMT_LEVEL_TS(t *testing.T) {
 			LogLevel:    model.LogLevel_info,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -315,7 +315,7 @@ func TestParseLOGFMT_LEVEL_TS(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -343,7 +343,7 @@ func TestParseCONNECT_LOG(t *testing.T) {
 			LogLevel:    model.LogLevel_warn,
 			UsedPattern: ConsulConnectPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", ConsulConnectPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", ConsulConnectPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -371,7 +371,7 @@ func TestMimirLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -396,7 +396,7 @@ func TestMimirLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -423,7 +423,7 @@ func TestTempoLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_warn,
 			UsedPattern: CommonPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -451,7 +451,7 @@ func TestConnectProxLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_debug,
 			UsedPattern: ConsulConnectPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", ConsulConnectPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", ConsulConnectPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -478,7 +478,7 @@ func TestPostgresLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_fatal,
 			UsedPattern: CommonUtcPattern.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonUtcPattern, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonUtcPattern, log)
 
 		if err != nil {
 			t.Error(err)
@@ -506,7 +506,7 @@ func TestNexusLogs(t *testing.T) {
 			LogLevel:    model.LogLevel_info,
 			UsedPattern: CommonUtcPatternWithCommaTsAndTz.Name,
 		}
-		parsed, err := patternfactory.Parse("test", CommonUtcPatternWithCommaTsAndTz, log)
+		parsed, err := patternfactory.Parse("test", "test", CommonUtcPatternWithCommaTsAndTz, log)
 
 		if err != nil {
 			t.Error(err)

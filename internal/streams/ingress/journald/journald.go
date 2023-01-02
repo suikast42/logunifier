@@ -62,7 +62,7 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		LogLevel:  model.LogLevel_unknown,
 		TimeStamp: journald.Timestamp,
 	}
-	parsed, err = patterns.Instance().ParseWitDefaults(journald.SYSTEMDUNIT, def, pattern, journald.Message)
+	parsed, err = patterns.Instance().ParseWitDefaults("IngressSubjectJournald", journald.SYSTEMDUNIT, def, pattern, journald.Message)
 	if err != nil {
 		return model.ToUnmarshalError(msg, err)
 	}

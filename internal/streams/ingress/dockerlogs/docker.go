@@ -74,7 +74,7 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		LogLevel:  model.LogLevel_unknown,
 		TimeStamp: dockerLogEntry.Timestamp,
 	}
-	parsed, err = patterns.Instance().ParseWitDefaults(patternKey, def, pattern, dockerLogEntry.Message)
+	parsed, err = patterns.Instance().ParseWitDefaults("IngessSubjectDockerLogs", patternKey, def, pattern, dockerLogEntry.Message)
 	if err != nil {
 		return model.ToUnmarshalError(msg, err)
 	}

@@ -255,7 +255,7 @@ func add(source map[string]string, new map[string]string) error {
 	return nil
 }
 
-func (factory *PatternFactory) Parse(foundFor string, patternkey PatternKey, text string) (ParseResult, error) {
+func (factory *PatternFactory) Parse(processStream string, foundFor string, patternkey PatternKey, text string) (ParseResult, error) {
 	if patternkey == NopPattern {
 		return ParseResult{}, nil
 	}
@@ -284,7 +284,7 @@ func (factory *PatternFactory) Parse(foundFor string, patternkey PatternKey, tex
 		defer wg.Done()
 		tsCompiler := factory.compilers[patternkey.TsPattern]
 		if tsCompiler == nil {
-			factory.logger.Error().Msgf("No ts compiler found for %s", patternkey.String())
+			factory.logger.Error().Msgf("No ts compiler found for stream %s and key %s ", processStream, patternkey.String())
 			return
 		}
 		parsed := tsCompiler.ParseString(*text)
@@ -292,13 +292,12 @@ func (factory *PatternFactory) Parse(foundFor string, patternkey PatternKey, tex
 		if tsFound {
 			_ts, err := time.Parse(patternkey.Tsformat, tsInMsg)
 			if err != nil {
-				factory.logger.Error().Err(err).Msgf("Can't parse timestamp for %s .Text is [%s] and found ts is [%s] with detected pattern %s", foundFor, *text, tsInMsg, patternkey.String())
+				factory.logger.Error().Err(err).Msgf("Can't parse timestamp for stream %s with key %s .Text is [%s] and found ts is [%s] with detected pattern %s", processStream, foundFor, *text, tsInMsg, patternkey.String())
 				return
 			}
 			parsedTs = _ts
 		} else {
-			factory.logger.Error().Msgf("Could not found a ts for %s .Text is [%s] with detected pattern %s", foundFor, *text, patternkey.String())
-
+			factory.logger.Error().Msgf("Could not found a ts for stream %s and key  %s .Text is [%s] with detected pattern %s", processStream, foundFor, *text, patternkey.String())
 		}
 	}(&patternkey, &text, &wg)
 
@@ -307,13 +306,13 @@ func (factory *PatternFactory) Parse(foundFor string, patternkey PatternKey, tex
 		defer wg.Done()
 		logLevelCompiler := factory.compilers[patternkey.LogLevelPattern]
 		if logLevelCompiler == nil {
-			factory.logger.Error().Msgf("No log level compiler found for %s", patternkey.String())
+			factory.logger.Error().Msgf("No log level compiler found for stream %s and key %s ", processStream, patternkey.String())
 			return
 		}
 		parsed := logLevelCompiler.ParseString(*text)
 		logLevelInMsg, logLevelFound := parsed[string(level)]
 		if !logLevelFound || len(logLevelInMsg) == 0 {
-			factory.logger.Error().Msgf("Can't find loglevel for %s .Text is [%s] with detected pattern %s", foundFor, *text, patternkey.String())
+			factory.logger.Error().Msgf("Can't find loglevel for stream %s and key %s .Text is [%s] with detected pattern %s", processStream, foundFor, *text, patternkey.String())
 			return
 		}
 		parsedLevel = model.StringToLogLevel(logLevelInMsg)
@@ -327,11 +326,11 @@ func (factory *PatternFactory) Parse(foundFor string, patternkey PatternKey, tex
 
 }
 
-func (factory *PatternFactory) ParseWitDefaults(foundFor string, defaults ParseResult, patternkey PatternKey, text string) (ParseResult, error) {
+func (factory *PatternFactory) ParseWitDefaults(processStream string, foundFor string, defaults ParseResult, patternkey PatternKey, text string) (ParseResult, error) {
 	if patternkey == NopPattern {
 		return defaults, nil
 	}
-	parsed, err := factory.Parse(foundFor, patternkey, text)
+	parsed, err := factory.Parse(processStream, foundFor, patternkey, text)
 	if err != nil {
 		return ParseResult{}, err
 	}
