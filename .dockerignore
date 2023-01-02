@@ -1,0 +1,11 @@
+*.sh
+*.iml
+*.md
+*.MD
+Dockerfile
+.idea/
+docs/
+.envrc
+.gitignore
+.dockerignore
+.git
