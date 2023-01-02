@@ -43,7 +43,8 @@ type IngressSubjectJournald struct {
 }
 
 var unitToPattern = map[string]patterns.PatternKey{
-	"init.scope": patterns.NopPattern,
+	"init.scope":   patterns.NopPattern,
+	"cron.service": patterns.NopPattern,
 }
 
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
