@@ -39,14 +39,8 @@ type IngessSubjectDockerLogs struct {
 }
 
 var containerToPattern = map[string]patterns.PatternKey{
-	"traefik":       patterns.LOGFMT_TS_LEVEL,
-	"forwardauth":   patterns.LOGFMT_TS_LEVEL,
-	"keycloak":      patterns.TS_LEVEL,
-	"loki":          patterns.LOGFMT_LEVEL_TS,
-	"tempo":         patterns.LOGFMT_LEVEL_TS,
-	"mimir":         patterns.LOGFMT_TS_LEVEL,
-	"grafana":       patterns.LOGFMT_TS_LEVEL,
-	"grafana-agent": patterns.LOGFMT_TS_LEVEL,
+	"keycloak": patterns.KeyCloakPattern,
+	"nexus":    patterns.CommonUtcPatternWithCommaTsAndTz,
 }
 
 func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
@@ -55,36 +49,41 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	if err != err {
 		return model.ToUnmarshalError(msg, err)
 	}
-	pattern, patternFound := containerToPattern[dockerLogEntry.Label.ComHashicorpNomadTaskName]
+	patternKey := dockerLogEntry.Label.ComHashicorpNomadTaskName
+	if patternKey == "" {
+		patternKey = dockerLogEntry.ContainerName
+	}
+	pattern, patternFound := containerToPattern[patternKey]
 
-	// nomad consul add for every connect sidecar a connect-proxy suffix
-	// Register dynamically for every connect sidecar proxy the log pattern
-	if !patternFound && strings.HasPrefix(dockerLogEntry.Label.ComHashicorpNomadTaskName, "connect-proxy-") {
-		var proxykey = "connect-proxy-" + dockerLogEntry.Label.ComHashicorpNomadTaskName
-		containerToPattern[proxykey] = patterns.CONNECT_LOG
-		pattern, patternFound = containerToPattern[proxykey]
+	if !patternFound {
+		if strings.HasPrefix(patternKey, "connect-proxy-") {
+			containerToPattern[patternKey] = patterns.ConsulConnectPattern
+			pattern, patternFound = containerToPattern[patternKey]
+		} else if strings.HasSuffix(patternKey, "postgres") {
+			containerToPattern[patternKey] = patterns.ConsulConnectPattern
+			pattern, patternFound = containerToPattern[patternKey]
+		} else {
+			containerToPattern[patternKey] = patterns.CommonPattern
+			pattern, patternFound = containerToPattern[patternKey]
+		}
 	}
 
 	var parsed patterns.ParseResult
 	// A registered pattern found for message
 	def := patterns.ParseResult{
-		LogLevel:  "UNKNOWN",
+		LogLevel:  model.LogLevel_unknown,
 		TimeStamp: dockerLogEntry.Timestamp,
 	}
-	if patternFound {
-		parsed, err = patterns.Instance().ParseWitDefaults(def, pattern, dockerLogEntry.Message)
-		if err != nil {
-			return model.ToUnmarshalError(msg, err)
-		}
-	} else {
-		parsed = def
+	parsed, err = patterns.Instance().ParseWitDefaults(patternKey, def, pattern, dockerLogEntry.Message)
+	if err != nil {
+		return model.ToUnmarshalError(msg, err)
 	}
 	return &model.EcsLogEntry{
 		Id:        model.UUID(),
 		Timestamp: timestamppb.New(parsed.TimeStamp),
 		Tags:      []string{dockerLogEntry.SourceType},
 		Log: &model.Log{
-			Level: model.StringToLogLevel(parsed.LogLevel),
+			Level: parsed.LogLevel,
 		},
 		Message: dockerLogEntry.Message,
 		Container: &model.Container{
@@ -98,7 +97,7 @@ func (r *DockerToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 			Labels: map[string]string{
 				ingress.IndexedContainerLabelStackName: dockerLogEntry.Label.ComHashicorpNomadJobName,
 				ingress.IndexedContainerLabelTaskGroup: dockerLogEntry.Label.ComHashicorpNomadTaskGroupName,
-				ingress.IndexedContainerLabelTask:      dockerLogEntry.Label.ComHashicorpNomadTaskName,
+				ingress.IndexedContainerLabelTask:      patternKey,
 				ingress.IndexedContainerLabelNamespace: dockerLogEntry.Label.ComHashicorpNomadNamespace,
 			},
 			Runtime: "",

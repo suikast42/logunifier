@@ -48,6 +48,7 @@ var logLevelToStringMap = map[LogLevel]string{
 }
 
 var stringToLogLevelMap = map[string]LogLevel{
+	// Sync the chaanges here with the log level pattern LOGLEVEL_KEYWORD
 	"trace":    LogLevel_trace,
 	"trc":      LogLevel_trace,
 	"debug":    LogLevel_debug,

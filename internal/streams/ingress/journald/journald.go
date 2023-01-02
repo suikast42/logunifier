@@ -42,14 +42,10 @@ type IngressSubjectJournald struct {
 	Timestamp           time.Time `json:"timestamp"`
 }
 
-var unitToPattern map[string]patterns.PatternKey
-
-func init() {
-	unitToPattern = make(map[string]patterns.PatternKey)
-	unitToPattern["nomad.service"] = patterns.TS_LEVEL
-	unitToPattern["consul.service"] = patterns.TS_LEVEL
-	unitToPattern["docker.service"] = patterns.LOGFMT_TS_LEVEL
+var unitToPattern = map[string]patterns.PatternKey{
+	"init.scope": patterns.NopPattern,
 }
+
 func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	journald := IngressSubjectJournald{}
 	err := json.Unmarshal(msg.Data, &journald)
@@ -57,19 +53,18 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		return model.ToUnmarshalError(msg, err)
 	}
 	pattern, patternFound := unitToPattern[journald.SYSTEMDUNIT]
+	if !patternFound {
+		pattern = patterns.CommonPattern
+	}
 	var parsed patterns.ParseResult
 	// A registered pattern found for message
 	def := patterns.ParseResult{
-		LogLevel:  "UNKNOWN",
+		LogLevel:  model.LogLevel_unknown,
 		TimeStamp: journald.Timestamp,
 	}
-	if patternFound {
-		parsed, err = patterns.Instance().ParseWitDefaults(def, pattern, journald.Message)
-		if err != nil {
-			return model.ToUnmarshalError(msg, err)
-		}
-	} else {
-		parsed = def
+	parsed, err = patterns.Instance().ParseWitDefaults(journald.SYSTEMDUNIT, def, pattern, journald.Message)
+	if err != nil {
+		return model.ToUnmarshalError(msg, err)
 	}
 
 	return &model.EcsLogEntry{
@@ -83,7 +78,7 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		Timestamp: timestamppb.New(parsed.TimeStamp),
 		Tags:      []string{journald.SourceType},
 		Log: &model.Log{
-			Level: model.StringToLogLevel(parsed.LogLevel),
+			Level: parsed.LogLevel,
 		},
 		Host: &model.Host{
 			Hostname: journald.Host,
