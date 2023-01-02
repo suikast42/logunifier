@@ -1,0 +1,225 @@
+// Data model for define a unified log model
+// This log model is leaned against elastic common schema
+syntax = "proto3";
+import "pkg/model/ecsconstants.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/suikast42/logunifier/pkg/model";
+option java_multiple_files = true;
+option java_package = "com.github.suikast42.logunifier.model";
+
+option optimize_for = SPEED;
+package boundary;
+
+
+
+message EcsLogEntry {
+  // A unique id that identify the log entry
+  string id = 1;
+  // The creation time of the log by its' source
+  google.protobuf.Timestamp  timestamp = 2 [json_name = "@timestamp"];
+  // The message of the log
+  string message = 3 ;
+  repeated string  tags = 4 ;
+  map <string, string> labels = 5 ;
+
+  Constants.Ecs version = 6 [json_name = "ecs"];
+  Container container = 7;
+  Agent agent = 8;
+  Host host = 9;
+  Tracing trace = 10;
+  Organization organization = 11;
+  Service service = 12;
+  Error error = 13;
+  Log log = 14;
+  ParseError parseError = 15;
+}
+
+
+
+//Docker or Pod container information
+message Container {
+  message Image {
+    string name = 1;
+    repeated string tag = 2;
+  }
+
+  string id = 1;
+  Image image = 2;
+  map <string, string> labels = 3;
+  string name = 4;
+  string runtime = 5;
+  google.protobuf.Timestamp  createdAt = 6;
+}
+
+// The agent information of the client
+// For example filebeat or a java client that ships the logs
+message Agent {
+  message Build {
+    string original = 1;
+  }
+
+  Build build = 1;
+  string ephemeral_id = 2;
+  string id = 3;
+  string name = 4;
+  string type = 5;
+  string version = 6;
+}
+
+// Host information of the logging agent.
+message Host {
+
+  message Os {
+    string family = 1;
+    string full = 2;
+    string kernel = 3;
+    string name = 4;
+    string platform = 5;
+    string type = 6;
+    string version = 7;
+  }
+
+  message User {
+    message Group {
+      string domain = 1;
+      string id = 2;
+      string name = 3;
+    }
+
+    string domain = 1;
+    string email = 2;
+    string full_name = 3;
+    Group group = 4;
+    string hash = 5;
+    string id = 6;
+    string name = 7;
+    repeated string roles = 8;
+  }
+
+  string architecture = 1;
+  string domain = 4;
+  string hostname = 6;
+  string id = 7;
+  repeated string ip = 8;
+  repeated string mac = 9;
+  string name = 10;
+  Os os = 12;
+  string type = 13;
+  int64 uptime = 14;
+  User user = 15;
+}
+
+// Apm trace
+message Tracing{
+  message Transaction {
+    string id = 1;
+  }
+
+  // Apm span
+  message Span {
+    string id = 1;
+  }
+  message Trace {
+    string id = 1;
+  }
+
+  Span span = 1;
+  Trace trace = 2;
+  Transaction transaction = 3;
+
+}
+
+// Information about the project
+message Organization {
+  string id = 1;
+  string name = 2;
+}
+
+// Service information
+message Service {
+  message Node {
+    string name = 1;
+  }
+
+  string ephemeral_id = 1;
+  string id = 2;
+  string name = 3;
+  Node node = 4;
+  string state = 5;
+  string type = 6;
+  string version = 7;
+}
+
+// Log error information
+message Error {
+  string code = 1;
+  string id = 2;
+  string message = 3;
+  string stack_trace = 4;
+  string type = 5;
+}
+
+// Meta information about the log
+message Log {
+  message File {
+    string path = 1;
+  }
+
+  message Origin {
+    message File {
+      int32 line = 1;
+      string name = 2;
+    }
+
+    File file = 1;
+    string function = 2;
+  }
+
+  message Syslog {
+    message Facility {
+      int64 code = 1;
+      string name = 2;
+    }
+
+    message Severity {
+      int64 code = 1;
+      string name = 2;
+    }
+
+    Facility facility = 1;
+    int64 priority = 2;
+    Severity severity = 3;
+  }
+
+  File file = 1;
+  LogLevel level = 2;
+  string logger = 3;
+  string thread_name = 4;
+  Origin origin = 5;
+  string original = 6;
+  Syslog syslog = 7;
+  string levelEmoji = 8;
+}
+
+enum LogLevel{
+  unknown = 0 ;
+  trace = 100;
+  debug = 200;
+  info = 300;
+  warn = 400;
+  error = 500;
+  fatal = 600;
+}
+// Debug information about the parse error
+message ParseError{
+  enum Reason {
+    UNKNOWN = 0;
+    Unmarshal = 1;
+  }
+  Reason reason = 1;
+  // String representation of the raw data
+  string rawData = 2;
+  string subject = 3;
+  map<string, string>  messageHeader = 4;
+}
