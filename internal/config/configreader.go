@@ -30,7 +30,7 @@ func ReadConfigs() {
 
 	// Default defined in local.cfg
 	fs.Var(&natsServers, "natsServers", "list of nats server(s) host and port")
-	fs.Var(&natsServers, "lokiServers", "list of loki server(s) host and port")
+	fs.Var(&lokiServers, "lokiServers", "list of loki server(s) host and port")
 	if err := ff.Parse(fs, os.Args[1:],
 		ff.WithEnvVarPrefix("LOGU"),
 		ff.WithConfigFileFlag("config"),

@@ -18,6 +18,7 @@ import (
 	"github.com/nats-io/nats.go"
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
+	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/grpc"
@@ -85,7 +86,8 @@ func (loki *LokiShipper) Connect() {
 		if loki.connected || loki.grpcConnection != nil {
 			return
 		}
-		grpcConnection, err := grpc.Dial("loki.service.consul:9005", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		cfg, _ := config.Instance()
+		grpcConnection, err := grpc.Dial(cfg.LokiServers()[0], grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			var wait = time.Second * 5
 			loki.Logger.Error().Err(err).Msgf("Can't create connection to loki %s. Try in %v", loki.LokiAddresses, wait)
