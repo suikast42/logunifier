@@ -7,6 +7,7 @@ require (
 	github.com/grafana/loki v1.6.2-0.20220914103657-a290549a59fe
 	github.com/nats-io/nats.go v1.22.1
 	github.com/peterbourgon/ff/v3 v3.3.0
+	github.com/prometheus/prometheus v1.8.2-0.20211119115433-692a54649ed7
 	github.com/rs/zerolog v1.28.0
 	github.com/trivago/grok v1.0.0
 	google.golang.org/grpc v1.51.0
@@ -71,7 +72,6 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/exporter-toolkit v0.8.2 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	github.com/prometheus/prometheus v1.8.2-0.20211119115433-692a54649ed7 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/sercand/kuberesolver v2.4.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect

@@ -17,10 +17,16 @@ func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	r.testCounter++
 	logger := config.Logger()
 	logger.Debug().Msgf("Counter %d", r.testCounter)
+	ts, err := time.Parse(time.RFC3339, string(msg.Data))
+	if err != nil {
+		ts = time.Now()
+	}
+
 	return &model.EcsLogEntry{
-		Id:        model.UUID(),
-		Message:   string(msg.Data),
-		Timestamp: timestamppb.New(time.Now()),
+		Id:      model.UUID(),
+		Message: string(msg.Data),
+		//Timestamp: timestamppb.New(time.Now()),
+		Timestamp: timestamppb.New(ts),
 		Labels: map[string]string{
 			ingress.IndexedLabelIngress:     "vector-testingress",
 			ingress.IndexedLabelUsedPattern: "nil",

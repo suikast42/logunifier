@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
@@ -12,11 +13,13 @@ import (
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 )
 
 func main() {
+
 	//fmt.Printf("GRPC_GO_LOG_VERBOSITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")) // 99
 	//fmt.Printf("GRPC_GO_LOG_SEVERITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL"))  // info
 	processChannel := make(chan ingress.IngressMsgContext, 4096)
@@ -33,11 +36,20 @@ func main() {
 	}
 
 	cfg, err := config.Instance()
+
 	// The second  panic point. Must be sure that the config is done
 	if err != nil {
 		panic(err)
 	}
 	logger := config.Logger()
+	defer func(logger zerolog.Logger) {
+		if r := recover(); r != nil {
+			// Log fatal do an os.Exit(1)
+			stack := debug.Stack()
+			logger.Fatal().Msgf("Unexpected error: %+v\n%s", r, string(stack))
+		}
+	}(logger)
+
 	logger.Info().Msgf("Starting with config: %s", cfg.String())
 
 	err = process.Start(processChannel, cfg.EgressSubjectEcs())

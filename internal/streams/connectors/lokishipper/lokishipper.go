@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"strings"
 	"sync"
 	"time"
 )
@@ -63,11 +64,22 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	pushRequest := loki.buildPushRequest(ecs.Timestamp.AsTime(), labels, string(marshal))
 	pushResponse, pushErr := loki.client.Push(loki.ctx, pushRequest)
 	if pushErr != nil {
-		loki.Logger.Err(pushErr).Msg("Can't push message")
-		err := msg.NakWithDelay(time.Second * 5)
-		if err != nil {
-			loki.Logger.Error().Err(err).Msg("Can't nack message")
+		//"entry too far behind, the oldest acceptable timestamp is: " + m.cutoff.Format(time.RFC3339)
+		//if chunkenc.IsErrTooFarBehind(pushErr) {
+		if strings.ContainsAny(strings.ToLower(pushErr.Error()), "entry too far behind") {
+			loki.Logger.Error().Err(pushErr).Msg("Event lost. Can't push message to loki")
+			err := msg.Term()
+			if err != nil {
+				loki.Logger.Error().Err(err).Msg("Can't terminate message")
+			}
+		} else {
+			loki.Logger.Error().Err(pushErr).Msg("Can't push message to loki")
+			err := msg.NakWithDelay(time.Second * 5)
+			if err != nil {
+				loki.Logger.Error().Err(err).Msg("Can't nack message")
+			}
 		}
+
 		return
 	}
 	err := msg.Ack()
@@ -114,10 +126,21 @@ func (loki *LokiShipper) watch() {
 			return
 		case <-time.After(time.Second):
 			state := loki.grpcConnection.GetState()
-			loki.connected = state == connectivity.Ready
-			if !loki.connected {
-				loki.Logger.Info().Msgf("Loki connection state: %s", state)
+			switch state {
+			case connectivity.Ready:
+				{
+					loki.connected = true
+					if !loki.connected {
+						loki.Logger.Info().Msgf("Loki connection state: %s", state)
+					}
+				}
+			case connectivity.TransientFailure:
+				loki.Logger.Info().Msgf("Reconnecting to state is %s", state)
+				loki.DisConnect()
+				loki.Connect()
+				return
 			}
+
 		}
 	}
 }
