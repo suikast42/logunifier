@@ -153,7 +153,9 @@ func (loki *LokiShipper) DisConnect() {
 	if loki.grpcConnection != nil {
 		loki.cancelFnc()
 		err := loki.grpcConnection.Close()
-		loki.Logger.Error().Err(err).Msgf("Can't close connection to loki %s", loki.LokiAddresses)
+		if err != nil {
+			loki.Logger.Error().Err(err).Msgf("Can't close connection to loki %s", loki.LokiAddresses)
+		}
 	}
 	loki.grpcConnection = nil
 }

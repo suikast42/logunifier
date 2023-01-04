@@ -20,12 +20,12 @@ func ReadConfigs() {
 		natsServers            arrayFlags
 		lokiServers            arrayFlags
 		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "ingress subject journald logs shipped by vector")
-		ingressSubjectDocker   = fs.String("ingressSubjectDocker", "ingress.logs.docker", "ingress subject docker container logs shipped by vector")
-		ingressSubjectTest     = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
-		egressSubjectEcs       = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
-		loglevel               = fs.String("loglevel", "info", "Default log level")
-		ackTimeoutIns          = fs.Int("ackTimeoutIns", 10, "Ack timeout of ingress channels")
-		_                      = fs.String("config", "internal/config/local.cfg", "config file (optional)")
+		//ingressSubjectDocker   = fs.String("ingressSubjectDocker", "ingress.logs.docker", "ingress subject docker container logs shipped by vector")
+		ingressSubjectTest = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
+		egressSubjectEcs   = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
+		loglevel           = fs.String("loglevel", "info", "Default log level")
+		ackTimeoutIns      = fs.Int("ackTimeoutIns", 10, "Ack timeout of ingress channels")
+		_                  = fs.String("config", "internal/config/local.cfg", "config file (optional)")
 	)
 
 	// Default defined in local.cfg
@@ -40,8 +40,8 @@ func ReadConfigs() {
 	}
 	builder := newBuilder().
 		withIngressSubjectJournald(ingressSubjectJournalD).
-		withIngresSubjectTest(ingressSubjectTest).
-		withIngressSubjectDocker(ingressSubjectDocker)
+		withIngresSubjectTest(ingressSubjectTest)
+	//withIngressSubjectDocker(ingressSubjectDocker)
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
 	}
@@ -79,7 +79,7 @@ func ConfigLogging() error {
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
-	_ = zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+	//_ = zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339Nano}
 	log := Logger()
 	{
 		loglevel := config.Loglevel()

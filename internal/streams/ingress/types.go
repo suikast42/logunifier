@@ -25,6 +25,7 @@ type IngressMsgContext struct {
 var IndexedLabels = map[IndexedLabel]IndexedLabel{
 	//IndexedLabelLevel:       IndexedLabelLevel,
 	IndexedLabelJob:         IndexedLabelJob,
+	IndexedLabelJobType:     IndexedLabelJobType,
 	IndexedLabelIngress:     IndexedLabelIngress,
 	IndexedLabelUsedPattern: IndexedLabelUsedPattern,
 }
@@ -41,6 +42,7 @@ type IndexedLabel string
 
 const (
 	IndexedLabelLevel       = "level"
+	IndexedLabelJobType     = "job_type"
 	IndexedLabelJob         = "job"
 	IndexedLabelIngress     = "ingress"
 	IndexedLabelUsedPattern = "used_grok"
