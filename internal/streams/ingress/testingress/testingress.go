@@ -16,11 +16,11 @@ type TestEcsConverter struct {
 func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	r.testCounter++
 	logger := config.Logger()
-	logger.Debug().Msgf("Counter %d", r.testCounter)
 	ts, err := time.Parse(time.RFC3339, string(msg.Data))
 	if err != nil {
 		ts = time.Now()
 	}
+	logger.Debug().Msgf("Counter %d. Message %s", r.testCounter, string(msg.Data))
 
 	return &model.EcsLogEntry{
 		Id:      model.UUID(),
