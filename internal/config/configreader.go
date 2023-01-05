@@ -105,13 +105,11 @@ func ConfigLogging() error {
 
 func Logger() zerolog.Logger {
 	//TODO provide the ability to switch log output in production to json file
-
-	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
+	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339Nano}
 	//multi := zerolog.MultiLevelWriter(consoleWriter, os.Stdout)
 	//
 	//logger := zerolog.New(multi).With().Timestamp().Logger()
-
 	return zeroLogger.Output(consoleWriter)
 
 }

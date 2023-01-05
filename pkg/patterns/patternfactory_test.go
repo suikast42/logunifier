@@ -521,6 +521,34 @@ func TestNexusLogs(t *testing.T) {
 	}
 
 }
+
+func TestLoguniferLogs(t *testing.T) {
+	{
+		var log = "2023-01-05T10:08:38.120801+01:00 INF This is my test\n"
+		ts, err := time.Parse(time.RFC3339, "2023-01-05T10:08:38.120801+01:00")
+		if err != nil {
+			t.Error(err)
+		}
+		expected := ParseResult{
+			TimeStamp:   ts,
+			LogLevel:    model.LogLevel_info,
+			UsedPattern: CommonPattern.Name,
+		}
+		parsed, err := patternfactory.Parse("test", "test", CommonPattern, log)
+
+		if err != nil {
+			t.Error(err)
+		}
+		if parsed.TimeStamp.IsZero() {
+			t.Errorf("Timestamp invalid  %s", parsed.TimeStamp.String())
+		}
+		equal := reflect.DeepEqual(expected, parsed)
+		if !equal {
+			t.Errorf("Expected %+v but got %+v", expected, parsed)
+		}
+	}
+
+}
 func TestEcsAggTags(t *testing.T) {
 	entry := &model.EcsLogEntry{}
 
