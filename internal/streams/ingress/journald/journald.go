@@ -128,11 +128,11 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		},
 		Service: &model.Service{
 			EphemeralId: journald.BOOTID,
-			Name:        journald.SYSTEMDUNIT,
+			Name:        journald.jobName(),
 			Node: &model.Service_Node{
 				Name: journald.Host,
 			},
-			Type: journald.SourceType,
+			Type: journald.jobType(),
 		},
 	}
 	if journald.isContainerLog() {
