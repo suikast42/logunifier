@@ -17,48 +17,48 @@ import (
 type JournaldDToEcsConverter struct {
 }
 type IngressSubjectJournald struct {
-	COM_HASHICORP_NOMAD_ALLOC_ID        string    `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
-	COM_HASHICORP_NOMAD_JOB_ID          string    `json:"COM_HASHICORP_NOMAD_JOB_ID"`
-	COM_HASHICORP_NOMAD_JOB_NAME        string    `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
-	COM_HASHICORP_NOMAD_NAMESPACE       string    `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
-	COM_HASHICORP_NOMAD_NODE_ID         string    `json:"COM_HASHICORP_NOMAD_NODE_ID"`
-	COM_HASHICORP_NOMAD_NODE_NAME       string    `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
-	COM_HASHICORP_NOMAD_TASK_GROUP_NAME string    `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
-	COM_HASHICORP_NOMAD_TASK_NAME       string    `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
-	CONTAINER_ID                        string    `json:"CONTAINER_ID"`
-	CONTAINER_ID_FULL                   string    `json:"CONTAINER_ID_FULL"`
-	CONTAINER_NAME                      string    `json:"CONTAINER_NAME"`
-	CONTAINER_TAG                       string    `json:"CONTAINER_TAG"`
-	CONTAINER_PARTIAL_MESSAGE           string    `json:"CONTAINER_PARTIAL_MESSAGE"`
-	IMAGE_NAME                          string    `json:"IMAGE_NAME"`
-	ORG_OPENCONTAINERS_IMAGE_REVISION   string    `json:"ORG_OPENCONTAINERS_IMAGE_REVISION"`
-	ORG_OPENCONTAINERS_IMAGE_SOURCE     string    `json:"ORG_OPENCONTAINERS_IMAGE_SOURCE"`
-	ORG_OPENCONTAINERS_IMAGE_TITLE      string    `json:"ORG_OPENCONTAINERS_IMAGE_TITLE"`
-	PRIORITY                            string    `json:"PRIORITY"`
-	SYSLOG_IDENTIFIER                   string    `json:"SYSLOG_IDENTIFIER"`
-	BOOTID                              string    `json:"_BOOT_ID"`
-	CAPEFFECTIVE                        string    `json:"_CAP_EFFECTIVE"`
-	CMDLINE                             string    `json:"_CMDLINE"`
-	COMM                                string    `json:"_COMM"`
-	EXE                                 string    `json:"_EXE"`
-	GID                                 string    `json:"_GID"`
-	MACHINEID                           string    `json:"_MACHINE_ID"`
-	PID                                 string    `json:"_PID"`
-	SELINUXCONTEXT                      string    `json:"_SELINUX_CONTEXT"`
-	STREAMID                            string    `json:"_STREAM_ID"`
-	SOURCEREALTIMETIMESTAMP             string    `json:"_SOURCE_REALTIME_TIMESTAMP"`
-	SYSTEMDCGROUP                       string    `json:"_SYSTEMD_CGROUP"`
-	SYSTEMDINVOCATIONID                 string    `json:"_SYSTEMD_INVOCATION_ID"`
-	SYSTEMDSLICE                        string    `json:"_SYSTEMD_SLICE"`
-	SYSTEMDUNIT                         string    `json:"_SYSTEMD_UNIT"`
-	TRANSPORT                           string    `json:"_TRANSPORT"`
-	UID                                 string    `json:"_UID"`
-	MONOTONICTIMESTAMP                  string    `json:"__MONOTONIC_TIMESTAMP"`
-	REALTIMETIMESTAMP                   string    `json:"__REALTIME_TIMESTAMP"`
-	Host                                string    `json:"host"`
-	Message                             string    `json:"message"`
-	SourceType                          string    `json:"source_type"`
-	Timestamp                           time.Time `json:"timestamp"`
+	COM_HASHICORP_NOMAD_ALLOC_ID        string `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
+	COM_HASHICORP_NOMAD_JOB_ID          string `json:"COM_HASHICORP_NOMAD_JOB_ID"`
+	COM_HASHICORP_NOMAD_JOB_NAME        string `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
+	COM_HASHICORP_NOMAD_NAMESPACE       string `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
+	COM_HASHICORP_NOMAD_NODE_ID         string `json:"COM_HASHICORP_NOMAD_NODE_ID"`
+	COM_HASHICORP_NOMAD_NODE_NAME       string `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
+	COM_HASHICORP_NOMAD_TASK_GROUP_NAME string `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
+	COM_HASHICORP_NOMAD_TASK_NAME       string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
+	CONTAINER_ID                        string `json:"CONTAINER_ID"`
+	CONTAINER_ID_FULL                   string `json:"CONTAINER_ID_FULL"`
+	CONTAINER_NAME                      string `json:"CONTAINER_NAME"`
+	CONTAINER_TAG                       string `json:"CONTAINER_TAG"`
+	//CONTAINER_PARTIAL_MESSAGE           string    `json:"CONTAINER_PARTIAL_MESSAGE"`
+	IMAGE_NAME                        string    `json:"IMAGE_NAME"`
+	ORG_OPENCONTAINERS_IMAGE_REVISION string    `json:"ORG_OPENCONTAINERS_IMAGE_REVISION"`
+	ORG_OPENCONTAINERS_IMAGE_SOURCE   string    `json:"ORG_OPENCONTAINERS_IMAGE_SOURCE"`
+	ORG_OPENCONTAINERS_IMAGE_TITLE    string    `json:"ORG_OPENCONTAINERS_IMAGE_TITLE"`
+	PRIORITY                          string    `json:"PRIORITY"`
+	SYSLOG_IDENTIFIER                 string    `json:"SYSLOG_IDENTIFIER"`
+	BOOTID                            string    `json:"_BOOT_ID"`
+	CAPEFFECTIVE                      string    `json:"_CAP_EFFECTIVE"`
+	CMDLINE                           string    `json:"_CMDLINE"`
+	COMM                              string    `json:"_COMM"`
+	EXE                               string    `json:"_EXE"`
+	GID                               string    `json:"_GID"`
+	MACHINEID                         string    `json:"_MACHINE_ID"`
+	PID                               string    `json:"_PID"`
+	SELINUXCONTEXT                    string    `json:"_SELINUX_CONTEXT"`
+	STREAMID                          string    `json:"_STREAM_ID"`
+	SOURCEREALTIMETIMESTAMP           string    `json:"_SOURCE_REALTIME_TIMESTAMP"`
+	SYSTEMDCGROUP                     string    `json:"_SYSTEMD_CGROUP"`
+	SYSTEMDINVOCATIONID               string    `json:"_SYSTEMD_INVOCATION_ID"`
+	SYSTEMDSLICE                      string    `json:"_SYSTEMD_SLICE"`
+	SYSTEMDUNIT                       string    `json:"_SYSTEMD_UNIT"`
+	TRANSPORT                         string    `json:"_TRANSPORT"`
+	UID                               string    `json:"_UID"`
+	MONOTONICTIMESTAMP                string    `json:"__MONOTONIC_TIMESTAMP"`
+	REALTIMETIMESTAMP                 string    `json:"__REALTIME_TIMESTAMP"`
+	Host                              string    `json:"host"`
+	Message                           string    `json:"message"`
+	SourceType                        string    `json:"source_type"`
+	Timestamp                         time.Time `json:"timestamp"`
 }
 
 var unitToPattern = map[string]patterns.PatternKey{
@@ -150,9 +150,9 @@ func (r *JournaldDToEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 			Labels: containerLabels,
 			Name:   journald.CONTAINER_NAME,
 		}
-		if len(journald.CONTAINER_PARTIAL_MESSAGE) > 0 {
-			converted.Message = converted.Message + "\n" + journald.CONTAINER_PARTIAL_MESSAGE
-		}
+		//if len(journald.CONTAINER_PARTIAL_MESSAGE) > 0 {
+		//	converted.Message = converted.Message + "\n" + journald.CONTAINER_PARTIAL_MESSAGE
+		//}
 	}
 	return converted
 

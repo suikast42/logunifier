@@ -99,32 +99,19 @@ func (nd *NatsDialer) Connect() error {
 		nats.Name("logunifier"),
 		nats.Timeout(nd.connectionTimeOut),
 		nats.RetryOnFailedConnect(true),
-		nats.ConnectHandler(func(c *nats.Conn) {
-			nd.logger.Info().Msgf("Connected to  %s", c.ConnectedUrl())
-			streamDefinitionError := nd.upsertStreams()
-			if streamDefinitionError != nil {
-				nd.logger.Error().Err(streamDefinitionError).Msgf("Can't create or update stream(s) for config %+v", nd.streamConfigurations)
-				os.Exit(1)
-			}
-
-			consumerDefinitionError := nd.upsertConsumers()
-			if consumerDefinitionError != nil {
-				nd.logger.Error().Err(consumerDefinitionError).Msgf("Can't create or update consumer(s) for config %+v", nd.consumerConfigurations)
-				os.Exit(1)
-			}
-
-			subscriptionError := nd.startSubscriptions()
-			if subscriptionError != nil {
-				nd.logger.Error().Err(subscriptionError).Msgf("Can't start subscription %+v", nd.consumerConfigurations)
-				os.Exit(1)
-			}
+		nats.ConnectHandler(func(nc *nats.Conn) {
+			nd.logger.Info().Msgf("Connected to  %s", nc.ConnectedUrl())
+			nd.nc = nc
+			nd.doSubscribe()
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
 			nd.logger.Info().Msgf("Connection closed to %s", c.ConnectedUrl())
 		}),
 		nats.ReconnectWait(nd.connectTimeWait),
-		nats.ReconnectHandler(func(c *nats.Conn) {
-			nd.logger.Info().Msgf("Reconnected to %s", c.ConnectedUrl())
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			nd.logger.Info().Msgf("Reconnected to %s", nc.ConnectedUrl())
+			nd.nc = nc
+			nd.doSubscribe()
 		}),
 		nats.DisconnectErrHandler(func(c *nats.Conn, disconnectionError error) {
 			if disconnectionError != nil {
@@ -138,11 +125,11 @@ func (nd *NatsDialer) Connect() error {
 		//We will keep the connection
 		//nats.NoReconnect(),
 	}
-	nc, err := nats.Connect(cfg.NatsServers(), opts...)
+	_, err = nats.Connect(cfg.NatsServers(), opts...)
 	if err != nil {
 		return err
 	}
-	nd.nc = nc
+
 	return nil
 }
 
@@ -158,6 +145,25 @@ func (nd *NatsDialer) Disconnect() error {
 	}
 	nd.logger.Info().Msg("Disconnected")
 	return nil
+}
+func (nd *NatsDialer) doSubscribe() {
+	streamDefinitionError := nd.upsertStreams()
+	if streamDefinitionError != nil {
+		nd.logger.Error().Err(streamDefinitionError).Msgf("Can't create or update stream(s) for config %+v", nd.streamConfigurations)
+		os.Exit(1)
+	}
+
+	consumerDefinitionError := nd.upsertConsumers()
+	if consumerDefinitionError != nil {
+		nd.logger.Error().Err(consumerDefinitionError).Msgf("Can't create or update consumer(s) for config %+v", nd.consumerConfigurations)
+		os.Exit(1)
+	}
+
+	subscriptionError := nd.startSubscriptions()
+	if subscriptionError != nil {
+		nd.logger.Error().Err(subscriptionError).Msgf("Can't start subscription %+v", nd.consumerConfigurations)
+		os.Exit(1)
+	}
 }
 
 func (nd *NatsDialer) upsertStreams() error {

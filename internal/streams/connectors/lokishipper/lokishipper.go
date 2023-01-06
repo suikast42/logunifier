@@ -135,7 +135,7 @@ func (loki *LokiShipper) watch() {
 					}
 				}
 			case connectivity.TransientFailure:
-				loki.Logger.Info().Msgf("Reconnecting to state is %s", state)
+				loki.Logger.Info().Msgf("Reconnecting to Loki. State is %s", state)
 				loki.DisConnect()
 				loki.Connect()
 				return
