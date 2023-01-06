@@ -32,19 +32,21 @@ import (
 type LokiShipper struct {
 	//GRPC_GO_LOG_VERBOSITY_LEVEL=99
 	//GRPC_GO_LOG_SEVERITY_LEVEL=info
-	Logger         zerolog.Logger
-	LokiAddresses  []string
-	grpcConnection *grpc.ClientConn
-	client         logproto.PusherClient
-	ctx            context.Context
-	cancelFnc      context.CancelFunc
-	connected      bool
+	Logger                   zerolog.Logger
+	LokiAddresses            []string
+	grpcConnection           *grpc.ClientConn
+	client                   logproto.PusherClient
+	ctx                      context.Context
+	cancelFnc                context.CancelFunc
+	connected                bool
+	lokiReconnectionInterval time.Duration
+	natsRedeliverInterval    time.Duration
 }
 
 func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	if !loki.connected {
 		//loki.Logger.Debug().Msg("not connected to loki")
-		err := msg.NakWithDelay(time.Second * 5)
+		err := msg.NakWithDelay(loki.natsRedeliverInterval)
 		if err != nil {
 			loki.Logger.Error().Err(err).Msg("Can't nack message")
 		}
@@ -66,15 +68,15 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	if pushErr != nil {
 		//"entry too far behind, the oldest acceptable timestamp is: " + m.cutoff.Format(time.RFC3339)
 		//if chunkenc.IsErrTooFarBehind(pushErr) {
-		if strings.ContainsAny(strings.ToLower(pushErr.Error()), "entry too far behind") {
-			loki.Logger.Error().Err(pushErr).Msg("Event lost. Can't push message to loki")
+		if strings.Contains(strings.ToLower(pushErr.Error()), "entry too far behind") {
+			loki.Logger.Error().Err(pushErr).Msgf("Event lost. Can't push message to loki. Lost message: [%s]", marshal)
 			err := msg.Term()
 			if err != nil {
 				loki.Logger.Error().Err(err).Msg("Can't terminate message")
 			}
 		} else {
-			loki.Logger.Error().Err(pushErr).Msg("Can't push message to loki")
-			err := msg.NakWithDelay(time.Second * 5)
+			//loki.Logger.Error().Err(pushErr).Msgf("Can't push message to loki. %s", marshal)
+			err := msg.NakWithDelay(loki.natsRedeliverInterval)
 			if err != nil {
 				loki.Logger.Error().Err(err).Msg("Can't nack message")
 			}
@@ -99,58 +101,60 @@ func (loki *LokiShipper) Connect() {
 			return
 		}
 		cfg, _ := config.Instance()
+		loki.lokiReconnectionInterval = time.Second * 5
+		loki.natsRedeliverInterval = loki.lokiReconnectionInterval + time.Second*5
 		grpcConnection, err := grpc.Dial(cfg.LokiServers()[0], grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			var wait = time.Second * 5
-			loki.Logger.Error().Err(err).Msgf("Can't create connection to loki %s. Try in %v", loki.LokiAddresses, wait)
+			loki.Logger.Error().Err(err).Msgf("Can't create connection to loki %s. Try in %v", loki.LokiAddresses, loki.lokiReconnectionInterval)
+			time.Sleep(loki.lokiReconnectionInterval)
 			go loki.Connect()
 			return
 		}
-		if loki.grpcConnection == nil {
-			ctx, cancel := context.WithCancel(context.Background())
-			loki.ctx = ctx
-			loki.cancelFnc = cancel
-			loki.grpcConnection = grpcConnection
-			go loki.watch()
-		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		loki.ctx = ctx
+		loki.cancelFnc = cancel
+		loki.grpcConnection = grpcConnection
 		loki.client = logproto.NewPusherClient(grpcConnection)
+		go loki.watch()
 
 	}(&conSync)
 
 }
 func (loki *LokiShipper) watch() {
+	loki.Logger.Info().Msg("Loki watcher is started")
 	for {
 		select {
 		case <-loki.ctx.Done():
-			loki.Logger.Info().Msg("Loki watcher stooped")
+			loki.Logger.Info().Msg("Loki watcher is stopped")
 			return
-		case <-time.After(time.Second):
+		case <-time.After(loki.lokiReconnectionInterval):
 			state := loki.grpcConnection.GetState()
+			//loki.Logger.Debug().Msgf("Loki Watcher is running. State is %s", state)
 			switch state {
 			case connectivity.Ready:
-				{
-					loki.connected = true
-					if !loki.connected {
-						loki.Logger.Info().Msgf("Loki connection state: %s", state)
-					}
+				if !loki.connected {
+					loki.Logger.Info().Msgf("Connected to Loki. State is %s", state)
 				}
-			case connectivity.TransientFailure:
+				loki.connected = true
+			case connectivity.TransientFailure, connectivity.Idle:
 				loki.Logger.Info().Msgf("Reconnecting to Loki. State is %s", state)
-				loki.DisConnect()
-				loki.Connect()
-				return
+				go func() {
+					// Disconnect will trigger a loki.ctx cancel
+					loki.DisConnect()
+					loki.Connect()
+				}()
 			}
 
 		}
 	}
 }
 
-var disconnMtx sync.Mutex
-
 func (loki *LokiShipper) DisConnect() {
-	disconnMtx.Lock()
-	defer disconnMtx.Unlock()
+	conSync.Lock()
+	defer conSync.Unlock()
 	if loki.grpcConnection != nil {
+		loki.connected = false
 		loki.cancelFnc()
 		err := loki.grpcConnection.Close()
 		if err != nil {
