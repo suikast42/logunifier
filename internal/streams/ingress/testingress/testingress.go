@@ -27,10 +27,14 @@ func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 		Message: string(msg.Data),
 		//Timestamp: timestamppb.New(time.Now()),
 		Timestamp: timestamppb.New(ts),
+		Log: &model.Log{
+			Level: model.LogLevel_info,
+		},
 		Labels: map[string]string{
-			ingress.IndexedLabelIngress:     "vector-testingress",
-			ingress.IndexedLabelUsedPattern: "nil",
-			ingress.IndexedLabelJob:         "test",
+			ingress.IndexedLabelIngress:            "vector-testingress",
+			ingress.IndexedLabelUsedPattern:        "nil",
+			ingress.IndexedLabelJob:                "test",
+			ingress.IndexedContainerLabelStackName: "test",
 		},
 	}
 

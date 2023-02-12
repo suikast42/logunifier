@@ -229,6 +229,9 @@ func main() {
 			}
 			os.Exit(1)
 		case <-time.After(time.Second * 1):
+			if cfg.PingLog() {
+				logger.Debug().Msg("Ping log")
+			}
 			err := dialer.SendPing()
 			if err != nil {
 				logger.Error().Err(err).Stack().Msg("Can't send ping")

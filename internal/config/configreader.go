@@ -19,6 +19,7 @@ func ReadConfigs() {
 	var (
 		natsServers            arrayFlags
 		lokiServers            arrayFlags
+		pingLog                = fs.Bool("pingLog", false, "log every second a ping in debug level")
 		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "ingress subject journald logs shipped by vector")
 		//ingressSubjectDocker   = fs.String("ingressSubjectDocker", "ingress.logs.docker", "ingress subject docker container logs shipped by vector")
 		ingressSubjectTest = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
@@ -40,7 +41,8 @@ func ReadConfigs() {
 	}
 	builder := newBuilder().
 		withIngressSubjectJournald(ingressSubjectJournalD).
-		withIngresSubjectTest(ingressSubjectTest)
+		withIngresSubjectTest(ingressSubjectTest).
+		withPingLog(pingLog)
 	//withIngressSubjectDocker(ingressSubjectDocker)
 	for _, s := range natsServers {
 		builder.withNatsServer(s)
