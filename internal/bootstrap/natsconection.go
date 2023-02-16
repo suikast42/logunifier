@@ -83,16 +83,27 @@ var connectionMtx sync.Mutex
 func (nd *NatsDialer) Connection() *nats.Conn {
 	return nd.nc
 }
+
+func (nd *NatsDialer) Health(ctx context.Context) error {
+	if nd.nc == nil {
+		return errors.New("connection is not set")
+	}
+
+	if !nd.nc.IsConnected() {
+		return errors.New("not connected yet")
+	}
+	return nil
+}
 func (nd *NatsDialer) Connect() error {
 	connectionMtx.Lock()
 	cfg, err := config.Instance()
 	if err != nil {
 		return err
 	}
-	if nd.nc != nil {
-		//Connection already established or establishing
-		return nil
-	}
+	//if nd.nc != nil {
+	//	//Connection already established or establishing
+	//	return nil
+	//}
 	defer connectionMtx.Unlock()
 
 	opts := []nats.Option{
@@ -105,7 +116,25 @@ func (nd *NatsDialer) Connect() error {
 			nd.doSubscribe()
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
-			nd.logger.Info().Msgf("Connection closed to %s", c.ConnectedUrl())
+			closeByRequest := nd.ctx.Value("DisconnectRequest")
+			if closeByRequest != nil && closeByRequest.(bool) {
+				// This is the case if the connection loosed by the program itself
+				nd.logger.Info().Msgf("Connection closed to %s by a DisconnectRequest", c.ConnectedUrl())
+			} else {
+				// Fatal do a os.Exit(1)
+				nd.logger.Fatal().Msgf("Can't connect to %s after connection lost")
+				//
+				//// This is the case if the nats clients lost the connection
+				//nd.logger.Warn().Msgf("Connection to %s lost. Reconnect", c.ConnectedUrl())
+				//go func() {
+				//	connErr := nd.Connect()
+				//	if connErr != nil {
+				//		// Fatal do a os.Exit(1)
+				//		nd.logger.Fatal().Msgf("Can't connect to %s after connection lost")
+				//	}
+				//}()
+			}
+
 		}),
 		nats.ReconnectWait(nd.connectTimeWait),
 		nats.ReconnectHandler(func(nc *nats.Conn) {
@@ -143,6 +172,8 @@ func (nd *NatsDialer) Disconnect() error {
 		nd.logger.Error().Err(err).Msg("Can't Drain")
 		return err
 	}
+	nd.ctx = context.WithValue(nd.ctx, "DisconnectRequest", true)
+	nd.nc.Close()
 	nd.logger.Info().Msg("Disconnected")
 	return nil
 }

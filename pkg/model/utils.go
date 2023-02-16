@@ -32,7 +32,7 @@ func StringToLogLevel(level string) LogLevel {
 	lowercased := strings.ToLower(level)
 	loglevel, found := stringToLogLevelMap[lowercased]
 	if !found {
-		return stringToLogLevelMap[lowercased]
+		return stringToLogLevelMap[string(LogLevel_unknown)]
 	}
 	return loglevel
 }
@@ -49,23 +49,24 @@ var logLevelToStringMap = map[LogLevel]string{
 
 var stringToLogLevelMap = map[string]LogLevel{
 	// Sync the chaanges here with the log level pattern LOGLEVEL_KEYWORD
-	"trace":    LogLevel_trace,
-	"trc":      LogLevel_trace,
-	"debug":    LogLevel_debug,
-	"dbg":      LogLevel_debug,
-	"dbug":     LogLevel_debug,
-	"info":     LogLevel_info,
-	"inf":      LogLevel_info,
-	"notice":   LogLevel_info,
-	"warn":     LogLevel_warn,
-	"warning":  LogLevel_warn,
-	"error":    LogLevel_error,
-	"err":      LogLevel_error,
-	"alert":    LogLevel_error,
-	"fatal":    LogLevel_fatal,
-	"emerg":    LogLevel_fatal,
-	"crit":     LogLevel_fatal,
-	"critical": LogLevel_fatal,
+	"trace":                  LogLevel_trace,
+	"trc":                    LogLevel_trace,
+	"debug":                  LogLevel_debug,
+	"dbg":                    LogLevel_debug,
+	"dbug":                   LogLevel_debug,
+	"info":                   LogLevel_info,
+	"inf":                    LogLevel_info,
+	"notice":                 LogLevel_info,
+	"warn":                   LogLevel_warn,
+	"warning":                LogLevel_warn,
+	"error":                  LogLevel_error,
+	"err":                    LogLevel_error,
+	"alert":                  LogLevel_error,
+	"fatal":                  LogLevel_fatal,
+	"emerg":                  LogLevel_fatal,
+	"crit":                   LogLevel_fatal,
+	"critical":               LogLevel_fatal,
+	string(LogLevel_unknown): LogLevel_unknown,
 }
 
 var loglevelToEmoji = map[LogLevel]string{

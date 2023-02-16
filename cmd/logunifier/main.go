@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/internal/health"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
@@ -159,6 +160,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = health.Start("/health", 3000, dialer, lokiShipper)
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't start health check endpoint")
+		os.Exit(1)
+	}
 	//processChannel := make(chan *ingress.IngressMsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
@@ -229,6 +235,9 @@ func main() {
 			}
 			os.Exit(1)
 		case <-time.After(time.Second * 1):
+			if cfg.PingLog() {
+				logger.Debug().Msg("Ping log")
+			}
 			err := dialer.SendPing()
 			if err != nil {
 				logger.Error().Err(err).Stack().Msg("Can't send ping")

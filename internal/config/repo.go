@@ -17,6 +17,7 @@ type Config struct {
 	loglevel          string
 	egressSubjectEcs  string
 	ackTimeoutS       int
+	pingLog           bool
 }
 
 func (c Config) AckTimeoutS() int {
@@ -33,6 +34,10 @@ loglevel: %v,
 
 func (c Config) IngressNatsJournald() string {
 	return c.ingressNatsJournald
+}
+
+func (c Config) PingLog() bool {
+	return c.pingLog
 }
 
 //func (c Config) IngressNatsDocker() string {
@@ -112,6 +117,11 @@ func (r *ConfigBuilder) withIngressSubjectJournald(ingressNatsJournald *string) 
 }
 func (r *ConfigBuilder) withIngresSubjectTest(ingresSubjectTest *string) *ConfigBuilder {
 	r.cfg.ingresSubjectTest = *ingresSubjectTest
+	return r
+}
+
+func (r *ConfigBuilder) withPingLog(pingLog *bool) *ConfigBuilder {
+	r.cfg.pingLog = *pingLog
 	return r
 }
 

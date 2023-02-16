@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/nats-io/nats.go"
+	"github.com/pkg/errors"
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
@@ -41,6 +42,13 @@ type LokiShipper struct {
 	connected                bool
 	lokiReconnectionInterval time.Duration
 	natsRedeliverInterval    time.Duration
+}
+
+func (loki *LokiShipper) Health(ctx context.Context) error {
+	if !loki.connected {
+		return errors.New("not connected yet")
+	}
+	return nil
 }
 
 func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
