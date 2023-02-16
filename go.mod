@@ -3,6 +3,7 @@ module github.com/suikast42/logunifier
 go 1.20
 
 require (
+	github.com/alexliesenfeld/health v0.6.0
 	github.com/google/uuid v1.3.0
 	github.com/grafana/loki v1.6.2-0.20220914103657-a290549a59fe
 	github.com/nats-io/nats.go v1.23.0

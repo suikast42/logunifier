@@ -4,7 +4,7 @@
      echo "Build version $BUILD_VERSION push to dockerhub"
      docker  build  .  -t suikast42/logunifier:$BUILD_VERSION
      echo docker push suikast42/logunifier:$BUILD_VERSION
-     docker push suikast42/logunifier:$Version
+     docker push suikast42/logunifier:$BUILD_VERSION
  else
      echo "Build version $BUILD_VERSION push to $REGISTRY"
      docker  build  .  -t  $REGISTRY/suikast42/logunifier:$BUILD_VERSION

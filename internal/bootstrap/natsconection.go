@@ -83,6 +83,17 @@ var connectionMtx sync.Mutex
 func (nd *NatsDialer) Connection() *nats.Conn {
 	return nd.nc
 }
+
+func (nd *NatsDialer) Health(ctx context.Context) error {
+	if nd.nc == nil {
+		return errors.New("connection is not set")
+	}
+
+	if !nd.nc.IsConnected() {
+		return errors.New("not connected yet")
+	}
+	return nil
+}
 func (nd *NatsDialer) Connect() error {
 	connectionMtx.Lock()
 	cfg, err := config.Instance()
