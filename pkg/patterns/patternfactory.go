@@ -19,6 +19,7 @@ const (
 	NopPattern GrokPatternKey = "NopPattern"
 )
 
+// var appPatterns = map[GrokPatternKey] GrokPattern
 const (
 	TimeformatCommonUTC           = "2006-01-02 15:04:05.000 MST"
 	TimeFormatConsulConnect       = "2006-01-02 15:04:05.000"

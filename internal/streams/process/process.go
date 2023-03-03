@@ -80,7 +80,7 @@ func (eg *LogProcessor) startReceiving() {
 				continue
 			}
 			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
-
+			Validate(ecsLog)
 			marshal, err := json.Marshal(ecsLog)
 
 			if err != nil {

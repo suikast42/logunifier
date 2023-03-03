@@ -34,6 +34,7 @@ message EcsLogEntry {
   Error error = 13;
   Log log = 14;
   ParseError parseError = 15;
+  repeated string validationError = 16;
 }
 
 

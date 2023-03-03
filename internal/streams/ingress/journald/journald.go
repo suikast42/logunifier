@@ -181,7 +181,17 @@ func (r *IngressSubjectJournald) jobName() string {
 	if len(r.CONTAINER_NAME) > 0 {
 		return r.CONTAINER_NAME
 	}
-	return r.SYSTEMDUNIT
+	if len(r.SYSTEMDUNIT) > 0 {
+		return r.SYSTEMDUNIT
+	}
+
+	if len(r.SYSTEMDSLICE) > 0 {
+		return r.SYSTEMDSLICE
+	}
+	if len(r.SYSTEMDCGROUP) > 0 {
+		return r.SYSTEMDCGROUP
+	}
+	return ""
 }
 
 func (r *IngressSubjectJournald) jobType() ingress.JobType {
