@@ -9,10 +9,11 @@ option java_multiple_files = true;
 option java_package = "com.github.suikast42.logunifier.model";
 
 option optimize_for = SPEED;
-package boundary;
+package model;
 
 
-
+// if you update the EcsLogEntry proto then checkout the
+// interface definition patterns.GrokPatternExtractor
 message EcsLogEntry {
   // A unique id that identify the log entry
   string id = 1;

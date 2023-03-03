@@ -1,0 +1,51 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "pkg/model/ecs.proto";
+
+option go_package = "github.com/suikast42/logunifier/pkg/model";
+option java_multiple_files = true;
+option java_package = "com.github.suikast42.logunifier.model";
+
+option optimize_for = SPEED;
+package model;
+
+
+// Collects the metadata of a log entry from various formats
+// This metadata is used for improve the pattern finding algorithm
+message MetaLog {
+
+  // Time of the log event shipment.
+  // This ts will considered as log ts if the ts canot exctracted from the message
+  google.protobuf.Timestamp fallbackTimestamp = 1 ;
+
+  // This loglevel will be used if the loglevel can't be extracted from the ingested message
+  LogLevel fallbackLoglevel = 2 ;
+
+  // True if the message is in native ecs format
+  bool isNativeEcs = 3;
+
+  // Identifier for finding a log pattern
+  // This can be a application name like keycloak, loki or a systemd slice name etc.
+  string patternIdentifier = 4;
+
+  // If the source provide the version information about the running unit.
+  // If not 0 is used
+  string appVersion = 5;
+
+
+  reserved 6 to 40;
+
+  // Labels captured from the log shipper source
+  // This labels will be added to the final logs as log labels.
+  map <string, string> labels = 41 ;
+  // The log message
+  string  message= 42;
+
+  // tags
+  repeated string tags = 43 ;
+
+  // If the log can't be unmarshalled from the ingress topic
+  ParseError parseError = 44;
+
+
+}

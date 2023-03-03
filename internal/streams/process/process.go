@@ -8,7 +8,7 @@ import (
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
-	"github.com/suikast42/logunifier/pkg/model"
+	"github.com/suikast42/logunifier/pkg/patterns"
 	"os"
 	"sync"
 	"time"
@@ -65,6 +65,7 @@ func (eg *LogProcessor) startReceiving() {
 		os.Exit(1)
 	}
 	eg.logger.Info().Msgf("Start validation channel")
+	patternFactory := patterns.Instance()
 	for {
 		select {
 		case receivedCtx, ok := <-eg.validationChannel:
@@ -73,19 +74,18 @@ func (eg *LogProcessor) startReceiving() {
 				eg.logger.Error().Msgf("Nothing received %v %v", receivedCtx, ok)
 				return
 			}
-			err := receivedCtx.Orig.InProgress()
+			err := receivedCtx.NatsMsg.InProgress()
 			if err != nil {
 				eg.logger.Error().Err(err).Msg("Can't set message InProgress")
 				continue
 			}
-			converted := receivedCtx.Converter.Convert(receivedCtx.Orig)
-			eg.analyzeAndEnrich(converted)
+			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
 
-			marshal, err := json.Marshal(converted)
+			marshal, err := json.Marshal(ecsLog)
 
 			if err != nil {
-				eg.logger.Error().Err(err).Msgf("Can't unmarshal outgoing message: %v", converted)
-				err = receivedCtx.Orig.Ack()
+				eg.logger.Error().Err(err).Msgf("Can't unmarshal outgoing message: %v", ecsLog)
+				err = receivedCtx.NatsMsg.Ack()
 				if err != nil {
 					eg.logger.Error().Err(err).Msg("Can't ack message")
 				}
@@ -94,7 +94,7 @@ func (eg *LogProcessor) startReceiving() {
 			async, err := egressStream.PublishAsync(eg.pushSubject, marshal)
 			if err != nil {
 				eg.logger.Error().Err(err).Msg("Can't publish message")
-				err := receivedCtx.Orig.NakWithDelay(eg.ackTimeout)
+				err := receivedCtx.NatsMsg.NakWithDelay(eg.ackTimeout)
 				if err != nil {
 					eg.logger.Error().Err(err).Msg("Can't nack message. Message lost")
 				}
@@ -103,20 +103,20 @@ func (eg *LogProcessor) startReceiving() {
 			go func(ack nats.PubAckFuture, msgctx ingress.IngressMsgContext, ackTimeout time.Duration) {
 				select {
 				case <-ack.Ok():
-					err = msgctx.Orig.Ack()
+					err = msgctx.NatsMsg.Ack()
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't ack message")
 					}
 					//eg.logger.Debug().Msg("Msg Acked")
 				case err, _ := <-ack.Err():
 					eg.logger.Error().Err(err).Msgf("Can't to egress %s. Try to nack with a delay of %v", eg.pushSubject, eg.ackTimeout)
-					err = msgctx.Orig.NakWithDelay(eg.ackTimeout)
+					err = msgctx.NatsMsg.NakWithDelay(eg.ackTimeout)
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't nack message")
 					}
 				case <-time.After(ackTimeout + time.Second*1):
 					eg.logger.Error().Msgf("This should not happened. Timeout on send msg after  %v ", ackTimeout+time.Second*1)
-					err = msgctx.Orig.NakWithDelay(eg.ackTimeout)
+					err = msgctx.NatsMsg.NakWithDelay(eg.ackTimeout)
 					if err != nil {
 						eg.logger.Error().Err(err).Msg("Can't nack message")
 					}
@@ -130,23 +130,4 @@ func (eg *LogProcessor) startReceiving() {
 		}
 	}
 
-}
-
-func (eg *LogProcessor) analyzeAndEnrich(msg *model.EcsLogEntry) {
-	if msg.HasParseErrors() {
-		msg.Tags = append(msg.Tags, "ParseError")
-	}
-	if msg.Log == nil {
-		msg.Tags = append(msg.Tags, "EmptyLog")
-		msg.Log = &model.Log{
-			Level: model.LogLevel_unknown,
-		}
-	}
-
-	if msg.Log.Level == model.LogLevel_unknown {
-		msg.Tags = append(msg.Tags, "NoLevel")
-	}
-
-	msg.Log.LevelEmoji = model.LogLevelToEmoji(msg.Log.Level)
-	//eg.logger.Info().Msgf("Received %s", msg.Timestamp.AsTime().String())
 }

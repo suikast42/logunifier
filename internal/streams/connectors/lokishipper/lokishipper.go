@@ -1,14 +1,11 @@
 package lokishipper
 
-// The loki client has an issue with the mod versionin in v2
+// The loki client has an issue with the mod version in v2
 // see https://github.com/grafana/loki/issues/2826
-// For upgrading the loki client version go to GitHub and find aut the commit id
-// After that execute go get github.com/grafana/loki@a290549a59fed24a4374e922dafee6c784cdedcc
-// This commit  id above resolves a go module github.com/grafana/loki v1.6.2-0.20220914103657-a290549a59fe
-// Furthermore, the weavework/common dependency from loki has a incompatibility with the grpc > 1.45
-// Thus you must patch it with  go get github.com/weaveworks/common@7c2720a9024d7fdf5f4668321a4fcddf7b461b27
-// This os the case with loki client v 2.7.1 with commit id a290549a59fed24a4374e922dafee6c784cdedcc
-// Check out if it needed for further releases
+// For upgrading the loki client version go to GitHub and find out the commit id
+// After that execute go get github.com/grafana/loki@c06f1daf59fcd138d6736c1637c193f458b0d514
+// This commit  id above resolves a go module github.com/grafana/loki v1.6.2-0.20230227104037-c06f1daf59fc
+// For loki v 2.7.4
 
 // Grafana loki model parsing https://github.com/grafana/loki/issues/114
 import (
@@ -20,8 +17,8 @@ import (
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
-	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
+	"github.com/suikast42/logunifier/pkg/patterns"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -188,27 +185,46 @@ func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string
 	return req
 }
 
-// toLokiLabels extract indexed fields from the ecs labels
+// toLokiLabels extract loki index labels from ecs log labels
+// ingress , host, job ,job_type, task, task_group,  job_type , namespace ,  stack , level , used_grok
 func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	labelsMap := make(map[string]string)
-	for k := range ingress.IndexedLabels {
-		value, found := ecs.Labels[string(k)]
-		if found {
-			labelsMap[string(k)] = value
-		}
-	}
 
-	if ecs.Container != nil {
-		for k := range ingress.IndexedContainerLabels {
-			value, found := ecs.Container.Labels[string(k)]
-			if found {
-				labelsMap[string(k)] = value
-			}
-		}
-	}
+	// Ingress index for loki
+	extractLabel(labelsMap, ecs, string(model.StaticLabelIngress))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelHost))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelJob))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelJobType))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelTask))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelTaskGroup))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelNameSpace))
+	extractLabel(labelsMap, ecs, string(model.StaticLabelStack))
 	// The level label is autodetected by grafana log panel
 	// Thus we duplicate this
-	labelsMap[ingress.IndexedLabelLevel] = model.LogLevelToString(ecs.Log.Level)
-	//fmt.Printf("%s %s ",  ecs.Service.Name, ecs.Message)
+	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelLevel), model.LogLevelToString(ecs.Log.Level))
+	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelUsedGrok), string(patterns.NopPattern))
+
+	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerName))
+	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
+	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageRevision))
+
 	return labelsMap
+}
+
+func extractLabel(_map map[string]string, ecs *model.EcsLogEntry, key string) {
+	extractLabelWithDefault(_map, ecs, key, "NotDefined")
+}
+
+func extractLabelIgnoreWhen(_map map[string]string, ecs *model.EcsLogEntry, key string) {
+	extractLabelWithDefault(_map, ecs, key, "")
+}
+
+func extractLabelWithDefault(_map map[string]string, ecs *model.EcsLogEntry, key string, _default string) {
+	if val, ok := ecs.Labels[key]; ok {
+		_map[key] = val
+	} else {
+		if len(_default) > 0 {
+			_map[key] = _default
+		}
+	}
 }

@@ -94,3 +94,24 @@ func LogLevelToEmoji(level LogLevel) string {
 	}
 	return loglevel
 }
+
+func NewEcsLogEntry() *EcsLogEntry {
+
+	return &EcsLogEntry{
+		Id:           UUID(),
+		Timestamp:    nil,
+		Message:      "",
+		Tags:         nil,
+		Labels:       nil,
+		Version:      nil,
+		Container:    nil,
+		Agent:        nil,
+		Host:         nil,
+		Trace:        nil,
+		Organization: nil,
+		Service:      nil,
+		Error:        nil,
+		Log:          &Log{},
+		ParseError:   nil,
+	}
+}
