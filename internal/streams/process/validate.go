@@ -8,4 +8,9 @@ func Validate(ecs *model.EcsLogEntry) {
 		ecs.ValidationError = append(ecs.ValidationError, "Job name is empty ")
 		ecs.SetJobName("Empty")
 	}
+
+	if !ecs.IsJobTypeSet() {
+		ecs.ValidationError = append(ecs.ValidationError, "Job type is empty ")
+		ecs.SetJobType("Empty")
+	}
 }

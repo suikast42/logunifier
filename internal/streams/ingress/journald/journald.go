@@ -191,6 +191,7 @@ func (r *IngressSubjectJournald) jobName() string {
 	if len(r.SYSTEMDCGROUP) > 0 {
 		return r.SYSTEMDCGROUP
 	}
+	// Validation  handles the missing job name
 	return ""
 }
 
@@ -201,7 +202,13 @@ func (r *IngressSubjectJournald) jobType() ingress.JobType {
 	if len(r.CONTAINER_NAME) > 0 {
 		return ingress.JobTypeContainer
 	}
-	return ingress.JobTypeOsService
+	if len(r.SYSTEMDUNIT) > 0 ||
+		len(r.SYSTEMDSLICE) > 0 ||
+		len(r.SYSTEMDCGROUP) > 0 {
+		return ingress.JobTypeOsService
+	}
+	// Validation  handles the missing job type
+	return ""
 }
 
 func (r *IngressSubjectJournald) appVersion() string {

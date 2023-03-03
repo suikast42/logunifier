@@ -17,8 +17,20 @@ func (ecs *EcsLogEntry) JobName() string {
 	return ecs.Labels[string(StaticLabelJob)]
 }
 
-func (ecs *EcsLogEntry) SetJobName(jobname string) {
-	ecs.Labels[string(StaticLabelJob)] = jobname
+func (ecs *EcsLogEntry) SetJobName(jobName string) {
+	ecs.Labels[string(StaticLabelJob)] = jobName
+}
+
+func (ecs *EcsLogEntry) IsJobTypeSet() bool {
+	return len(ecs.Labels[string(StaticLabelJobType)]) > 0
+}
+
+func (ecs *EcsLogEntry) JobType() string {
+	return ecs.Labels[string(StaticLabelJobType)]
+}
+
+func (ecs *EcsLogEntry) SetJobType(jobType string) {
+	ecs.Labels[string(StaticLabelJobType)] = jobType
 }
 
 // MarshalJSON Json serializes for log level enum
