@@ -122,5 +122,6 @@ func (g *GrokPatternDefault) extract() *model.EcsLogEntry {
 	ecs.Service = g._serviceInfo
 	ecs.Error = g._errorInfo
 	ecs.Trace = g._traceInfo
+	ecs.ProcessError = g._metaLog.ProcessError
 	return ecs
 }

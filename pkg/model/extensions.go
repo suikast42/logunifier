@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 )
 
-func (ecs *EcsLogEntry) HasParseErrors() bool {
-	return ecs.ParseError != nil
+func (ecs *EcsLogEntry) HasProcessError() bool {
+	return ecs.ProcessError != nil && len(ecs.ProcessError.Reason) > 0
 }
 
 func (ecs *EcsLogEntry) IsJobNameSet() bool {
@@ -31,6 +31,17 @@ func (ecs *EcsLogEntry) JobType() string {
 
 func (ecs *EcsLogEntry) SetJobType(jobType string) {
 	ecs.Labels[string(StaticLabelJobType)] = jobType
+}
+
+func (ecs *EcsLogEntry) AppendParseError(_error string) {
+	if len(_error) == 0 {
+		return
+	}
+	if len(ecs.ProcessError.Reason) == 0 {
+		ecs.ProcessError.Reason = _error
+	} else {
+		ecs.ProcessError.Reason = ecs.ProcessError.Reason + ",\n" + _error
+	}
 }
 
 // MarshalJSON Json serializes for log level enum

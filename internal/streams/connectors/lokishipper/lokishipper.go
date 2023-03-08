@@ -208,6 +208,9 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
 	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageRevision))
 
+	if ecs.HasProcessError() {
+		labelsMap[string(model.StaticLabelProcessError)] = "true"
+	}
 	return labelsMap
 }
 

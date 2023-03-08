@@ -45,7 +45,9 @@ message MetaLog {
   repeated string tags = 43 ;
 
   // If the log can't be unmarshalled from the ingress topic
-  ParseError parseError = 44;
+  // If the log has validation errors
+  // If something goes wrong in pattern matching
+  ProcessError processError = 44;
 
 
 }

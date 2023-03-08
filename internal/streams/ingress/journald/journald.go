@@ -74,11 +74,10 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 			MetaLog: &model.MetaLog{
 				AppVersion:        journald.appVersion(),
 				PatternIdentifier: journald.patternIdentifier(),
-				ParseError: &model.ParseError{
-					Reason:        model.ParseError_Unmarshal,
-					RawData:       string(msg.Data),
-					Subject:       msg.Subject,
-					MessageHeader: ingress.HeaderToMap(msg.Header),
+				ProcessError: &model.ProcessError{
+					Reason:  err.Error(),
+					RawData: string(msg.Data),
+					Subject: msg.Subject,
 				},
 			},
 		}
@@ -95,7 +94,10 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 			Tags:              journald.tags(),
 			IsNativeEcs:       journald.isNativeEcs(),
 			Message:           journald.Message,
-			ParseError:        nil,
+			ProcessError: &model.ProcessError{
+				RawData: string(msg.Data),
+				Subject: msg.Subject,
+			},
 		},
 	}
 }
@@ -110,6 +112,10 @@ func (r *IngressSubjectJournald) extractLabels(msg *nats.Msg) map[string]string 
 	}
 	if len(r.COM_HASHICORP_NOMAD_TASK_NAME) > 0 {
 		labels[string(model.StaticLabelTask)] = r.COM_HASHICORP_NOMAD_TASK_NAME
+	}
+
+	if len(r.COM_HASHICORP_NOMAD_JOB_NAME) > 0 {
+		labels[string(model.StaticLabelStack)] = r.COM_HASHICORP_NOMAD_JOB_NAME
 	}
 	if len(r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME) > 0 {
 		labels[string(model.StaticLabelTaskGroup)] = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME

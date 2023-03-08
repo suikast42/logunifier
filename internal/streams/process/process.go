@@ -81,6 +81,10 @@ func (eg *LogProcessor) startReceiving() {
 			}
 			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
 			Validate(ecsLog)
+			// Delete the debug info if there is no error occured there
+			if !ecsLog.HasProcessError() {
+				ecsLog.ProcessError = nil
+			}
 			marshal, err := json.Marshal(ecsLog)
 
 			if err != nil {

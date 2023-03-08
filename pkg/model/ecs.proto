@@ -33,8 +33,7 @@ message EcsLogEntry {
   Service service = 12;
   Error error = 13;
   Log log = 14;
-  ParseError parseError = 15;
-  repeated string validationError = 16;
+  ProcessError processError = 15;
 }
 
 
@@ -214,14 +213,10 @@ enum LogLevel{
   fatal = 600;
 }
 // Debug information about the parse error
-message ParseError{
-  enum Reason {
-    UNKNOWN = 0;
-    Unmarshal = 1;
-  }
-  Reason reason = 1;
+message ProcessError{
+  // List of process errors
+  string reason = 1;
   // String representation of the raw data
   string rawData = 2;
   string subject = 3;
-  map<string, string>  messageHeader = 4;
 }

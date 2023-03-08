@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/patterns"
+	"github.com/suikast42/logunifier/pkg/utils"
 	"os"
 	"testing"
 )
@@ -31,5 +32,23 @@ func TestDefaultPatterContainerLogTest(t *testing.T) {
 	if parse.Message != "TestMessage" {
 		t.Errorf("Expected %+v but got %+v", expectedMessage, parse.Message)
 	}
+
+}
+
+func TestLogfmt(t *testing.T) {
+
+	fmt, err := utils.DecodeLogFmt("esc=bar hasi=bongo xy=\"first line\nsecond line\"")
+	if err != nil {
+		t.Errorf("Unexepected error %s", err)
+	}
+
+	if len(fmt) != 3 {
+		t.Errorf("Expected %+v but got %+v", 3, len(fmt))
+	}
+	for k, v := range fmt {
+		logger.Info().Msgf("Key=%s Value=%s", k, v)
+	}
+}
+func TestDockerServicelog(t *testing.T) {
 
 }

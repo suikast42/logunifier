@@ -54,15 +54,16 @@ var lablesStatic = []LabelStatic{
 }
 
 const (
-	StaticLabelIngress   LabelStatic = "ingress"
-	StaticLabelJobType   LabelStatic = "job_type"
-	StaticLabelStack     LabelStatic = "stack"
-	StaticLabelNameSpace LabelStatic = "namespace"
-	StaticLabelJob       LabelStatic = "job"
-	StaticLabelTaskGroup LabelStatic = "task_group"
-	StaticLabelTask      LabelStatic = "task"
-	StaticLabelHost      LabelStatic = "host_name"
-	StaticLabelHostId    LabelStatic = "host_id"
+	StaticLabelIngress      LabelStatic = "ingress"
+	StaticLabelJobType      LabelStatic = "job_type"
+	StaticLabelStack        LabelStatic = "stack"
+	StaticLabelNameSpace    LabelStatic = "namespace"
+	StaticLabelJob          LabelStatic = "job"
+	StaticLabelTaskGroup    LabelStatic = "task_group"
+	StaticLabelTask         LabelStatic = "task"
+	StaticLabelHost         LabelStatic = "host_name"
+	StaticLabelHostId       LabelStatic = "host_id"
+	StaticLabelProcessError LabelStatic = "processError"
 )
 
 func (m *MetaLog) LabelsStatic() map[LabelStatic]string {

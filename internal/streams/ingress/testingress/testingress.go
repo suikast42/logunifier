@@ -33,7 +33,10 @@ func (r *TestEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgCon
 			Labels:            extractLabels(msg),
 			Message:           string(msg.Data),
 			Tags:              nil,
-			ParseError:        nil,
+			ProcessError: &model.ProcessError{
+				RawData: string(msg.Data),
+				Subject: msg.Subject,
+			},
 		},
 	}
 
