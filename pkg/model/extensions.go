@@ -3,6 +3,7 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (ecs *EcsLogEntry) HasProcessError() bool {
@@ -33,6 +34,17 @@ func (ecs *EcsLogEntry) SetJobType(jobType string) {
 	ecs.Labels[string(StaticLabelJobType)] = jobType
 }
 
+func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
+	if ecs.Log == nil {
+		ecs.Log = &Log{}
+	}
+	ecs.Log.Level = level
+	ecs.Log.LevelEmoji = LogLevelToEmoji(level)
+}
+
+func (ecs *EcsLogEntry) SetTimeStamp(timestamp *timestamppb.Timestamp) {
+	ecs.Timestamp = timestamp
+}
 func (ecs *EcsLogEntry) AppendParseError(_error string) {
 	if len(_error) == 0 {
 		return

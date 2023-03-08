@@ -197,6 +197,9 @@ func (r *IngressSubjectJournald) jobName() string {
 	if len(r.SYSTEMDCGROUP) > 0 {
 		return r.SYSTEMDCGROUP
 	}
+	if len(r.SYSLOG_IDENTIFIER) > 0 {
+		return r.SYSLOG_IDENTIFIER
+	}
 	// Validation  handles the missing job name
 	return ""
 }
