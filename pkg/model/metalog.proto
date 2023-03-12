@@ -14,6 +14,13 @@ package model;
 // This metadata is used for improve the pattern finding algorithm
 message MetaLog {
 
+  enum PatternKey{
+    Unknown =0;
+    Nop =1;
+    LogFmt =2;
+    Ecs =3;
+  }
+
   // Time of the log event shipment.
   // This ts will considered as log ts if the ts canot exctracted from the message
   google.protobuf.Timestamp fallbackTimestamp = 1 ;
@@ -21,33 +28,31 @@ message MetaLog {
   // This loglevel will be used if the loglevel can't be extracted from the ingested message
   LogLevel fallbackLoglevel = 2 ;
 
-  // True if the message is in native ecs format
-  bool isNativeEcs = 3;
 
-  // Identifier for finding a log pattern
-  // This can be a application name like keycloak, loki or a systemd slice name etc.
-  string patternIdentifier = 4;
+  // a PatternKey for parsing the log content
+  // An ingress channel have to decide the which pattern have to be choose
+  PatternKey patternKey = 3;
 
-  // If the source provide the version information about the running unit.
-  // If not 0 is used
-  string appVersion = 5;
+  // Unique name of an application
+  string applicationName =4;
 
-
-  reserved 6 to 40;
+  // Version of the running instance of the application
+  string applicationVersion =5;
+  reserved 6 to 10;
 
   // Labels captured from the log shipper source
   // This labels will be added to the final logs as log labels.
-  map <string, string> labels = 41 ;
+  map <string, string> labels = 11 ;
   // The log message
-  string  message= 42;
+  string  message = 12;
 
   // tags
-  repeated string tags = 43 ;
+  repeated string tags = 13 ;
 
   // If the log can't be unmarshalled from the ingress topic
   // If the log has validation errors
   // If something goes wrong in pattern matching
-  ProcessError processError = 44;
+  ProcessError processError = 14;
 
 
 }

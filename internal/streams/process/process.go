@@ -10,6 +10,7 @@ import (
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -44,7 +45,14 @@ func Start(processChannel <-chan ingress.IngressMsgContext, pushSubject string) 
 }
 
 func (eg *LogProcessor) startReceiving() {
-
+	defer func() {
+		if r := recover(); r != nil {
+			// Log fatal do an os.Exit(1)
+			logger := config.Logger()
+			stack := debug.Stack()
+			logger.Fatal().Msgf("Unexpected error: %+v\n%s", r, string(stack))
+		}
+	}()
 	instance, _ := bootstrap.Intance()
 	for instance == nil {
 		instance, _ = bootstrap.Intance()
@@ -79,6 +87,7 @@ func (eg *LogProcessor) startReceiving() {
 				eg.logger.Error().Err(err).Msg("Can't set message InProgress")
 				continue
 			}
+
 			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
 			ValidateAndFix(ecsLog, receivedCtx.MetaLog)
 			// Delete the debug info if there is no error occured there
@@ -119,10 +128,10 @@ func (eg *LogProcessor) startReceiving() {
 						eg.logger.Error().Err(err).Msg("Can't nack message")
 					}
 				case <-time.After(ackTimeout + time.Second*1):
-					eg.logger.Error().Msgf("This should not happened. Timeout on send msg after  %v ", ackTimeout+time.Second*1)
+					//eg.logger.Error().Msgf("This should not happened. Timeout on send msg after  %v ", ackTimeout+time.Second*1)
 					err = msgctx.NatsMsg.NakWithDelay(eg.ackTimeout)
 					if err != nil {
-						eg.logger.Error().Err(err).Msg("Can't nack message")
+						eg.logger.Error().Err(err).Msgf("Can't nack message. Message lost. [%s]", string(msgctx.NatsMsg.Data))
 					}
 				}
 

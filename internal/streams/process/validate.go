@@ -21,4 +21,10 @@ func ValidateAndFix(ecs *model.EcsLogEntry, metalog *model.MetaLog) {
 		ecs.AppendParseError("Timestamp not found. Set to fallback")
 		ecs.SetTimeStamp(metalog.FallbackTimestamp)
 	}
+
+	if !ecs.IsPatternSet() {
+		ecs.AppendParseError("No pattern found")
+		ecs.SetPattern("NoPattern")
+	}
+
 }

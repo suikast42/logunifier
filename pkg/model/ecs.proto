@@ -34,10 +34,18 @@ message EcsLogEntry {
   Error error = 13;
   Log log = 14;
   ProcessError processError = 15;
+  User user = 16;
+  Event event = 17;
 }
 
 
+message Event {
+  string kind =1;
+}
 
+message User {
+  string name =1;
+}
 //Docker or Pod container information
 message Container {
   message Image {

@@ -10,18 +10,15 @@ type GrokPatternKey string
 // GrokPattern A Grok pattern definition for parsing a log line
 type GrokPattern struct {
 
-	// Name unique name of the pattern
-	GrokPatternKey string
-
 	// Pattern the pattern used for parse the log message
-	Name GrokPatternKey
+	Name model.MetaLog_PatternKey
 
 	// CompiledPattern the compiled grok pattern from Pattern
 	CompiledPattern *grok.CompiledGrok
 
-	// TimeStampFormat the timestamp format
+	// TimeStampFormats the timestamp format
 	// for example time.RFC3339
-	TimeStampFormat string
+	TimeStampFormats []string
 }
 
 type GrokPatternExtractor interface {
@@ -65,11 +62,19 @@ type GrokPatternExtractor interface {
 	//TracingInfo Apm trace
 	tracingInfo() GrokPatternExtractor
 
+	// Information about the user in a log entry
+	userInfo() GrokPatternExtractor
+
+	// Information about the kind of a log event
+	// eg. alert, enrichment, event, metric, state, pipeline_error, signal
+	eventInfo() GrokPatternExtractor
+
 	// Create finally the model.EcsLogEntry
 	extract() *model.EcsLogEntry
 }
 
 func ExractFrom(extractor GrokPatternExtractor, from *model.MetaLog) *model.EcsLogEntry {
+
 	return extractor.from(from).
 		timeStamp().
 		message().

@@ -167,7 +167,6 @@ func (m *MetaLog) EcsHostInfo() *Host {
 }
 
 func (m *MetaLog) EcsOrganizationInfo() *Organization {
-
 	return nil
 }
 

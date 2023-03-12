@@ -17,19 +17,21 @@ type JournaldDToEcsConverter struct {
 
 // IngressSubjectJournald For journald fields see https://www.freedesktop.org/software/systemd/man/systemd.journal-fields.html
 type IngressSubjectJournald struct {
-	COM_HASHICORP_NOMAD_ALLOC_ID        string `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
-	COM_HASHICORP_NOMAD_JOB_ID          string `json:"COM_HASHICORP_NOMAD_JOB_ID"`
-	COM_HASHICORP_NOMAD_JOB_NAME        string `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
-	COM_HASHICORP_NOMAD_NAMESPACE       string `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
-	COM_HASHICORP_NOMAD_NODE_ID         string `json:"COM_HASHICORP_NOMAD_NODE_ID"`
-	COM_HASHICORP_NOMAD_NODE_NAME       string `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
-	COM_HASHICORP_NOMAD_TASK_GROUP_NAME string `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
-	COM_HASHICORP_NOMAD_TASK_NAME       string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
-	COM_HASHICORP_NOMAD_NATIVE_ECS      string `json:"COM_HASHICORP_NOMAD_NATIVE_ECS"`
-	CONTAINER_ID                        string `json:"CONTAINER_ID"`
-	CONTAINER_ID_FULL                   string `json:"CONTAINER_ID_FULL"`
-	CONTAINER_NAME                      string `json:"CONTAINER_NAME"`
-	CONTAINER_TAG                       string `json:"CONTAINER_TAG"`
+	COM_HASHICORP_NOMAD_ALLOC_ID              string `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
+	COM_HASHICORP_NOMAD_JOB_ID                string `json:"COM_HASHICORP_NOMAD_JOB_ID"`
+	COM_HASHICORP_NOMAD_JOB_NAME              string `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
+	COM_HASHICORP_NOMAD_NAMESPACE             string `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
+	COM_HASHICORP_NOMAD_NODE_ID               string `json:"COM_HASHICORP_NOMAD_NODE_ID"`
+	COM_HASHICORP_NOMAD_NODE_NAME             string `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
+	COM_HASHICORP_NOMAD_TASK_GROUP_NAME       string `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
+	COM_HASHICORP_NOMAD_TASK_NAME             string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_NAME    string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_NAME"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION"`
+	COM_GITHUB_LOGUNIFIER_PATTERN_KEY         string `json:"COM_GITHUB_LOGUNIFIER_PATTERN_KEY"`
+	CONTAINER_ID                              string `json:"CONTAINER_ID"`
+	CONTAINER_ID_FULL                         string `json:"CONTAINER_ID_FULL"`
+	CONTAINER_NAME                            string `json:"CONTAINER_NAME"`
+	CONTAINER_TAG                             string `json:"CONTAINER_TAG"`
 	//CONTAINER_PARTIAL_MESSAGE           string    `json:"CONTAINER_PARTIAL_MESSAGE"`
 	IMAGE_NAME                        string    `json:"IMAGE_NAME"`
 	ORG_OPENCONTAINERS_IMAGE_REVISION string    `json:"ORG_OPENCONTAINERS_IMAGE_REVISION"`
@@ -37,6 +39,7 @@ type IngressSubjectJournald struct {
 	ORG_OPENCONTAINERS_IMAGE_TITLE    string    `json:"ORG_OPENCONTAINERS_IMAGE_TITLE"`
 	PRIORITY                          string    `json:"PRIORITY"`
 	SYSLOG_IDENTIFIER                 string    `json:"SYSLOG_IDENTIFIER"`
+	SYSLOG_FACILITY                   string    `json:"SYSLOG_FACILITY"`
 	BOOTID                            string    `json:"_BOOT_ID"`
 	CAPEFFECTIVE                      string    `json:"_CAP_EFFECTIVE"`
 	CMDLINE                           string    `json:"_CMDLINE"`
@@ -72,8 +75,9 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 		return ingress.IngressMsgContext{
 			NatsMsg: msg,
 			MetaLog: &model.MetaLog{
-				AppVersion:        journald.appVersion(),
-				PatternIdentifier: journald.patternIdentifier(),
+				ApplicationVersion: journald.appVersion(),
+				ApplicationName:    journald.appName(),
+				PatternKey:         journald.patternKey(),
 				ProcessError: &model.ProcessError{
 					Reason:  err.Error(),
 					RawData: string(msg.Data),
@@ -86,14 +90,14 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 	return ingress.IngressMsgContext{
 		NatsMsg: msg,
 		MetaLog: &model.MetaLog{
-			AppVersion:        journald.appVersion(),
-			PatternIdentifier: journald.patternIdentifier(),
-			FallbackTimestamp: journald.ts(),
-			FallbackLoglevel:  journald.toLogLevel(),
-			Labels:            journald.extractLabels(msg),
-			Tags:              journald.tags(),
-			IsNativeEcs:       journald.isNativeEcs(),
-			Message:           journald.Message,
+			ApplicationVersion: journald.appVersion(),
+			ApplicationName:    journald.appName(),
+			PatternKey:         journald.patternKey(),
+			FallbackTimestamp:  journald.ts(),
+			FallbackLoglevel:   journald.toLogLevel(),
+			Labels:             journald.extractLabels(msg),
+			Tags:               journald.tags(),
+			Message:            journald.Message,
 			ProcessError: &model.ProcessError{
 				RawData: string(msg.Data),
 				Subject: msg.Subject,
@@ -149,7 +153,7 @@ func (r *IngressSubjectJournald) ts() *timestamppb.Timestamp {
 func (r *IngressSubjectJournald) toLogLevel() model.LogLevel {
 
 	jobType := r.jobType()
-	if jobType == ingress.JobTypeNomadJob || jobType == ingress.JobTypeContainer {
+	if jobType == ingress.JobTypeNomadJob {
 		return model.LogLevel_unknown
 	}
 	if len(r.PRIORITY) == 0 {
@@ -170,14 +174,6 @@ func (r *IngressSubjectJournald) toLogLevel() model.LogLevel {
 	default:
 		return model.LogLevel_unknown
 	}
-}
-
-func (r *IngressSubjectJournald) isNativeEcs() bool {
-	boolValue, err := strconv.ParseBool(r.COM_HASHICORP_NOMAD_NATIVE_ECS)
-	if err != nil {
-		return false
-	}
-	return boolValue
 }
 
 func (r *IngressSubjectJournald) jobName() string {
@@ -211,21 +207,75 @@ func (r *IngressSubjectJournald) jobType() ingress.JobType {
 	if len(r.CONTAINER_NAME) > 0 {
 		return ingress.JobTypeContainer
 	}
-	if len(r.SYSTEMDUNIT) > 0 ||
-		len(r.SYSTEMDSLICE) > 0 ||
-		len(r.SYSTEMDCGROUP) > 0 {
-		return ingress.JobTypeOsService
+
+	switch r.SYSLOG_FACILITY {
+	case "0":
+		return "kernel"
+	case "1":
+		return "user"
+	case "2":
+		return "mail"
+	case "3":
+		return ingress.JobTypeDaemon
+	case "4":
+		return "auth"
+	case "5":
+		return "syslog"
+	case "6":
+		return "lpr"
+	case "7":
+		return "news"
+	case "8":
+		return "uucp"
+	case "9":
+		return "cron"
+	case "10":
+		return "authpriv"
+	case "11":
+		return "ftp"
+	case "12":
+		return "ntp"
+	case "13":
+		return "security"
+	case "14":
+		return "console"
+	case "15":
+		return "solaris-cron"
+	case "16":
+		return "local-0"
+	case "17":
+		return "local-1"
+	case "18":
+		return "local-2"
+	case "19":
+		return "local-3"
+	case "20":
+		return "local-4"
+	case "21":
+		return "local-5"
+	case "22":
+		return "local-6"
+	case "23":
+		return "local-7"
+
 	}
+
 	// Validation  handles the missing job type
 	return ""
 }
 
 func (r *IngressSubjectJournald) appVersion() string {
-	return "0"
+	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION) > 0 {
+		return r.COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION
+	}
+	return ""
 }
 
-func (r *IngressSubjectJournald) patternIdentifier() string {
-	return ""
+func (r *IngressSubjectJournald) appName() string {
+	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAME) > 0 {
+		return r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAME
+	}
+	return r.jobName()
 }
 
 func (r *IngressSubjectJournald) tags() []string {
@@ -233,4 +283,16 @@ func (r *IngressSubjectJournald) tags() []string {
 		return strings.Split(r.CONTAINER_TAG, ",")
 	}
 	return nil
+}
+
+func (r *IngressSubjectJournald) patternKey() model.MetaLog_PatternKey {
+	if len(r.COM_GITHUB_LOGUNIFIER_PATTERN_KEY) > 0 {
+		return model.StringToLogPatterKey(r.COM_GITHUB_LOGUNIFIER_PATTERN_KEY)
+	}
+	if r.jobType() == ingress.JobTypeDaemon {
+		if strings.EqualFold("docker.service", r.jobName()) {
+			return model.MetaLog_LogFmt
+		}
+	}
+	return model.MetaLog_Nop
 }

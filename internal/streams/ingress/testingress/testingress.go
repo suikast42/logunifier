@@ -25,14 +25,14 @@ func (r *TestEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgCon
 	return ingress.IngressMsgContext{
 		NatsMsg: msg,
 		MetaLog: &model.MetaLog{
-			FallbackTimestamp: timestamppb.New(ts),
-			FallbackLoglevel:  model.LogLevel_unknown,
-			IsNativeEcs:       false,
-			PatternIdentifier: "",
-			AppVersion:        "",
-			Labels:            extractLabels(msg),
-			Message:           string(msg.Data),
-			Tags:              nil,
+			FallbackTimestamp:  timestamppb.New(ts),
+			FallbackLoglevel:   model.LogLevel_unknown,
+			ApplicationName:    "NoName",
+			ApplicationVersion: "NoVersion",
+			PatternKey:         model.MetaLog_Nop,
+			Labels:             extractLabels(msg),
+			Message:            string(msg.Data),
+			Tags:               nil,
 			ProcessError: &model.ProcessError{
 				RawData: string(msg.Data),
 				Subject: msg.Subject,

@@ -34,6 +34,14 @@ func (ecs *EcsLogEntry) SetJobType(jobType string) {
 	ecs.Labels[string(StaticLabelJobType)] = jobType
 }
 
+func (ecs *EcsLogEntry) IsPatternSet() bool {
+	return len(ecs.Labels[string(DynamicLabelUsedGrok)]) > 0
+}
+
+func (ecs *EcsLogEntry) SetPattern(pattern string) {
+	ecs.Labels[string(DynamicLabelUsedGrok)] = pattern
+}
+
 func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
 	if ecs.Log == nil {
 		ecs.Log = &Log{}
@@ -53,6 +61,17 @@ func (ecs *EcsLogEntry) AppendParseError(_error string) {
 		ecs.ProcessError.Reason = _error
 	} else {
 		ecs.ProcessError.Reason = ecs.ProcessError.Reason + ",\n" + _error
+	}
+}
+
+func (log *MetaLog) AppendParseError(_error string) {
+	if len(_error) == 0 {
+		return
+	}
+	if len(log.ProcessError.Reason) == 0 {
+		log.ProcessError.Reason = _error
+	} else {
+		log.ProcessError.Reason = log.ProcessError.Reason + ",\n" + _error
 	}
 }
 

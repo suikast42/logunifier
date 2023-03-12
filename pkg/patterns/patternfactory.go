@@ -10,28 +10,30 @@ import (
 	additionalPatterns "github.com/trivago/grok/patterns"
 	"strings"
 	"sync"
+	"time"
 )
 
-type attributeKeys string
 type TimeFormat string
-
-const (
-	NopPattern GrokPatternKey = "NopPattern"
-)
 
 // var appPatterns = map[GrokPatternKey] GrokPattern
 const (
-	TimeformatCommonUTC           = "2006-01-02 15:04:05.000 MST"
-	TimeFormatConsulConnect       = "2006-01-02 15:04:05.000"
-	TimeFormatKeyCloak            = "2006-01-02 15:04:05,000"
-	TimeFormatUtcCommaSecondAndTs = "2006-01-02 15:04:05,000-0700"
-)
-const (
-	timestamp attributeKeys = "timestamp"
-	level     attributeKeys = "level"
+	timeformatCommonUTC           = "2006-01-02 15:04:05.000 MST"
+	timeFormatConsulConnect       = "2006-01-02 15:04:05.000"
+	timeFormatKeyCloak            = "2006-01-02 15:04:05,000"
+	timeFormatUtcCommaSecondAndTs = "2006-01-02 15:04:05,000-0700"
 )
 
-type internalGrokKey string
+var tsFormatCahce = make(map[string]string)
+var standardTimeFormats = []string{
+	time.RFC3339Nano,
+	time.RFC3339,
+	time.UnixDate,
+	time.ANSIC,
+	time.RubyDate,
+	time.StampMilli,
+	time.StampMicro,
+	time.StampNano,
+}
 
 //const (
 //	common_level   internalGrokKey = "COMMON_LEVEL"
@@ -153,9 +155,48 @@ func (factory *PatternFactory) Parse(log *model.MetaLog) *model.EcsLogEntry {
 }
 
 func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExtractor {
-	return &GrokPatternDefault{
-		GrokPattern: GrokPattern{
-			Name: NopPattern,
-		},
+
+	switch log.PatternKey {
+	case model.MetaLog_LogFmt:
+		return &GrokPatternLogfmt{
+			GrokPatternDefault: GrokPatternDefault{
+				GrokPattern: GrokPattern{
+					Name:             log.PatternKey,
+					CompiledPattern:  nil,
+					TimeStampFormats: standardTimeFormats,
+				},
+			},
+		}
+		//case model.MetaLog_Ecs:
+	case model.MetaLog_Nop:
+		return &GrokPatternDefault{
+			GrokPattern: GrokPattern{
+				Name: model.MetaLog_Nop,
+			},
+		}
+	default:
+		log.AppendParseError(fmt.Sprintf("The iedtified PatternKey %s by the ingress is not mapped to a pattern extractor", log.PatternKey.String()))
+		return &GrokPatternDefault{
+			GrokPattern: GrokPattern{
+				Name: model.MetaLog_Nop,
+			},
+		}
 	}
+
+}
+
+func cachedLayoutForLog(log *model.MetaLog) (string, bool) {
+	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
+	ts, found := tsFormatCahce[cahceKey]
+	return ts, found
+}
+
+func cacheLayoutForLog(log *model.MetaLog, ts string) {
+	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
+	tsFormatCahce[cahceKey] = ts
+}
+
+func deleteCachedLayoutForLog(log *model.MetaLog) {
+	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
+	delete(tsFormatCahce, cahceKey)
 }

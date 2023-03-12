@@ -22,7 +22,6 @@ type IngressMsgContext struct {
 // LabelStatic. Labels can be emmited during ingress phase
 
 var JobTypes = []JobType{
-	JobTypeOsService,
 	JobTypeNomadJob,
 	JobTypeContainer,
 }
@@ -30,9 +29,9 @@ var JobTypes = []JobType{
 type JobType string
 
 const (
-	JobTypeOsService JobType = "os_service"
-	JobTypeNomadJob  JobType = "nomad_service"
+	JobTypeNomadJob  JobType = "nomad_job"
 	JobTypeContainer JobType = "container"
+	JobTypeDaemon    JobType = "daemon"
 )
 
 func HeaderToMap(header nats.Header) map[string]string {

@@ -3,9 +3,11 @@ package journald
 import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"github.com/suikast42/logunifier/pkg/utils"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -50,5 +52,67 @@ func TestLogfmt(t *testing.T) {
 	}
 }
 func TestDockerServicelog(t *testing.T) {
+	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldDockerServiceLog), t)
+	parsed := patternfactory.Parse(log)
+	if parsed == nil {
+		t.Error("Expected not nil but got nil")
+	}
+
+	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+
+	if !ok {
+		t.Error("Can't find pattern")
+	}
+
+	if grok != string(patterns.LogFmtPattern) {
+		t.Errorf("Expected pattern %s but got %s", patterns.LogFmtPattern, grok)
+	}
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
+	}
+
+	if parsed.Log.Level != model.LogLevel_error {
+		t.Errorf("Expected Log level %+v but got %+v", model.LogLevel_error, parsed.Log.Level)
+	}
+
+	if parsed.Log.LevelEmoji != model.LogLevelToEmoji(model.LogLevel_error) {
+		t.Errorf("Expected Log level emoji  %+v but got %+v", model.LogLevelToEmoji(model.LogLevel_error), model.LogLevelToEmoji(parsed.Log.Level))
+	}
+	if !strings.Contains(parsed.Message, "collecting stats for") {
+		t.Errorf("Expected Log message starts with  %+v but got %+v", "collecting stats for", parsed.Message)
+	}
+
+	if len(parsed.ProcessError.Reason) > 0 {
+		t.Errorf("Expected no parse errors but got %+v", parsed.ProcessError)
+	}
+	//2023-03-10T18:53:52
+	time := parsed.Timestamp.AsTime()
+	year := 2023
+	month := "March"
+	day := 10
+	hour := 18
+	minute := 53
+	second := 52
+	if time.IsZero() {
+		t.Errorf("Expected time not zero  but got %+v", time)
+	}
+	if time.Year() != year {
+		t.Errorf("Expected %d  but got %d", year, time.Year())
+	}
+	if time.Month().String() != "March" {
+		t.Errorf("Expected %s  but got %s", month, time.Month())
+	}
+	if time.Day() != day {
+		t.Errorf("Expected %d  but got %d", day, time.Day())
+	}
+	if time.Minute() != minute {
+		t.Errorf("Expected %d  but got %d", minute, time.Minute())
+	}
+	if time.Hour() != hour {
+		t.Errorf("Expected %d  but got %d", hour, time.Hour())
+	}
+	if time.Second() != second {
+		t.Errorf("Expected %d  but got %d", second, time.Second())
+	}
 
 }

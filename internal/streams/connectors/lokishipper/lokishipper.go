@@ -18,7 +18,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/model"
-	"github.com/suikast42/logunifier/pkg/patterns"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -199,10 +198,11 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	extractLabel(labelsMap, ecs, string(model.StaticLabelTaskGroup))
 	extractLabel(labelsMap, ecs, string(model.StaticLabelNameSpace))
 	extractLabel(labelsMap, ecs, string(model.StaticLabelStack))
+	extractLabel(labelsMap, ecs, string(model.DynamicLabelUsedGrok))
+
 	// The level label is autodetected by grafana log panel
 	// Thus we duplicate this
 	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelLevel), model.LogLevelToString(ecs.Log.Level))
-	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelUsedGrok), string(patterns.NopPattern))
 
 	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerName))
 	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
@@ -210,6 +210,8 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 
 	if ecs.HasProcessError() {
 		labelsMap[string(model.StaticLabelProcessError)] = "true"
+	} else {
+		labelsMap[string(model.StaticLabelProcessError)] = "false"
 	}
 	return labelsMap
 }

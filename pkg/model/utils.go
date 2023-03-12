@@ -28,6 +28,21 @@ var logLevelToStringMap = map[LogLevel]string{
 	LogLevel_unknown: "unknown",
 }
 
+func StringToLogPatterKey(pattern string) MetaLog_PatternKey {
+	lowercased := strings.ToLower(pattern)
+	key, found := logPatternStringMap[lowercased]
+	if !found {
+		return logPatternStringMap["nop"]
+	}
+	return key
+}
+
+var logPatternStringMap = map[string]MetaLog_PatternKey{
+	"nop":    MetaLog_Nop,
+	"logfmt": MetaLog_LogFmt,
+	"ecs":    MetaLog_Ecs,
+}
+
 var stringToLogLevelMap = map[string]LogLevel{
 	// Sync the chaanges here with the log level pattern LOGLEVEL_KEYWORD
 	"trace":                  LogLevel_trace,
