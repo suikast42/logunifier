@@ -13,7 +13,7 @@ type TestEcsConverter struct {
 	testCounter int64
 }
 
-func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
+func (r *TestEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 	r.testCounter++
 	logger := config.Logger()
 	ts, err := time.Parse(time.RFC3339, string(msg.Data))
@@ -22,20 +22,31 @@ func (r *TestEcsConverter) Convert(msg *nats.Msg) *model.EcsLogEntry {
 	}
 	logger.Debug().Msgf("Counter %d. Message %s", r.testCounter, string(msg.Data))
 
-	return &model.EcsLogEntry{
-		Id:      model.UUID(),
-		Message: string(msg.Data),
-		//Timestamp: timestamppb.New(time.Now()),
-		Timestamp: timestamppb.New(ts),
-		Log: &model.Log{
-			Level: model.LogLevel_info,
-		},
-		Labels: map[string]string{
-			ingress.IndexedLabelIngress:            "vector-testingress",
-			ingress.IndexedLabelUsedPattern:        "nil",
-			ingress.IndexedLabelJob:                "test",
-			ingress.IndexedContainerLabelStackName: "test",
+	return ingress.IngressMsgContext{
+		NatsMsg: msg,
+		MetaLog: &model.MetaLog{
+			FallbackTimestamp:  timestamppb.New(ts),
+			FallbackLoglevel:   model.LogLevel_unknown,
+			ApplicationName:    "NoName",
+			ApplicationVersion: "NoVersion",
+			PatternKey:         model.MetaLog_Nop,
+			Labels:             extractLabels(msg),
+			Message:            string(msg.Data),
+			Tags:               nil,
+			ProcessError: &model.ProcessError{
+				RawData: string(msg.Data),
+				Subject: msg.Subject,
+			},
 		},
 	}
 
+}
+func extractLabels(msg *nats.Msg) map[string]string {
+	var labels = make(map[string]string)
+	labels[string(model.StaticLabelIngress)] = msg.Subject
+	labels[string(model.StaticLabelJob)] = "test"
+	labels[string(model.StaticLabelJobType)] = "test"
+	labels[string(model.StaticLabelTask)] = "task"
+
+	return labels
 }

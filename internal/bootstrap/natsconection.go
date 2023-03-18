@@ -122,7 +122,7 @@ func (nd *NatsDialer) Connect() error {
 				nd.logger.Info().Msgf("Connection closed to %s by a DisconnectRequest", c.ConnectedUrl())
 			} else {
 				// Fatal do a os.Exit(1)
-				nd.logger.Fatal().Msgf("Can't connect to %s after connection lost")
+				nd.logger.Fatal().Msgf("Can't connect to %s connection lost", c.ConnectedUrl())
 				//
 				//// This is the case if the nats clients lost the connection
 				//nd.logger.Warn().Msgf("Connection to %s lost. Reconnect", c.ConnectedUrl())
