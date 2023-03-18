@@ -53,13 +53,9 @@ func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, stream
 	}
 }
 
-func IngressMsgHandler(pushChannel chan<- ingress.IngressMsgContext, ecsConverter ingress.EcsConverter) nats.MsgHandler {
+func IngressMsgHandler(pushChannel chan<- ingress.IngressMsgContext, metaLogConverter ingress.MetaLogConverter) nats.MsgHandler {
 	return func(msg *nats.Msg) {
-		msgContext := ingress.IngressMsgContext{
-			Orig:      msg,
-			Converter: ecsConverter,
-		}
-		pushChannel <- msgContext
+		pushChannel <- metaLogConverter.ConvertToMetaLog(msg)
 	}
 }
 

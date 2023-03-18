@@ -2,30 +2,11 @@ package model
 
 import (
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 	"strings"
 )
 
 func UUID() string {
 	return uuid.NewString()
-}
-func ToUnmarshalError(msg *nats.Msg, err error) *EcsLogEntry {
-	m := make(map[string]string)
-	for k, v := range msg.Header {
-		m[k] = strings.Join(v, ",")
-	}
-	return &EcsLogEntry{
-		Message: err.Error(),
-		Log: &Log{
-			Level: LogLevel_error,
-		},
-		ParseError: &ParseError{
-			Reason:        ParseError_Unmarshal,
-			RawData:       string(msg.Data),
-			Subject:       msg.Subject,
-			MessageHeader: m,
-		},
-	}
 }
 
 func StringToLogLevel(level string) LogLevel {
@@ -45,6 +26,21 @@ var logLevelToStringMap = map[LogLevel]string{
 	LogLevel_error:   "error",
 	LogLevel_fatal:   "fatal",
 	LogLevel_unknown: "unknown",
+}
+
+func StringToLogPatterKey(pattern string) MetaLog_PatternKey {
+	lowercased := strings.ToLower(pattern)
+	key, found := logPatternStringMap[lowercased]
+	if !found {
+		return logPatternStringMap["nop"]
+	}
+	return key
+}
+
+var logPatternStringMap = map[string]MetaLog_PatternKey{
+	"nop":    MetaLog_Nop,
+	"logfmt": MetaLog_LogFmt,
+	"ecs":    MetaLog_Ecs,
 }
 
 var stringToLogLevelMap = map[string]LogLevel{
@@ -93,4 +89,25 @@ func LogLevelToEmoji(level LogLevel) string {
 		return loglevelToEmoji[LogLevel_unknown]
 	}
 	return loglevel
+}
+
+func NewEcsLogEntry() *EcsLogEntry {
+
+	return &EcsLogEntry{
+		Id:           UUID(),
+		Timestamp:    nil,
+		Message:      "",
+		Tags:         nil,
+		Labels:       make(map[string]string),
+		Version:      nil,
+		Container:    nil,
+		Agent:        nil,
+		Host:         nil,
+		Trace:        nil,
+		Organization: nil,
+		Service:      nil,
+		Error:        nil,
+		Log:          &Log{},
+		ProcessError: nil,
+	}
 }

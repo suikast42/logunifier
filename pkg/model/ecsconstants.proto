@@ -4,7 +4,7 @@ option go_package = "github.com/suikast42/logunifier/pkg/model";
 option java_multiple_files = true;
 option java_package = "com.github.suikast42.logunifier.model";
 
-package boundary;
+package model;
 option optimize_for= SPEED;
 // proto2 allows default values and proto3 not.
 // All fields  that defines constants should defined here
