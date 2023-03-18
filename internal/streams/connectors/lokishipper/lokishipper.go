@@ -204,9 +204,9 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	// Thus we duplicate this
 	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelLevel), model.LogLevelToString(ecs.Log.Level))
 
-	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerName))
-	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
-	extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageRevision))
+	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerName))
+	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
+	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageRevision))
 
 	if ecs.HasProcessError() {
 		labelsMap[string(model.StaticLabelProcessError)] = "true"

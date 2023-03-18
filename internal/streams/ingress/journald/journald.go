@@ -17,21 +17,21 @@ type JournaldDToEcsConverter struct {
 
 // IngressSubjectJournald For journald fields see https://www.freedesktop.org/software/systemd/man/systemd.journal-fields.html
 type IngressSubjectJournald struct {
-	COM_HASHICORP_NOMAD_ALLOC_ID              string `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
-	COM_HASHICORP_NOMAD_JOB_ID                string `json:"COM_HASHICORP_NOMAD_JOB_ID"`
-	COM_HASHICORP_NOMAD_JOB_NAME              string `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
-	COM_HASHICORP_NOMAD_NAMESPACE             string `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
-	COM_HASHICORP_NOMAD_NODE_ID               string `json:"COM_HASHICORP_NOMAD_NODE_ID"`
-	COM_HASHICORP_NOMAD_NODE_NAME             string `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
-	COM_HASHICORP_NOMAD_TASK_GROUP_NAME       string `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
-	COM_HASHICORP_NOMAD_TASK_NAME             string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
-	COM_GITHUB_LOGUNIFIER_APPLICATION_NAME    string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_NAME"`
-	COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION"`
-	COM_GITHUB_LOGUNIFIER_PATTERN_KEY         string `json:"COM_GITHUB_LOGUNIFIER_PATTERN_KEY"`
-	CONTAINER_ID                              string `json:"CONTAINER_ID"`
-	CONTAINER_ID_FULL                         string `json:"CONTAINER_ID_FULL"`
-	CONTAINER_NAME                            string `json:"CONTAINER_NAME"`
-	CONTAINER_TAG                             string `json:"CONTAINER_TAG"`
+	COM_HASHICORP_NOMAD_ALLOC_ID                  string `json:"COM_HASHICORP_NOMAD_ALLOC_ID"`
+	COM_HASHICORP_NOMAD_JOB_ID                    string `json:"COM_HASHICORP_NOMAD_JOB_ID"`
+	COM_HASHICORP_NOMAD_JOB_NAME                  string `json:"COM_HASHICORP_NOMAD_JOB_NAME"`
+	COM_HASHICORP_NOMAD_NAMESPACE                 string `json:"COM_HASHICORP_NOMAD_NAMESPACE"`
+	COM_HASHICORP_NOMAD_NODE_ID                   string `json:"COM_HASHICORP_NOMAD_NODE_ID"`
+	COM_HASHICORP_NOMAD_NODE_NAME                 string `json:"COM_HASHICORP_NOMAD_NODE_NAME"`
+	COM_HASHICORP_NOMAD_TASK_GROUP_NAME           string `json:"COM_HASHICORP_NOMAD_TASK_GROUP_NAME"`
+	COM_HASHICORP_NOMAD_TASK_NAME                 string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_NAME        string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_NAME"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION     string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY"`
+	CONTAINER_ID                                  string `json:"CONTAINER_ID"`
+	CONTAINER_ID_FULL                             string `json:"CONTAINER_ID_FULL"`
+	CONTAINER_NAME                                string `json:"CONTAINER_NAME"`
+	CONTAINER_TAG                                 string `json:"CONTAINER_TAG"`
 	//CONTAINER_PARTIAL_MESSAGE           string    `json:"CONTAINER_PARTIAL_MESSAGE"`
 	IMAGE_NAME                        string    `json:"IMAGE_NAME"`
 	ORG_OPENCONTAINERS_IMAGE_REVISION string    `json:"ORG_OPENCONTAINERS_IMAGE_REVISION"`
@@ -68,6 +68,10 @@ type IngressSubjectJournald struct {
 func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 	journald := IngressSubjectJournald{}
 	err := json.Unmarshal(msg.Data, &journald)
+	//if strings.Contains(string(msg.Data), "mimir") {
+	//	logger := config.Logger()
+	//	logger.Debug().Msg(string(msg.Data))
+	//}
 	if err != err {
 		//logger := config.Logger()
 		//logger.Err(err).Msgf("Can't unmarshal journald ingress.\n[%s]", string(msg.Data))
@@ -286,8 +290,8 @@ func (r *IngressSubjectJournald) tags() []string {
 }
 
 func (r *IngressSubjectJournald) patternKey() model.MetaLog_PatternKey {
-	if len(r.COM_GITHUB_LOGUNIFIER_PATTERN_KEY) > 0 {
-		return model.StringToLogPatterKey(r.COM_GITHUB_LOGUNIFIER_PATTERN_KEY)
+	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY) > 0 {
+		return model.StringToLogPatterKey(r.COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY)
 	}
 	if r.jobType() == ingress.JobTypeDaemon {
 		if strings.EqualFold("docker.service", r.jobName()) {

@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/alexliesenfeld/health v0.6.0
+	github.com/go-logfmt/logfmt v0.6.0
 	github.com/google/uuid v1.3.0
 	github.com/grafana/loki v1.6.2-0.20230227104037-c06f1daf59fc
 	github.com/nats-io/nats.go v1.24.0
@@ -30,7 +31,6 @@ require (
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/gogo/googleapis v1.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gogo/status v1.1.1 // indirect

@@ -216,5 +216,6 @@ func (g *GrokPatternLogfmt) extract() *model.EcsLogEntry {
 	for k, v := range g._logfmtKv {
 		ecs.Labels["logfmt_"+k] = v
 	}
+
 	return ecs
 }
