@@ -20,7 +20,9 @@ const LogfmtKeyUser LogFmtKey = "user"
 const LogfmtKeyEvent LogFmtKey = "event"
 const LogfmtKeyTrash LogFmtKey = "trash"
 
-// DecodeLogFmt bases on lokis logfmt package
+// DecodeLogFmt makes full usage of lokis logfmt package for regular key value demerited log texts
+// All irregular parts of the log are captured in mapkey LogfmtKeyTrash. But if the log does not contain
+// any key LogfmtKeyMessage then the log is present in that key and a parse error will return
 // Scan all kv pairs
 func DecodeLogFmt(log string) (map[string]string, error) {
 	var restpart = log
@@ -64,13 +66,20 @@ func DecodeLogFmt(log string) (map[string]string, error) {
 	}
 
 	if len(result) == 0 {
-		parseError = errors.Join(parseError, errors.New("could not extract key value pairs"))
-		// Copy the trash to message
 		// That log is marked with parse errors and shows the trash as message
+		// Copy the trash to message
+		parseError = errors.Join(parseError, errors.New("could not extract key value pairs"))
 		result[string(LogfmtKeyMessage)] = log
 	} else if trashCaught {
-		result[string(LogfmtKeyTrash)] = trashBuffer.String()
-		parseError = errors.Join(parseError, errors.New("log fmt trash caught"))
+		if len(result[string(LogfmtKeyMessage)]) == 0 {
+			// Whole message is parsed and there is no message filed captured
+			// make the trash as log message and mark a process error
+			result[string(LogfmtKeyMessage)] = trashBuffer.String()
+			parseError = errors.Join(parseError, errors.New("is not in logfmt"))
+		} else {
+			result[string(LogfmtKeyTrash)] = trashBuffer.String()
+			parseError = errors.Join(parseError, errors.New("log fmt trash caught"))
+		}
 	}
 	return result, parseError
 }

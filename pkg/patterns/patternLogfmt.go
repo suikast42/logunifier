@@ -26,7 +26,7 @@ func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 	logMessage, err := utils.DecodeLogFmt(log.Message)
 	if err != nil {
 		g._parseErrors = append(g._parseErrors, err.Error())
-		return g._this
+		//return g._this
 	}
 	for k, v := range logMessage {
 		val, ok := g._logfmtKv[k]
@@ -43,7 +43,6 @@ func (g *GrokPatternLogfmt) timeStamp() GrokPatternExtractor {
 	tsstring, ok := g._logfmtKv[string(utils.LogfmtKeyTimestamp)]
 	var parsedTs time.Time
 	if !ok {
-		g._parseErrors = append(g._parseErrors, "Can't find timestamp key in msg")
 		return g._this
 	}
 	defer func() {
@@ -82,7 +81,6 @@ func (g *GrokPatternLogfmt) message() GrokPatternExtractor {
 
 	message, ok := g._logfmtKv[string(utils.LogfmtKeyMessage)]
 	if !ok {
-		g._parseErrors = append(g._parseErrors, "Can't find a message key in msg")
 		return g._this
 	}
 	defer func() {
@@ -210,6 +208,10 @@ func (g *GrokPatternLogfmt) extract() *model.EcsLogEntry {
 	ecs.Error = g._errorInfo
 	ecs.Trace = g._traceInfo
 	ecs.ProcessError = g._metaLog.ProcessError
+
+	if len(g._parseErrors) > 0 {
+		ecs.AppendParseError(strings.Join(g._parseErrors, "\n"))
+	}
 
 	// Every step removes the registered keys
 	// Add the not standard keys as labels

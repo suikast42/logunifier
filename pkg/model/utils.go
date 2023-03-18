@@ -98,7 +98,7 @@ func NewEcsLogEntry() *EcsLogEntry {
 		Timestamp:    nil,
 		Message:      "",
 		Tags:         nil,
-		Labels:       nil,
+		Labels:       make(map[string]string),
 		Version:      nil,
 		Container:    nil,
 		Agent:        nil,

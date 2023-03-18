@@ -149,9 +149,9 @@ func TestInValidKvs(t *testing.T) {
 			pos:  1,
 			data: "you got it a=1 b= ",
 			want: map[string]string{
-				"a":                    "1",
-				"b":                    "",
-				string(LogfmtKeyTrash): "you got it",
+				"a":                      "1",
+				"b":                      "",
+				string(LogfmtKeyMessage): "you got it",
 			},
 		},
 
@@ -159,9 +159,9 @@ func TestInValidKvs(t *testing.T) {
 			pos:  2,
 			data: "a=1 you got it b= ",
 			want: map[string]string{
-				"a":                    "1",
-				"b":                    "",
-				string(LogfmtKeyTrash): "you got it",
+				"a":                      "1",
+				"b":                      "",
+				string(LogfmtKeyMessage): "you got it",
 			},
 		},
 
@@ -169,9 +169,9 @@ func TestInValidKvs(t *testing.T) {
 			pos:  3,
 			data: "a=1 b= you got it",
 			want: map[string]string{
-				"a":                    "1",
-				"b":                    "",
-				string(LogfmtKeyTrash): "you got it",
+				"a":                      "1",
+				"b":                      "",
+				string(LogfmtKeyMessage): "you got it",
 			},
 		},
 
@@ -179,7 +179,9 @@ func TestInValidKvs(t *testing.T) {
 			pos:  4,
 			data: "ts msg level is info msg=\"the only valid stuff here\" spanID msg user not valid msg=\"is 42\"",
 			want: map[string]string{
-				"msg":                  "the only valid stuff here is 42",
+				// Msg field merged
+				"msg": "the only valid stuff here is 42",
+				// Due to we have a message field the rest is in trash
 				string(LogfmtKeyTrash): "ts msg level is info spanID msg user not valid",
 			},
 		},

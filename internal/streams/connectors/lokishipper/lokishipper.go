@@ -90,7 +90,7 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	}
 	err := msg.Ack()
 	if err != nil {
-		loki.Logger.Err(pushErr).Msgf("Can't ack message", pushResponse)
+		loki.Logger.Err(pushErr).Msgf("Can't ack message. Push response %s", pushResponse)
 	}
 }
 

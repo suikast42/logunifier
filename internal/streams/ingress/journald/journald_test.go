@@ -5,7 +5,6 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
-	"github.com/suikast42/logunifier/pkg/utils"
 	"os"
 	"strings"
 	"testing"
@@ -37,20 +36,6 @@ func TestDefaultPatterContainerLogTest(t *testing.T) {
 
 }
 
-func TestLogfmt(t *testing.T) {
-
-	fmt, err := utils.DecodeLogFmt("esc=bar hasi=bongo xy=\"first line\nsecond line\"")
-	if err != nil {
-		t.Errorf("Unexepected error %s", err)
-	}
-
-	if len(fmt) != 3 {
-		t.Errorf("Expected %+v but got %+v", 3, len(fmt))
-	}
-	for k, v := range fmt {
-		logger.Info().Msgf("Key=%s Value=%s", k, v)
-	}
-}
 func TestDockerServiceLog(t *testing.T) {
 	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldDockerServiceLog), t)
 	parsed := patternfactory.Parse(log)
@@ -199,8 +184,13 @@ func TestTraefikInvalidLogFmt(t *testing.T) {
 	if grok != model.MetaLog_LogFmt.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_LogFmt.String(), grok)
 	}
-	if parsed.Log == nil {
-		t.Error("Expected not nil but got nil")
+
+	if len(parsed.ProcessError.Reason) == 0 {
+		t.Error("Expect a process error bu got nothing")
+	}
+
+	if len(parsed.Message) == 0 {
+		t.Error("Expected a message nothing")
 	}
 
 }
