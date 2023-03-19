@@ -293,10 +293,6 @@ func (r *IngressSubjectJournald) patternKey() model.MetaLog_PatternKey {
 	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY) > 0 {
 		return model.StringToLogPatterKey(r.COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY)
 	}
-	if r.jobType() == ingress.JobTypeDaemon {
-		if strings.EqualFold("docker.service", r.jobName()) {
-			return model.MetaLog_LogFmt
-		}
-	}
+
 	return model.MetaLog_Nop
 }
