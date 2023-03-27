@@ -9,32 +9,6 @@ import (
 
 // region pattern parsing
 
-//var APPLOGS = map[string]string{
-//	// Aliases for patterns
-//	"LOGLEVEL_KEYWORD":       `((?i)trace|(?i)trc|(?i)debug|(?i)dbg|(?i)dbug|(?i)info|(?i)inf|(?i)notice|(?i)warn|(?i)warning|(?i)error|(?i)err|(?i)alert|(?i)fatal|(?i)emerg|(?i)crit|(?i)critical)`,
-//	"COMMON_UTC_TS_PATTERN":  `%{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{HOUR}:%{MINUTE}:%{SECOND}.%{INT} %{WORD:timezone}`,
-//	"COMMON_NANO_TS_PATTERN": `%{YEAR}-%{MONTHNUM}-%{MONTHDAY}T%{HOUR}:%{MINUTE}:%{SECOND}.%{INT:microseconds}Z`,
-//	// Used as grok patterns
-//	string(common_level):   `(.*level=|.?)%{LOGLEVEL_KEYWORD:level}`,
-//	string(common_ts):      `%{TIMESTAMP_ISO8601:timestamp}`,
-//	string(common_utc_ts):  `%{COMMON_UTC_TS_PATTERN:timestamp}`,
-//	string(common_nano_ts): `%{COMMON_NANO_TS_PATTERN:timestamp}`,
-//}
-
-//	var APPLOGS = map[string]string{
-//		//"MULTILINE":                  `((\s)*(.*))*`,
-//		//string(MSG_ONLY):             `%{MULTILINE:message}`,
-//		string(TS_LEVEL):        `%{TIMESTAMP_ISO8601:timestamp} .?%{LOGLEVEL:level}.?`,
-//		string(LOGFMT_TS_LEVEL): `(time|ts|t)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']?.*level=%{LOGLEVEL:level}`,
-//		string(LOGFMT_LEVEL_TS): `level=%{LOGLEVEL:level}.*(time|ts|t)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']?`,
-//		// This pattern captures the full elements of connect logs.
-//		//string(CONNECT_LOG):         `\[%{TIMESTAMP_ISO8601:timestamp}\]\[%{INT:thread_id}\]\[%{LOGLEVEL:level}\]\[%{DATA:module}\] \[%{DATA:source_file}:%{INT:line_number}\] \[%{DATA:connection_id}\] %{MULTILINE:message}`,
-//		// This pattern captures a lite version of connect logs and ignores the thread_id
-//		string(CONNECT_LOG): `\[%{TIMESTAMP_ISO8601:timestamp}\].*\[%{LOGLEVEL:level}\]`,
-//	}
-
-//%{TIMESTAMP_ISO8601:TimeStamp} (%{LOGLEVEL:Level} %{BRACKETED:Thread})|(%{BRACKETED:Thread) %{LOGLEVEL:Level})
-
 type PatterMatch string
 
 const (
