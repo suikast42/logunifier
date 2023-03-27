@@ -7,7 +7,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type GrokPatternLogfmt struct {
@@ -16,8 +15,6 @@ type GrokPatternLogfmt struct {
 	_parseErrors []string
 	_logfmtKv    map[string]string
 }
-
-var logFmtTimeStanpkeys = []string{"ts,timestamp"}
 
 func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 	g._metaLog = log
@@ -41,32 +38,13 @@ func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 
 func (g *GrokPatternLogfmt) timeStamp() GrokPatternExtractor {
 	tsstring, ok := g._logfmtKv[string(utils.LogfmtKeyTimestamp)]
-	var parsedTs time.Time
 	if !ok {
 		return g._this
 	}
 	defer func() {
 		delete(g._logfmtKv, string(utils.LogfmtKeyTimestamp))
 	}()
-	cachedLayout, found := cachedLayoutForLog(g._metaLog)
-	if !found {
-		for _, layout := range g.TimeStampFormats {
-			_parsed, err := time.Parse(layout, tsstring)
-			if err != nil {
-				continue
-			}
-			parsedTs = _parsed
-			cacheLayoutForLog(g._metaLog, layout)
-		}
-	} else {
-		_parsed, err := time.Parse(cachedLayout, tsstring)
-		if err != nil {
-			// Delete the ts from chance and retry all again
-			deleteCachedLayoutForLog(g._metaLog)
-			return g.timeStamp()
-		}
-		parsedTs = _parsed
-	}
+	parsedTs := utils.ParseTime(g._metaLog, tsstring)
 
 	if parsedTs.IsZero() {
 		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))

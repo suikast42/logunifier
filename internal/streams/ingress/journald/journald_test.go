@@ -194,3 +194,63 @@ func TestTraefikInvalidLogFmt(t *testing.T) {
 	}
 
 }
+
+func TestNomadLog(t *testing.T) {
+	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldNomadLog), t)
+	parsed := patternfactory.Parse(log)
+	if parsed == nil {
+		t.Error("Expected not nil but got nil")
+	}
+
+	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+
+	if !ok {
+		t.Error("Can't find pattern")
+	}
+
+	if grok != model.MetaLog_TsLevelMsg.String() {
+		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
+	}
+
+	if len(parsed.ProcessError.Reason) > 0 {
+		t.Errorf("Should not contain a process error. But contains %s", parsed.ProcessError.Reason)
+	}
+
+	if len(parsed.Message) == 0 {
+		t.Error("Expected a message nothing")
+	}
+
+	if parsed.Log.Level != model.LogLevel_debug {
+		t.Errorf("Expected a debug level but got %+v", parsed.Log.Level)
+	}
+	if parsed.Timestamp.AsTime().IsZero() {
+		t.Errorf("Expected a valid ts but got %+v", parsed.Timestamp.AsTime())
+	}
+
+	//2023-03-20T15:06:45.057Z
+	time := parsed.Timestamp.AsTime()
+	year := 2023
+	month := "March"
+	day := 15
+	hour := 06
+	minute := 45
+	second := 05
+	if time.Year() != year {
+		t.Errorf("Expected %d  but got %d", year, time.Year())
+	}
+	if time.Month().String() != "March" {
+		t.Errorf("Expected %s  but got %s", month, time.Month())
+	}
+	if time.Day() != day {
+		t.Errorf("Expected %d  but got %d", day, time.Day())
+	}
+	if time.Minute() != minute {
+		t.Errorf("Expected %d  but got %d", minute, time.Minute())
+	}
+	if time.Hour() != hour {
+		t.Errorf("Expected %d  but got %d", hour, time.Hour())
+	}
+	if time.Second() != second {
+		t.Errorf("Expected %d  but got %d", second, time.Second())
+	}
+}

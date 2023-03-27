@@ -6,70 +6,25 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/model"
+	"github.com/suikast42/logunifier/pkg/utils"
 	"github.com/trivago/grok"
 	additionalPatterns "github.com/trivago/grok/patterns"
 	"strings"
 	"sync"
-	"time"
 )
-
-type TimeFormat string
-
-// var appPatterns = map[GrokPatternKey] GrokPattern
-const (
-	timeformatCommonUTC           = "2006-01-02 15:04:05.000 MST"
-	timeFormatConsulConnect       = "2006-01-02 15:04:05.000"
-	timeFormatKeyCloak            = "2006-01-02 15:04:05,000"
-	timeFormatUtcCommaSecondAndTs = "2006-01-02 15:04:05,000-0700"
-)
-
-var tsFormatCahce = make(map[string]string)
-var standardTimeFormats = []string{
-	time.RFC3339Nano,
-	time.RFC3339,
-	time.UnixDate,
-	time.ANSIC,
-	time.RubyDate,
-	time.StampMilli,
-	time.StampMicro,
-	time.StampNano,
-}
-
-//const (
-//	common_level   internalGrokKey = "COMMON_LEVEL"
-//	common_ts      internalGrokKey = "COMMON_TS"
-//	common_utc_ts  internalGrokKey = "COMMON_UTC_TS"
-//	common_nano_ts internalGrokKey = "COMMON_NANO_TS"
-//)
-
-//var APPLOGS = map[string]string{
-//	// Aliases for patterns
-//	"LOGLEVEL_KEYWORD":       `((?i)trace|(?i)trc|(?i)debug|(?i)dbg|(?i)dbug|(?i)info|(?i)inf|(?i)notice|(?i)warn|(?i)warning|(?i)error|(?i)err|(?i)alert|(?i)fatal|(?i)emerg|(?i)crit|(?i)critical)`,
-//	"COMMON_UTC_TS_PATTERN":  `%{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{HOUR}:%{MINUTE}:%{SECOND}.%{INT} %{WORD:timezone}`,
-//	"COMMON_NANO_TS_PATTERN": `%{YEAR}-%{MONTHNUM}-%{MONTHDAY}T%{HOUR}:%{MINUTE}:%{SECOND}.%{INT:microseconds}Z`,
-//	// Used as grok patterns
-//	string(common_level):   `(.*level=|.?)%{LOGLEVEL_KEYWORD:level}`,
-//	string(common_ts):      `%{TIMESTAMP_ISO8601:timestamp}`,
-//	string(common_utc_ts):  `%{COMMON_UTC_TS_PATTERN:timestamp}`,
-//	string(common_nano_ts): `%{COMMON_NANO_TS_PATTERN:timestamp}`,
-//}
-
-//var APPLOGS = map[string]string{
-//	//"MULTILINE":                  `((\s)*(.*))*`,
-//	//string(MSG_ONLY):             `%{MULTILINE:message}`,
-//	string(TS_LEVEL):        `%{TIMESTAMP_ISO8601:timestamp} .?%{LOGLEVEL:level}.?`,
-//	string(LOGFMT_TS_LEVEL): `(time|ts|t)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']?.*level=%{LOGLEVEL:level}`,
-//	string(LOGFMT_LEVEL_TS): `level=%{LOGLEVEL:level}.*(time|ts|t)=[",']?%{TIMESTAMP_ISO8601:timestamp}[",']?`,
-//	// This pattern captures the full elements of connect logs.
-//	//string(CONNECT_LOG):         `\[%{TIMESTAMP_ISO8601:timestamp}\]\[%{INT:thread_id}\]\[%{LOGLEVEL:level}\]\[%{DATA:module}\] \[%{DATA:source_file}:%{INT:line_number}\] \[%{DATA:connection_id}\] %{MULTILINE:message}`,
-//	// This pattern captures a lite version of connect logs and ignores the thread_id
-//	string(CONNECT_LOG): `\[%{TIMESTAMP_ISO8601:timestamp}\].*\[%{LOGLEVEL:level}\]`,
-//}
 
 type PatternFactory struct {
 	logger    *zerolog.Logger
 	patterns  map[string]string
 	compilers map[string]*grok.CompiledGrok
+}
+
+func (factory *PatternFactory) CompilerFor(key model.MetaLog_PatternKey) *grok.CompiledGrok {
+	return factory.compilerFor(string(key))
+}
+
+func (factory *PatternFactory) compilerFor(key string) *grok.CompiledGrok {
+	return factory.compilers[key]
 }
 
 var mtx sync.Mutex
@@ -85,9 +40,9 @@ func Initialize() (*PatternFactory, error) {
 	if instance != nil {
 		return instance, nil
 	}
-
-	addPatterns := make(map[string]string)
 	compiledPatterns := make(map[string]*grok.CompiledGrok)
+	addPatterns := make(map[string]string)
+
 	{
 		err := add(addPatterns, grok.DefaultPatterns)
 		// better defined in additionalPatterns.Grok
@@ -108,6 +63,12 @@ func Initialize() (*PatternFactory, error) {
 		}
 	}
 
+	{
+		err := add(addPatterns, utils.CustomPatterns)
+		if err != nil {
+			panic(err)
+		}
+	}
 	grokConfig := grok.Config{
 		Patterns:            addPatterns,
 		SkipDefaultPatterns: true,
@@ -161,9 +122,15 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 		return &GrokPatternLogfmt{
 			GrokPatternDefault: GrokPatternDefault{
 				GrokPattern: GrokPattern{
-					Name:             log.PatternKey,
-					CompiledPattern:  nil,
-					TimeStampFormats: standardTimeFormats,
+					Name: log.PatternKey,
+				},
+			},
+		}
+	case model.MetaLog_TsLevelMsg:
+		return &GrokPatternTsLevelMsg{
+			GrokPatternDefault: GrokPatternDefault{
+				GrokPattern: GrokPattern{
+					Name: log.PatternKey,
 				},
 			},
 		}
@@ -174,6 +141,7 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 				Name: model.MetaLog_Nop,
 			},
 		}
+
 	default:
 		log.AppendParseError(fmt.Sprintf("The iedtified PatternKey %s by the ingress is not mapped to a pattern extractor", log.PatternKey.String()))
 		return &GrokPatternDefault{
@@ -185,18 +153,12 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 
 }
 
-func cachedLayoutForLog(log *model.MetaLog) (string, bool) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	ts, found := tsFormatCahce[cahceKey]
-	return ts, found
+func (factory *PatternFactory) ParseGrokWithKey(key string, data string) (map[utils.PatterMatch]string, error) {
+	if compiledGrok, found := factory.compilers[key]; found {
+		return utils.ParseAndGetRegisteredKey(compiledGrok, data)
+	}
+	return nil, errors.New(fmt.Sprintf("No compiler found for key [%s]", key))
 }
-
-func cacheLayoutForLog(log *model.MetaLog, ts string) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	tsFormatCahce[cahceKey] = ts
-}
-
-func deleteCachedLayoutForLog(log *model.MetaLog) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	delete(tsFormatCahce, cahceKey)
+func (factory *PatternFactory) ParseGrok(key model.MetaLog_PatternKey, data string) (map[utils.PatterMatch]string, error) {
+	return factory.ParseGrokWithKey(key.String(), data)
 }

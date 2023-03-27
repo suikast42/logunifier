@@ -38,9 +38,10 @@ func StringToLogPatterKey(pattern string) MetaLog_PatternKey {
 }
 
 var logPatternStringMap = map[string]MetaLog_PatternKey{
-	"nop":    MetaLog_Nop,
-	"logfmt": MetaLog_LogFmt,
-	"ecs":    MetaLog_Ecs,
+	"nop":        MetaLog_Nop,
+	"logfmt":     MetaLog_LogFmt,
+	"ecs":        MetaLog_Ecs,
+	"tslevelmsg": MetaLog_TsLevelMsg,
 }
 
 var stringToLogLevelMap = map[string]LogLevel{
