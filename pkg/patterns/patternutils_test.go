@@ -63,6 +63,17 @@ func TestGenericTsPattern(t *testing.T) {
 			patternKey: "GENERIC_TS",
 			data:       "02/Feb/2023:15:04:05 -0700",
 		},
+
+		{
+			pos:        7,
+			patternKey: "GENERIC_TS",
+			data:       "2023-03-27T18:23:45Z",
+		},
+		{
+			pos:        8,
+			patternKey: "GENERIC_TS",
+			data:       "27/Mar/2023:18:23:45-0400",
+		},
 	}
 	log := &model.MetaLog{
 		ApplicationName:    "Test",
@@ -192,6 +203,17 @@ func TestPatterns(t *testing.T) {
 			data:       "02/Feb/2023:15:04:05 -0700 [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
 				utils.TimeStamp: "02/Feb/2023:15:04:05 -0700",
+				utils.Level:     "INF",
+				utils.Message:   "Server is ready",
+			},
+		},
+		{
+			//W3c log ts
+			pos:        8,
+			patternKey: model.MetaLog_TsLevelMsg,
+			data:       "2023-03-27T18:23:45Z [INF] Server is ready",
+			want: map[utils.PatterMatch]string{
+				utils.TimeStamp: "2023-03-27T18:23:45Z",
 				utils.Level:     "INF",
 				utils.Message:   "Server is ready",
 			},

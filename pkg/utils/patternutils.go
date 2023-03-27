@@ -59,7 +59,7 @@ var CustomPatterns = map[string]string{
 	"MULTILINE":        `((\s)*(.*))*`,
 	"LOGLEVEL_KEYWORD": `((?i)trace|(?i)trc|(?i)debug|(?i)dbg|(?i)dbug|(?i)info|(?i)inf|(?i)notice|(?i)warn|(?i)warning|(?i)error|(?i)err|(?i)alert|(?i)fatal|(?i)ftl|(?i)emerg|(?i)crit|(?i)critical)`,
 	"TS_YYMMDD_SLASH":  `%{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{TIME}.%{INT:milliseconds}`,
-	"TS_APACHE_LOG":    `%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HOUR}:%{MINUTE}:%{SECOND} %{ISO8601_TIMEZONE}`,
+	"TS_APACHE_LOG":    `%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HOUR}:%{MINUTE}:%{SECOND} ?%{ISO8601_TIMEZONE}`,
 
 	"TS": fmt.Sprintf(""+
 		"%%{TIMESTAMP_ISO8601:%s}"+
@@ -105,6 +105,7 @@ var StandardTimeFormats = []string{
 	time.StampMicro,
 	time.StampNano,
 	"02/Jan/2006:15:04:05 -0700",
+	"02/Jan/2006:15:04:05-0700",
 }
 
 var tsFormatCahce = make(map[string]string)
