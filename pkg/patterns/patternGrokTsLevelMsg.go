@@ -32,7 +32,7 @@ func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 		return g._this
 	}
 	defer func() {
-		delete(g._extractedFields, string(utils.LogfmtKeyTimestamp))
+		delete(g._extractedFields, string(utils.PatternTimeStamp))
 	}()
 	parsedTs := utils.ParseTime(g._metaLog, tsstring)
 
@@ -47,12 +47,12 @@ func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 
 func (g *GrokPatternTsLevelMsg) message() GrokPatternExtractor {
 
-	message, ok := g._extractedFields["message"]
+	message, ok := g._extractedFields[string(utils.PatternMessage)]
 	if !ok {
 		return g._this
 	}
 	defer func() {
-		delete(g._extractedFields, "message")
+		delete(g._extractedFields, string(utils.PatternMessage))
 	}()
 	g._message = message
 	return g._this
@@ -68,10 +68,10 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 		LevelEmoji: model.LogLevelToEmoji(g._metaLog.FallbackLoglevel),
 	}
 
-	level, levelFound := g._extractedFields["level"]
+	level, levelFound := g._extractedFields[string(utils.PatternLevel)]
 	if levelFound {
 		defer func() {
-			delete(g._extractedFields, "level")
+			delete(g._extractedFields, string(utils.PatternLevel))
 		}()
 		g._logInfo.Level = model.StringToLogLevel(level)
 		g._logInfo.LevelEmoji = model.LogLevelToEmoji(g._logInfo.Level)
