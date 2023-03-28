@@ -65,7 +65,7 @@ type GrokPatternExtractor interface {
 	extract() *model.EcsLogEntry
 }
 
-func ExractFrom(extractor GrokPatternExtractor, from *model.MetaLog) *model.EcsLogEntry {
+func ExtractFrom(extractor GrokPatternExtractor, from *model.MetaLog) *model.EcsLogEntry {
 
 	return extractor.from(from).
 		timeStamp().

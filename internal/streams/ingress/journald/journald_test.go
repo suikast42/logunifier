@@ -231,10 +231,10 @@ func TestNomadLog(t *testing.T) {
 	time := parsed.Timestamp.AsTime()
 	year := 2023
 	month := "March"
-	day := 15
-	hour := 06
-	minute := 45
-	second := 05
+	day := 20
+	hour := 15
+	minute := 06
+	second := 45
 	if time.Year() != year {
 		t.Errorf("Expected %d  but got %d", year, time.Year())
 	}

@@ -12,15 +12,15 @@ import (
 type PatterMatch string
 
 const (
-	TimeStamp PatterMatch = "timestamp"
-	Level     PatterMatch = "level"
-	Message   PatterMatch = "message"
+	PatternTimeStamp PatterMatch = "timestamp"
+	PatternLevel     PatterMatch = "level"
+	PatternMessage   PatterMatch = "message"
 )
 
 var patternMatchKeys = map[string]PatterMatch{
-	"timestamp": TimeStamp,
-	"level":     Level,
-	"message":   Message,
+	"timestamp": PatternTimeStamp,
+	"level":     PatternLevel,
+	"message":   PatternMessage,
 }
 
 const (

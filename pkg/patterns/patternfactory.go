@@ -20,7 +20,7 @@ type PatternFactory struct {
 }
 
 func (factory *PatternFactory) CompilerFor(key model.MetaLog_PatternKey) *grok.CompiledGrok {
-	return factory.compilerFor(string(key))
+	return factory.compilerFor(key.String())
 }
 
 func (factory *PatternFactory) compilerFor(key string) *grok.CompiledGrok {
@@ -112,7 +112,7 @@ func add(source map[string]string, new map[string]string) error {
 
 func (factory *PatternFactory) Parse(log *model.MetaLog) *model.EcsLogEntry {
 	extractor := factory.findPatternFor(log)
-	return ExractFrom(extractor, log)
+	return ExtractFrom(extractor, log)
 }
 
 func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExtractor {

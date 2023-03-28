@@ -3,6 +3,8 @@ package patterns
 import (
 	"fmt"
 	"github.com/suikast42/logunifier/pkg/model"
+	"github.com/suikast42/logunifier/pkg/utils"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type GrokPatternTsLevelMsg struct {
@@ -15,52 +17,30 @@ type GrokPatternTsLevelMsg struct {
 func (g *GrokPatternTsLevelMsg) from(log *model.MetaLog) GrokPatternExtractor {
 	compilerFor := Instance().CompilerFor(g.GrokPatternDefault.Name)
 	g._this = g
+	g._metaLog = log
 	if compilerFor == nil {
 		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't a pattern for key %s", g.GrokPatternDefault.Name))
 		return g._this
 	}
 	g._extractedFields = compilerFor.ParseString(log.Message)
-	g._metaLog = log
 	return g._this
 }
 
 func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
-	panic("Not implemeneted")
-	return g._this
-	//tsstring, ok := g._extractedFields["timestamp"]
-	//var parsedTs time.Time
-	//if !ok {
-	//	return g._this
-	//}
-	//defer func() {
-	//	delete(g._extractedFields, "timestamp")
-	//}()
+	tsstring, ok := g._extractedFields[string(utils.PatternTimeStamp)]
+	if !ok {
+		return g._this
+	}
+	defer func() {
+		delete(g._extractedFields, string(utils.LogfmtKeyTimestamp))
+	}()
+	parsedTs := utils.ParseTime(g._metaLog, tsstring)
 
-	//cachedLayout, found := cachedLayoutForLog(g._metaLog)
-	//if !found {
-	//	for _, layout := range g.TimeStampFormats {
-	//		_parsed, err := time.Parse(layout, tsstring)
-	//		if err != nil {
-	//			continue
-	//		}
-	//		parsedTs = _parsed
-	//		cacheLayoutForLog(g._metaLog, layout)
-	//	}
-	//} else {
-	//	_parsed, err := time.Parse(cachedLayout, tsstring)
-	//	if err != nil {
-	//		// Delete the ts from chance and retry all again
-	//		deleteCachedLayoutForLog(g._metaLog)
-	//		return g.timeStamp()
-	//	}
-	//	parsedTs = _parsed
-	//}
-	//
-	//if parsedTs.IsZero() {
-	//	g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))
-	//	return g._this
-	//}
-	//g._timeStamp = timestamppb.New(parsedTs)
+	if parsedTs.IsZero() {
+		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))
+		return g._this
+	}
+	g._timeStamp = timestamppb.New(parsedTs)
 
 	return g._this
 }
