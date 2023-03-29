@@ -3,6 +3,7 @@ package patterns
 import (
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"strings"
 )
 
 type GrokPatternDefault struct {
@@ -25,6 +26,7 @@ type GrokPatternDefault struct {
 	_traceInfo        *model.Tracing
 	_userInfo         *model.User
 	_eventInfo        *model.Event
+	_parseErrors      []string
 	//endregion
 }
 
@@ -138,5 +140,8 @@ func (g *GrokPatternDefault) extract() *model.EcsLogEntry {
 	ecs.ProcessError = g._metaLog.ProcessError
 	ecs.User = g._userInfo
 	ecs.Event = g._eventInfo
+	if len(g._parseErrors) > 0 {
+		ecs.AppendParseError(strings.Join(g._parseErrors, "\n"))
+	}
 	return ecs
 }

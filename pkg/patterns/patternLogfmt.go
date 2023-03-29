@@ -12,8 +12,8 @@ import (
 type GrokPatternLogfmt struct {
 	GrokPatternDefault
 	// Builder fields
-	_parseErrors []string
-	_logfmtKv    map[string]string
+
+	_logfmtKv map[string]string
 }
 
 func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
@@ -172,25 +172,7 @@ func (g *GrokPatternLogfmt) tracingInfo() GrokPatternExtractor {
 }
 
 func (g *GrokPatternLogfmt) extract() *model.EcsLogEntry {
-	ecs := model.NewEcsLogEntry()
-	ecs.Timestamp = g._timeStamp
-	ecs.Log = g._logInfo
-	ecs.Message = g._message
-	ecs.Labels = g._labels
-	ecs.Tags = g._tags
-	ecs.Container = g._containerInfo
-	ecs.Agent = g._agentInfo
-	ecs.Host = g._hostInfo
-	ecs.Organization = g._organisationInfo
-	ecs.Service = g._serviceInfo
-	ecs.Error = g._errorInfo
-	ecs.Trace = g._traceInfo
-	ecs.ProcessError = g._metaLog.ProcessError
-
-	if len(g._parseErrors) > 0 {
-		ecs.AppendParseError(strings.Join(g._parseErrors, "\n"))
-	}
-
+	ecs := g.GrokPatternDefault.extract()
 	// Every step removes the registered keys
 	// Add the not standard keys as labels
 	for k, v := range g._logfmtKv {

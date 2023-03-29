@@ -254,3 +254,45 @@ func TestNomadLog(t *testing.T) {
 		t.Errorf("Expected %d  but got %d", second, time.Second())
 	}
 }
+
+func TestInvalidTsLevelMsg(t *testing.T) {
+	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldInvalidTsLevelMsg), t)
+	parsed := patternfactory.Parse(log)
+	if parsed == nil {
+		t.Error("Expected not nil but got nil")
+	}
+
+	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+
+	if !ok {
+		t.Error("Can't find pattern")
+	}
+
+	if grok != model.MetaLog_TsLevelMsg.String() {
+		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
+	}
+
+	if !parsed.HasProcessError() {
+		t.Error("Expect process error bu got nothing ")
+	}
+
+	if len(parsed.Message) == 0 {
+		t.Error("Expected a message nothing")
+	}
+
+	if parsed.Log.Level != log.FallbackLoglevel {
+		t.Errorf("Expected a %+v level but got %+v", log.FallbackLoglevel, parsed.Log.Level)
+	}
+	if parsed.Timestamp.AsTime().IsZero() {
+		t.Errorf("Expected a valid ts but got %+v", parsed.Timestamp.AsTime())
+	}
+
+	if parsed.Timestamp.AsTime() != log.FallbackTimestamp.AsTime() {
+		t.Errorf("Expected FallbackTimestamp %+v but got %+v", log.FallbackTimestamp.AsTime(), parsed.Timestamp.AsTime())
+	}
+
+	if parsed.Message != "Invalid message" {
+		t.Errorf("Expected message [Invalid message] but got [%s]", parsed.Message)
+	}
+
+}

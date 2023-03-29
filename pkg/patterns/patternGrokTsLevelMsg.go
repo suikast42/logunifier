@@ -10,7 +10,6 @@ import (
 type GrokPatternTsLevelMsg struct {
 	GrokPatternDefault
 	// Builder fields
-	_parseErrors     []string
 	_extractedFields map[string]string
 }
 
@@ -29,6 +28,8 @@ func (g *GrokPatternTsLevelMsg) from(log *model.MetaLog) GrokPatternExtractor {
 func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 	tsstring, ok := g._extractedFields[string(utils.PatternTimeStamp)]
 	if !ok {
+		g._parseErrors = append(g._parseErrors, "Can't find timestamp")
+		g._timeStamp = g._metaLog.FallbackTimestamp
 		return g._this
 	}
 	defer func() {
@@ -49,6 +50,8 @@ func (g *GrokPatternTsLevelMsg) message() GrokPatternExtractor {
 
 	message, ok := g._extractedFields[string(utils.PatternMessage)]
 	if !ok {
+		g._parseErrors = append(g._parseErrors, "Can't find a message")
+		g._message = g._metaLog.Message
 		return g._this
 	}
 	defer func() {
@@ -76,6 +79,7 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 		g._logInfo.Level = model.StringToLogLevel(level)
 		g._logInfo.LevelEmoji = model.LogLevelToEmoji(g._logInfo.Level)
 	}
+
 	return g._this
 
 }
