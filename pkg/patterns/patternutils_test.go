@@ -74,6 +74,12 @@ func TestGenericTsPattern(t *testing.T) {
 			patternKey: "GENERIC_TS",
 			data:       "27/Mar/2023:18:23:45-0400",
 		},
+
+		{
+			pos:        9,
+			patternKey: "GENERIC_TS",
+			data:       "2023-03-29 20:50:13.931",
+		},
 	}
 	log := &model.MetaLog{
 		ApplicationName:    "Test",
@@ -218,6 +224,16 @@ func TestPatterns(t *testing.T) {
 				utils.PatternMessage:   "Server is ready",
 			},
 		},
+		{
+			pos:        9,
+			patternKey: model.MetaLog_TsLevelMsg,
+			data:       "2023-03-29 20:50:13.931 [INF] Server is ready",
+			want: map[utils.PatterMatch]string{
+				utils.PatternTimeStamp: "2023-03-29 20:50:13.931",
+				utils.PatternLevel:     "INF",
+				utils.PatternMessage:   "Server is ready",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -244,6 +260,85 @@ func TestPatterns(t *testing.T) {
 		if parsedTs.IsZero() {
 			t.Errorf("Pos: %d. Can't parse ts [%s]. parsedTs.IsZero", test.pos, kv[utils.PatternTimeStamp])
 		}
+	}
+}
 
+func TestTimeParseTimeZone(t *testing.T) {
+	tests := []struct {
+		pos    int
+		data   string
+		year   int
+		month  string
+		day    int
+		hour   int
+		minute int
+		second int
+	}{
+		{
+			pos:    1,
+			data:   "2023-03-29T20:30:00+0000",
+			year:   2023,
+			month:  "March",
+			day:    29,
+			hour:   20,
+			minute: 30,
+			second: 00,
+		},
+		{
+			pos:    2,
+			data:   "2023-03-29T20:30:00+0200",
+			year:   2023,
+			month:  "March",
+			day:    29,
+			hour:   18,
+			minute: 30,
+			second: 00,
+		},
+		{
+			pos:    3,
+			data:   "2023-03-29T20:30:00-0200",
+			year:   2023,
+			month:  "March",
+			day:    29,
+			hour:   22,
+			minute: 30,
+			second: 00,
+		},
+		{
+			pos:    4,
+			data:   "2023-03-29 20:50:13.931",
+			year:   2023,
+			month:  "March",
+			day:    29,
+			hour:   20,
+			minute: 50,
+			second: 13,
+		},
+	}
+	for _, test := range tests {
+		time, layout := utils.ParseTimeUncached(test.data)
+		//fmt.Printf("Pos %d: %s\n", test.pos, time.String())
+		//continue
+		if time.IsZero() {
+			t.Errorf("Pos %d: Expected time not zero  but got %+v for layout [%s]", test.pos, time, layout)
+		}
+		if time.Year() != test.year {
+			t.Errorf("Pos %d: Expected Year %d  but got %d", test.pos, test.year, time.Year())
+		}
+		if time.Month().String() != test.month {
+			t.Errorf("Pos %d: Expected Month %s  but got %s", test.pos, test.month, time.Month())
+		}
+		if time.Day() != test.day {
+			t.Errorf("Pos %d: Expected Day %d  but got %d", test.pos, test.day, time.Day())
+		}
+		if time.Minute() != test.minute {
+			t.Errorf("Pos %d: Expected  Minute %d  but got %d", test.pos, test.minute, time.Minute())
+		}
+		if time.Hour() != test.hour {
+			t.Errorf("Pos %d: Expected Hour %d  but got %d", test.pos, test.hour, time.Hour())
+		}
+		if time.Second() != test.second {
+			t.Errorf("Pos %d: Expected Second %d  but got %d", test.pos, test.second, time.Second())
+		}
 	}
 }

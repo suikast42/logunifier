@@ -72,6 +72,9 @@ var StandardTimeFormats = []string{
 	time.UnixDate,
 	"2006/01/02 15:04:05.000000",
 	"2006-01-02 15:04:05,999-0700",
+	"2006-01-02 15:04:05,999 -0700",
+	"2006-01-02T15:04:05-0700",
+	"2006-01-02T15:04:05 -0700",
 	"2006-01-02 15:04:05,999",
 	time.ANSIC,
 	time.RubyDate,
@@ -104,26 +107,28 @@ func deleteCachedLayoutForLog(log *model.MetaLog) {
 // without a parser error
 func ParseTimeUncached(timeString string) (time.Time, string) {
 	for _, layout := range StandardTimeFormats {
-		parse, err := time.Parse(layout, timeString)
+		//parse, err := time.Parse(layout, timeString)
+		parse, err := time.ParseInLocation(layout, timeString, time.UTC)
 		if err != nil || parse.IsZero() {
 			continue
 		}
-		return parse, layout
+		return parse.UTC(), layout
 	}
-	return time.Time{}, ""
+	return time.Time{}.UTC(), ""
 }
 
 func ParseTime(log *model.MetaLog, timeString string) time.Time {
 	if layout, found := cachedLayoutForLog(log); found {
 		// Key is cached
-		parse, err := time.Parse(layout, timeString)
+		//parse, err := time.Parse(layout, timeString)
+		parse, err := time.ParseInLocation(layout, timeString, time.UTC)
 		if err != nil || parse.IsZero() {
 			// expect that a chanced layout always parses a valid timestamp
 			// If not delete it from cache and retry it again
 			deleteCachedLayoutForLog(log)
 			return ParseTime(log, timeString)
 		}
-		return parse
+		return parse.UTC()
 	}
 	// Key is not cached
 	parsed, layout := ParseTimeUncached(timeString)
@@ -131,7 +136,7 @@ func ParseTime(log *model.MetaLog, timeString string) time.Time {
 		cacheLayoutForLog(log, layout)
 	}
 
-	return parsed
+	return parsed.UTC()
 }
 
 //endregion
