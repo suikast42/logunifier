@@ -195,7 +195,7 @@ func TestPatterns(t *testing.T) {
 			//nats
 			pos:        8,
 			patternKey: model.MetaLog_TsLevelMsg,
-			data:       "2023/03/20 14:27:52.652648 [INF] Server is ready",
+			data:       "[1] 2023/03/20 14:27:52.652648 [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
 				utils.PatternMatchTimeStamp:  "2023/03/20 14:27:52.652648",
 				utils.PatternMatchKeyLevel:   "INF",
@@ -245,6 +245,17 @@ func TestPatterns(t *testing.T) {
 				utils.PatternMatchKeyLevel:   "debug",
 				utils.PatternMatchKeyMessage: "[upstream] [source/common/upstream/upstream_impl.cc:451] transport socket match, socket default selected for host with address 10.21.21.42:9411",
 				utils.PatternMatchKeyThread:  "42",
+			},
+		},
+		{
+			//Logunifier log
+			pos:        11,
+			patternKey: model.MetaLog_TsLevelMsg,
+			data:       "2023-03-30T16:32:12.538785+02:00 INF Connected to Loki. State is READY",
+			want: map[utils.PatterMatch]string{
+				utils.PatternMatchTimeStamp:  "2023-03-30T16:32:12.538785+02:00",
+				utils.PatternMatchKeyLevel:   "INF",
+				utils.PatternMatchKeyMessage: "Connected to Loki. State is READY",
 			},
 		},
 	}
