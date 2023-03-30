@@ -7,17 +7,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type GrokPatternLogfmt struct {
 	GrokPatternDefault
 	// Builder fields
-	_parseErrors []string
-	_logfmtKv    map[string]string
-}
 
-var logFmtTimeStanpkeys = []string{"ts,timestamp"}
+	_logfmtKv map[string]string
+}
 
 func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 	g._metaLog = log
@@ -41,32 +38,13 @@ func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 
 func (g *GrokPatternLogfmt) timeStamp() GrokPatternExtractor {
 	tsstring, ok := g._logfmtKv[string(utils.LogfmtKeyTimestamp)]
-	var parsedTs time.Time
 	if !ok {
 		return g._this
 	}
 	defer func() {
 		delete(g._logfmtKv, string(utils.LogfmtKeyTimestamp))
 	}()
-	cachedLayout, found := cachedLayoutForLog(g._metaLog)
-	if !found {
-		for _, layout := range g.TimeStampFormats {
-			_parsed, err := time.Parse(layout, tsstring)
-			if err != nil {
-				continue
-			}
-			parsedTs = _parsed
-			cacheLayoutForLog(g._metaLog, layout)
-		}
-	} else {
-		_parsed, err := time.Parse(cachedLayout, tsstring)
-		if err != nil {
-			// Delete the ts from chance and retry all again
-			deleteCachedLayoutForLog(g._metaLog)
-			return g.timeStamp()
-		}
-		parsedTs = _parsed
-	}
+	parsedTs := utils.ParseTime(g._metaLog, tsstring)
 
 	if parsedTs.IsZero() {
 		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))
@@ -194,25 +172,7 @@ func (g *GrokPatternLogfmt) tracingInfo() GrokPatternExtractor {
 }
 
 func (g *GrokPatternLogfmt) extract() *model.EcsLogEntry {
-	ecs := model.NewEcsLogEntry()
-	ecs.Timestamp = g._timeStamp
-	ecs.Log = g._logInfo
-	ecs.Message = g._message
-	ecs.Labels = g._labels
-	ecs.Tags = g._tags
-	ecs.Container = g._containerInfo
-	ecs.Agent = g._agentInfo
-	ecs.Host = g._hostInfo
-	ecs.Organization = g._organisationInfo
-	ecs.Service = g._serviceInfo
-	ecs.Error = g._errorInfo
-	ecs.Trace = g._traceInfo
-	ecs.ProcessError = g._metaLog.ProcessError
-
-	if len(g._parseErrors) > 0 {
-		ecs.AppendParseError(strings.Join(g._parseErrors, "\n"))
-	}
-
+	ecs := g.GrokPatternDefault.extract()
 	// Every step removes the registered keys
 	// Add the not standard keys as labels
 	for k, v := range g._logfmtKv {

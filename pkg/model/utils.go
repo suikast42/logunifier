@@ -28,7 +28,7 @@ var logLevelToStringMap = map[LogLevel]string{
 	LogLevel_unknown: "unknown",
 }
 
-func StringToLogPatterKey(pattern string) MetaLog_PatternKey {
+func StringToLogPatternKey(pattern string) MetaLog_PatternKey {
 	lowercased := strings.ToLower(pattern)
 	key, found := logPatternStringMap[lowercased]
 	if !found {
@@ -38,9 +38,11 @@ func StringToLogPatterKey(pattern string) MetaLog_PatternKey {
 }
 
 var logPatternStringMap = map[string]MetaLog_PatternKey{
-	"nop":    MetaLog_Nop,
-	"logfmt": MetaLog_LogFmt,
-	"ecs":    MetaLog_Ecs,
+	"nop":        MetaLog_Nop,
+	"logfmt":     MetaLog_LogFmt,
+	"ecs":        MetaLog_Ecs,
+	"tslevelmsg": MetaLog_TsLevelMsg,
+	"envoy":      MetaLog_Envoy,
 }
 
 var stringToLogLevelMap = map[string]LogLevel{

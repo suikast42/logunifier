@@ -2,7 +2,6 @@ package patterns
 
 import (
 	"github.com/suikast42/logunifier/pkg/model"
-	"github.com/trivago/grok"
 )
 
 type GrokPatternKey string
@@ -12,13 +11,6 @@ type GrokPattern struct {
 
 	// Pattern the pattern used for parse the log message
 	Name model.MetaLog_PatternKey
-
-	// CompiledPattern the compiled grok pattern from Pattern
-	CompiledPattern *grok.CompiledGrok
-
-	// TimeStampFormats the timestamp format
-	// for example time.RFC3339
-	TimeStampFormats []string
 }
 
 type GrokPatternExtractor interface {
@@ -73,7 +65,7 @@ type GrokPatternExtractor interface {
 	extract() *model.EcsLogEntry
 }
 
-func ExractFrom(extractor GrokPatternExtractor, from *model.MetaLog) *model.EcsLogEntry {
+func ExtractFrom(extractor GrokPatternExtractor, from *model.MetaLog) *model.EcsLogEntry {
 
 	return extractor.from(from).
 		timeStamp().
