@@ -6,6 +6,7 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
+	"github.com/suikast42/logunifier/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ type IngressSubjectJournald struct {
 	COM_GITHUB_LOGUNIFIER_APPLICATION_NAME        string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_NAME"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION     string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI  string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI"`
 	CONTAINER_ID                                  string `json:"CONTAINER_ID"`
 	CONTAINER_ID_FULL                             string `json:"CONTAINER_ID_FULL"`
 	CONTAINER_NAME                                string `json:"CONTAINER_NAME"`
@@ -101,7 +103,7 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 			FallbackLoglevel:   journald.toLogLevel(),
 			Labels:             journald.extractLabels(msg),
 			Tags:               journald.tags(),
-			Message:            journald.Message,
+			Message:            journald.message(),
 			ProcessError: &model.ProcessError{
 				RawData: string(msg.Data),
 				Subject: msg.Subject,
@@ -275,6 +277,14 @@ func (r *IngressSubjectJournald) appVersion() string {
 	return ""
 }
 
+func (r *IngressSubjectJournald) stripAnsi() bool {
+	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI) > 0 {
+		strip, _ := strconv.ParseBool(r.COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI)
+		return strip
+	}
+	return false
+}
+
 func (r *IngressSubjectJournald) appName() string {
 	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAME) > 0 {
 		return r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAME
@@ -295,4 +305,11 @@ func (r *IngressSubjectJournald) patternKey() model.MetaLog_PatternKey {
 	}
 
 	return model.MetaLog_Nop
+}
+
+func (r *IngressSubjectJournald) message() string {
+	if r.stripAnsi() {
+		return utils.StripAnsi(r.Message)
+	}
+	return r.Message
 }

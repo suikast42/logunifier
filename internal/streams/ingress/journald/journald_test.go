@@ -269,7 +269,7 @@ func TestConsulConnectLog(t *testing.T) {
 	}
 
 	if grok != model.MetaLog_Envoy.String() {
-		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
+		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_Envoy.String(), grok)
 	}
 
 	if len(parsed.ProcessError.Reason) > 0 {
@@ -353,6 +353,71 @@ func TestInvalidTsLevelMsg(t *testing.T) {
 
 	if parsed.Message != "Invalid message" {
 		t.Errorf("Expected message [Invalid message] but got [%s]", parsed.Message)
+	}
+
+}
+
+func TestLogunifier(t *testing.T) {
+	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldLogunifier), t)
+	parsed := patternfactory.Parse(log)
+	if parsed == nil {
+		t.Error("Expected not nil but got nil")
+	}
+
+	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+
+	if !ok {
+		t.Error("Can't find pattern")
+	}
+
+	if grok != model.MetaLog_TsLevelMsg.String() {
+		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
+	}
+
+	if len(parsed.ProcessError.Reason) > 0 {
+		t.Errorf("Should not contain a process error. But contains %s", parsed.ProcessError.Reason)
+	}
+
+	if len(parsed.Message) == 0 {
+		t.Error("Expected a message nothing")
+	}
+
+	if parsed.Log.Level != model.LogLevel_debug {
+		t.Errorf("Expected a debug level but got %+v", parsed.Log.Level)
+	}
+	if parsed.Timestamp.AsTime().IsZero() {
+		t.Errorf("Expected a valid ts but got %+v", parsed.Timestamp.AsTime())
+	}
+
+	//2023-03-30T20:13:52.774125Z
+	time := parsed.Timestamp.AsTime()
+	year := 2023
+	month := "March"
+	day := 30
+	hour := 20
+	minute := 13
+	second := 52
+	if time.Year() != year {
+		t.Errorf("Expected %d  but got %d", year, time.Year())
+	}
+	if time.Month().String() != "March" {
+		t.Errorf("Expected %s  but got %s", month, time.Month())
+	}
+	if time.Day() != day {
+		t.Errorf("Expected %d  but got %d", day, time.Day())
+	}
+	if time.Minute() != minute {
+		t.Errorf("Expected %d  but got %d", minute, time.Minute())
+	}
+	if time.Hour() != hour {
+		t.Errorf("Expected %d  but got %d", hour, time.Hour())
+	}
+	if time.Second() != second {
+		t.Errorf("Expected %d  but got %d", second, time.Second())
+	}
+
+	if parsed.Message != "Nothing to validate after 10s " {
+		t.Errorf("Expected message [Nothing to validate after 10s] but got [%s]", parsed.Message)
 	}
 
 }
