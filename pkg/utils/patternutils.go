@@ -12,15 +12,17 @@ import (
 type PatterMatch string
 
 const (
-	PatternTimeStamp PatterMatch = "timestamp"
-	PatternLevel     PatterMatch = "level"
-	PatternMessage   PatterMatch = "message"
+	PatternMatchTimeStamp  PatterMatch = "timestamp"
+	PatternMatchKeyLevel   PatterMatch = "level"
+	PatternMatchKeyMessage PatterMatch = "message"
+	PatternMatchKeyThread  PatterMatch = "thread"
 )
 
 var patternMatchKeys = map[string]PatterMatch{
-	"timestamp": PatternTimeStamp,
-	"level":     PatternLevel,
-	"message":   PatternMessage,
+	"timestamp": PatternMatchTimeStamp,
+	"level":     PatternMatchKeyLevel,
+	"message":   PatternMatchKeyMessage,
+	"thread":    PatternMatchKeyThread,
 }
 
 const (
@@ -44,6 +46,7 @@ var CustomPatterns = map[string]string{
 		timeFormatApacheLog,
 	),
 	"GENERIC_TS":                      "%{TS:timestamp}",
+	model.MetaLog_Envoy.String():      `[",',\[]?%{GENERIC_TS}[",',\]]?[",',\[]?%{NUMBER:thread}[",',\]]?[",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]?%{MULTILINE:message}`,
 	model.MetaLog_TsLevelMsg.String(): `[",',\[]?%{GENERIC_TS}[",',\]]? [",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]? %{MULTILINE:message}`,
 }
 
@@ -53,7 +56,7 @@ func ParseAndGetRegisteredKey(compiler *grok.CompiledGrok, log string) (map[Patt
 	parsed := compiler.ParseString(log)
 
 	for k, v := range parsed {
-		if _, ok := patternMatchKeys[k]; ok {
+		if IsRegisteredKey(k) {
 			result[patternMatchKeys[k]] = v
 			continue
 		}
@@ -61,6 +64,13 @@ func ParseAndGetRegisteredKey(compiler *grok.CompiledGrok, log string) (map[Patt
 	}
 
 	return result, nil
+}
+
+func IsRegisteredKey(key string) bool {
+	if _, ok := patternMatchKeys[key]; ok {
+		return ok
+	}
+	return false
 }
 
 //endregion

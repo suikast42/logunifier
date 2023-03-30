@@ -20,6 +20,7 @@ message MetaLog {
     LogFmt =2;
     Ecs =3;
     TsLevelMsg =4;
+    Envoy =5;
   }
 
   // Time of the log event shipment.

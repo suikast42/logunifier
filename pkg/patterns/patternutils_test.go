@@ -92,7 +92,7 @@ func TestGenericTsPattern(t *testing.T) {
 			continue
 		}
 
-		parsedTs := kv[utils.PatternTimeStamp]
+		parsedTs := kv[utils.PatternMatchTimeStamp]
 
 		if len(parsedTs) != len(test.data) {
 			t.Errorf("In pos: %d. Expect [%s] but got [%s]. Parsed %+v", test.pos, test.data, parsedTs, kv)
@@ -106,6 +106,7 @@ func TestGenericTsPattern(t *testing.T) {
 		}
 	}
 }
+
 func TestPatterns(t *testing.T) {
 	tests := []struct {
 		pos        int
@@ -118,9 +119,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-20T15:06:45.057Z [DEBUG] nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20T15:06:45.057Z",
-				utils.PatternLevel:     "DEBUG",
-				utils.PatternMessage:   "nomad: memberlist: Stream connection from=127.0.0.1:48046",
+				utils.PatternMatchTimeStamp:  "2023-03-20T15:06:45.057Z",
+				utils.PatternMatchKeyLevel:   "DEBUG",
+				utils.PatternMatchKeyMessage: "nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			},
 		},
 
@@ -129,9 +130,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "[2023-03-20T15:06:45.057Z] DEBUG nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20T15:06:45.057Z",
-				utils.PatternLevel:     "DEBUG",
-				utils.PatternMessage:   "nomad: memberlist: Stream connection from=127.0.0.1:48046",
+				utils.PatternMatchTimeStamp:  "2023-03-20T15:06:45.057Z",
+				utils.PatternMatchKeyLevel:   "DEBUG",
+				utils.PatternMatchKeyMessage: "nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			},
 		},
 
@@ -140,9 +141,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "[2023-03-20T15:06:45.057Z] [DEBUG] nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20T15:06:45.057Z",
-				utils.PatternLevel:     "DEBUG",
-				utils.PatternMessage:   "nomad: memberlist: Stream connection from=127.0.0.1:48046",
+				utils.PatternMatchTimeStamp:  "2023-03-20T15:06:45.057Z",
+				utils.PatternMatchKeyLevel:   "DEBUG",
+				utils.PatternMatchKeyMessage: "nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			},
 		},
 
@@ -151,9 +152,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-20T15:06:45.057Z [DEBUG] nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20T15:06:45.057Z",
-				utils.PatternLevel:     "DEBUG",
-				utils.PatternMessage:   "nomad: memberlist: Stream connection from=127.0.0.1:48046",
+				utils.PatternMatchTimeStamp:  "2023-03-20T15:06:45.057Z",
+				utils.PatternMatchKeyLevel:   "DEBUG",
+				utils.PatternMatchKeyMessage: "nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			},
 		},
 		{
@@ -163,9 +164,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-20T15:06:45.057Z DEBUG nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20T15:06:45.057Z",
-				utils.PatternLevel:     "DEBUG",
-				utils.PatternMessage:   "nomad: memberlist: Stream connection from=127.0.0.1:48046",
+				utils.PatternMatchTimeStamp:  "2023-03-20T15:06:45.057Z",
+				utils.PatternMatchKeyLevel:   "DEBUG",
+				utils.PatternMatchKeyMessage: "nomad: memberlist: Stream connection from=127.0.0.1:48046",
 			},
 		},
 		{
@@ -174,9 +175,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-19 21:17:04,243+0000 INFO [FelixStartLevel] *SYSTEM ROOT - bundle org.apache.felix.scr:2.1.30 (54) Starting with globalExtender setting: false",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-19 21:17:04,243+0000",
-				utils.PatternLevel:     "INFO",
-				utils.PatternMessage:   "[FelixStartLevel] *SYSTEM ROOT - bundle org.apache.felix.scr:2.1.30 (54) Starting with globalExtender setting: false",
+				utils.PatternMatchTimeStamp:  "2023-03-19 21:17:04,243+0000",
+				utils.PatternMatchKeyLevel:   "INFO",
+				utils.PatternMatchKeyMessage: "[FelixStartLevel] *SYSTEM ROOT - bundle org.apache.felix.scr:2.1.30 (54) Starting with globalExtender setting: false",
 			},
 		},
 		{
@@ -185,9 +186,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-20 14:27:28,296 INFO [org.infinispan.CLUSTER] (keycloak-cache-init) ISPN000079: Channel `ISPN` local address is `b52fd99994da-52866`, physical addresses are `[172.26.68.59:37184]`",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-20 14:27:28,296",
-				utils.PatternLevel:     "INFO",
-				utils.PatternMessage:   "[org.infinispan.CLUSTER] (keycloak-cache-init) ISPN000079: Channel `ISPN` local address is `b52fd99994da-52866`, physical addresses are `[172.26.68.59:37184]`",
+				utils.PatternMatchTimeStamp:  "2023-03-20 14:27:28,296",
+				utils.PatternMatchKeyLevel:   "INFO",
+				utils.PatternMatchKeyMessage: "[org.infinispan.CLUSTER] (keycloak-cache-init) ISPN000079: Channel `ISPN` local address is `b52fd99994da-52866`, physical addresses are `[172.26.68.59:37184]`",
 			},
 		},
 		{
@@ -196,9 +197,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023/03/20 14:27:52.652648 [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023/03/20 14:27:52.652648",
-				utils.PatternLevel:     "INF",
-				utils.PatternMessage:   "Server is ready",
+				utils.PatternMatchTimeStamp:  "2023/03/20 14:27:52.652648",
+				utils.PatternMatchKeyLevel:   "INF",
+				utils.PatternMatchKeyMessage: "Server is ready",
 			},
 		},
 
@@ -208,9 +209,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "02/Feb/2023:15:04:05 -0700 [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "02/Feb/2023:15:04:05 -0700",
-				utils.PatternLevel:     "INF",
-				utils.PatternMessage:   "Server is ready",
+				utils.PatternMatchTimeStamp:  "02/Feb/2023:15:04:05 -0700",
+				utils.PatternMatchKeyLevel:   "INF",
+				utils.PatternMatchKeyMessage: "Server is ready",
 			},
 		},
 		{
@@ -219,9 +220,9 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-27T18:23:45Z [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-27T18:23:45Z",
-				utils.PatternLevel:     "INF",
-				utils.PatternMessage:   "Server is ready",
+				utils.PatternMatchTimeStamp:  "2023-03-27T18:23:45Z",
+				utils.PatternMatchKeyLevel:   "INF",
+				utils.PatternMatchKeyMessage: "Server is ready",
 			},
 		},
 		{
@@ -229,9 +230,21 @@ func TestPatterns(t *testing.T) {
 			patternKey: model.MetaLog_TsLevelMsg,
 			data:       "2023-03-29 20:50:13.931 [INF] Server is ready",
 			want: map[utils.PatterMatch]string{
-				utils.PatternTimeStamp: "2023-03-29 20:50:13.931",
-				utils.PatternLevel:     "INF",
-				utils.PatternMessage:   "Server is ready",
+				utils.PatternMatchTimeStamp:  "2023-03-29 20:50:13.931",
+				utils.PatternMatchKeyLevel:   "INF",
+				utils.PatternMatchKeyMessage: "Server is ready",
+			},
+		},
+		{
+			//Envoy log
+			pos:        10,
+			patternKey: model.MetaLog_Envoy,
+			data:       "[2023-03-30 10:51:43.705][42][debug][upstream] [source/common/upstream/upstream_impl.cc:451] transport socket match, socket default selected for host with address 10.21.21.42:9411",
+			want: map[utils.PatterMatch]string{
+				utils.PatternMatchTimeStamp:  "2023-03-30 10:51:43.705",
+				utils.PatternMatchKeyLevel:   "debug",
+				utils.PatternMatchKeyMessage: "[upstream] [source/common/upstream/upstream_impl.cc:451] transport socket match, socket default selected for host with address 10.21.21.42:9411",
+				utils.PatternMatchKeyThread:  "42",
 			},
 		},
 	}
@@ -252,13 +265,13 @@ func TestPatterns(t *testing.T) {
 		}
 
 		if err != nil {
-			t.Errorf("Pos: %d. Can't parse ts [%s]. %s", test.pos, kv[utils.PatternTimeStamp], err)
+			t.Errorf("Pos: %d. Can't parse ts [%s]. %s", test.pos, kv[utils.PatternMatchTimeStamp], err)
 		}
 
-		parsedTs, _ := utils.ParseTimeUncached(kv[utils.PatternTimeStamp])
+		parsedTs, _ := utils.ParseTimeUncached(kv[utils.PatternMatchTimeStamp])
 
 		if parsedTs.IsZero() {
-			t.Errorf("Pos: %d. Can't parse ts [%s]. parsedTs.IsZero", test.pos, kv[utils.PatternTimeStamp])
+			t.Errorf("Pos: %d. Can't parse ts [%s]. parsedTs.IsZero", test.pos, kv[utils.PatternMatchTimeStamp])
 		}
 	}
 }

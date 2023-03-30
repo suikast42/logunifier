@@ -126,7 +126,8 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 				},
 			},
 		}
-	case model.MetaLog_TsLevelMsg:
+	case model.MetaLog_TsLevelMsg,
+		model.MetaLog_Envoy:
 		return &GrokPatternTsLevelMsg{
 			GrokPatternDefault: GrokPatternDefault{
 				GrokPattern: GrokPattern{
@@ -134,6 +135,7 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 				},
 			},
 		}
+
 		//case model.MetaLog_Ecs:
 	case model.MetaLog_Nop:
 		return &GrokPatternDefault{

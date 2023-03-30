@@ -26,14 +26,14 @@ func (g *GrokPatternTsLevelMsg) from(log *model.MetaLog) GrokPatternExtractor {
 }
 
 func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
-	tsstring, ok := g._extractedFields[string(utils.PatternTimeStamp)]
+	tsstring, ok := g._extractedFields[string(utils.PatternMatchTimeStamp)]
 	if !ok {
 		g._parseErrors = append(g._parseErrors, "Can't find timestamp")
 		g._timeStamp = g._metaLog.FallbackTimestamp
 		return g._this
 	}
 	defer func() {
-		delete(g._extractedFields, string(utils.PatternTimeStamp))
+		delete(g._extractedFields, string(utils.PatternMatchTimeStamp))
 	}()
 	parsedTs := utils.ParseTime(g._metaLog, tsstring)
 
@@ -48,14 +48,14 @@ func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 
 func (g *GrokPatternTsLevelMsg) message() GrokPatternExtractor {
 
-	message, ok := g._extractedFields[string(utils.PatternMessage)]
+	message, ok := g._extractedFields[string(utils.PatternMatchKeyMessage)]
 	if !ok {
 		g._parseErrors = append(g._parseErrors, "Can't find a message")
 		g._message = g._metaLog.Message
 		return g._this
 	}
 	defer func() {
-		delete(g._extractedFields, string(utils.PatternMessage))
+		delete(g._extractedFields, string(utils.PatternMatchKeyMessage))
 	}()
 	g._message = message
 	return g._this
@@ -71,10 +71,10 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 		LevelEmoji: model.LogLevelToEmoji(g._metaLog.FallbackLoglevel),
 	}
 
-	level, levelFound := g._extractedFields[string(utils.PatternLevel)]
+	level, levelFound := g._extractedFields[string(utils.PatternMatchKeyLevel)]
 	if levelFound {
 		defer func() {
-			delete(g._extractedFields, string(utils.PatternLevel))
+			delete(g._extractedFields, string(utils.PatternMatchKeyLevel))
 		}()
 		g._logInfo.Level = model.StringToLogLevel(level)
 		g._logInfo.LevelEmoji = model.LogLevelToEmoji(g._logInfo.Level)
@@ -82,4 +82,17 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 
 	return g._this
 
+}
+
+func (g *GrokPatternTsLevelMsg) extract() *model.EcsLogEntry {
+	ecs := g.GrokPatternDefault.extract()
+	// Every step removes the registered keys
+	// Add the not standard keys as labels
+	for k, v := range g._extractedFields {
+		if utils.IsRegisteredKey(k) {
+			ecs.Labels["pattern_"+k] = v
+		}
+	}
+
+	return ecs
 }
