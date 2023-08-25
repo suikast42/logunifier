@@ -1,6 +1,8 @@
 package patterns
 
 import (
+	"errors"
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/model"
@@ -86,7 +88,7 @@ func TestGenericTsPattern(t *testing.T) {
 		ApplicationVersion: "1",
 	}
 	for _, test := range tests {
-		kv, parseError := patternfactory.ParseGrokWithKey(test.patternKey, test.data)
+		kv, parseError := patternfactory.parseGrokWithKey(test.patternKey, test.data)
 		if parseError != nil {
 			t.Errorf("Pos: %d for pattern %s. Parse errror %s", test.pos, test.patternKey, parseError)
 			continue
@@ -258,10 +260,20 @@ func TestPatterns(t *testing.T) {
 				utils.PatternMatchKeyMessage: "Connected to Loki. State is READY",
 			},
 		},
+
+		{
+			//common log format log
+			pos:        12,
+			patternKey: model.MetaLog_Clf,
+			data:       `10.21.0.1 - - [01/Apr/2023:08:33:52 +0000] "GET /v1/acl/token/self HTTP/2.0" 400 44 "-" "-" 79 "nomad@file" "https://10.21.21.41:4646" 7ms`,
+			want: map[utils.PatterMatch]string{
+				utils.PatternMatchTimeStamp: "01/Apr/2023:08:33:52 +0000",
+			},
+		},
 	}
 
 	for _, test := range tests {
-		kv, err := patternfactory.ParseGrok(test.patternKey, test.data)
+		kv, err := patternfactory.parseGrok(test.patternKey, test.data)
 
 		if err != nil {
 			t.Errorf("Pos: %d. No error expexted but got %s", test.pos, err)
@@ -365,4 +377,14 @@ func TestTimeParseTimeZone(t *testing.T) {
 			t.Errorf("Pos %d: Expected Second %d  but got %d", test.pos, test.second, time.Second())
 		}
 	}
+}
+
+func (factory *PatternFactory) parseGrokWithKey(key string, data string) (map[utils.PatterMatch]string, error) {
+	if compiledGrok, found := factory.compilers[key]; found {
+		return utils.ParseAndGetRegisteredKey(compiledGrok, data)
+	}
+	return nil, errors.New(fmt.Sprintf("No compiler found for key [%s]", key))
+}
+func (factory *PatternFactory) parseGrok(key model.MetaLog_PatternKey, data string) (map[utils.PatterMatch]string, error) {
+	return factory.parseGrokWithKey(key.String(), data)
 }

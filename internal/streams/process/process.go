@@ -2,7 +2,6 @@ package process
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/bootstrap"
@@ -16,10 +15,10 @@ import (
 )
 
 type LogProcessor struct {
-	logger            *zerolog.Logger
-	validationChannel <-chan ingress.IngressMsgContext
-	ackTimeout        time.Duration
-	pushSubject       string
+	logger         *zerolog.Logger
+	processChannel <-chan ingress.IngressMsgContext
+	ackTimeout     time.Duration
+	pushSubject    string
 }
 
 var lock = &sync.Mutex{}
@@ -33,10 +32,10 @@ func Start(processChannel <-chan ingress.IngressMsgContext, pushSubject string) 
 		logger := config.Logger()
 
 		instance = &LogProcessor{
-			logger:            &logger,
-			validationChannel: processChannel,
-			ackTimeout:        time.Second * time.Duration(cfg.AckTimeoutS()),
-			pushSubject:       pushSubject,
+			logger:         &logger,
+			processChannel: processChannel,
+			ackTimeout:     time.Second * time.Duration(cfg.AckTimeoutS()),
+			pushSubject:    pushSubject,
 		}
 		go instance.startReceiving()
 	}
@@ -56,14 +55,14 @@ func (eg *LogProcessor) startReceiving() {
 	instance, _ := bootstrap.Intance()
 	for instance == nil {
 		instance, _ = bootstrap.Intance()
-		eg.logger.Info().Msgf("Waiting for boostrap is done")
+		eg.logger.Info().Msg("Waiting for boostrap is done")
 		time.Sleep(time.Second * 1)
 	}
 
 	nc := instance.Connection()
 	for nc == nil {
 		nc = instance.Connection()
-		eg.logger.Info().Msgf("Waiting connection to nats established")
+		eg.logger.Info().Msg("Waiting connection to nats established")
 		time.Sleep(time.Second * 1)
 	}
 
@@ -72,11 +71,11 @@ func (eg *LogProcessor) startReceiving() {
 		eg.logger.Error().Err(err).Msg("Can't create producer for egress stream")
 		os.Exit(1)
 	}
-	eg.logger.Info().Msgf("Start validation channel")
+	eg.logger.Info().Msgf("Start receiving channel")
 	patternFactory := patterns.Instance()
 	for {
 		select {
-		case receivedCtx, ok := <-eg.validationChannel:
+		case receivedCtx, ok := <-eg.processChannel:
 			if !ok {
 				instance = nil
 				eg.logger.Error().Msgf("Nothing received %v %v", receivedCtx, ok)
@@ -90,11 +89,8 @@ func (eg *LogProcessor) startReceiving() {
 
 			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
 			ValidateAndFix(ecsLog, receivedCtx.MetaLog)
-			// Delete the debug info if there is no error occured there
-			if !ecsLog.HasProcessError() {
-				ecsLog.ProcessError = nil
-			}
-			marshal, err := json.Marshal(ecsLog)
+
+			marshal, err := ecsLog.ToJson()
 
 			if err != nil {
 				eg.logger.Error().Err(err).Msgf("Can't unmarshal outgoing message: %v", ecsLog)
@@ -138,7 +134,7 @@ func (eg *LogProcessor) startReceiving() {
 			}(async, receivedCtx, time.Second*2)
 
 		case <-time.After(eg.ackTimeout):
-			eg.logger.Debug().Msgf("Nothing to validate after %v ", eg.ackTimeout)
+			eg.logger.Warn().Msgf("Nothing received after %v ", eg.ackTimeout)
 			continue
 		}
 	}

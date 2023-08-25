@@ -11,14 +11,13 @@ option java_package = "com.github.suikast42.logunifier.model";
 option optimize_for = SPEED;
 package model;
 
-
 // if you update the EcsLogEntry proto then checkout the
 // interface definition patterns.GrokPatternExtractor
 message EcsLogEntry {
   // A unique id that identify the log entry
-  string id = 1;
+  string id = 1[json_name = "id"];
   // The creation time of the log by its' source
-  google.protobuf.Timestamp  timestamp = 2 [json_name = "@timestamp"];
+  google.protobuf.Timestamp    timestamp = 2 [json_name = "@timestamp"];
   // The message of the log
   string message = 3 ;
   repeated string  tags = 4 ;
@@ -69,7 +68,7 @@ message Agent {
   }
 
   Build build = 1;
-  string ephemeral_id = 2;
+  string ephemeral_id = 2  [json_name = "ephemeral_id"];
   string id = 3;
   string name = 4;
   string type = 5;
@@ -98,7 +97,7 @@ message Host {
 
     string domain = 1;
     string email = 2;
-    string full_name = 3;
+    string full_name = 3 [json_name = "full_name"];
     Group group = 4;
     string hash = 5;
     string id = 6;
@@ -151,7 +150,7 @@ message Service {
     string name = 1;
   }
 
-  string ephemeral_id = 1;
+  string ephemeral_id = 1 [json_name = "ephemeral_id"];
   string id = 2;
   string name = 3;
   Node node = 4;
@@ -165,7 +164,7 @@ message Error {
   string code = 1;
   string id = 2;
   string message = 3;
-  string stack_trace = 4;
+  string stack_trace = 4 [json_name = "stack_trace"];
   string type = 5;
 }
 
@@ -204,7 +203,7 @@ message Log {
   File file = 1;
   LogLevel level = 2;
   string logger = 3;
-  string thread_name = 4;
+  string thread_name = 4 [json_name = "thread_name"];
   Origin origin = 5;
   string original = 6;
   Syslog syslog = 7;

@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors"
@@ -62,7 +61,7 @@ func IngressMsgHandler(pushChannel chan<- ingress.IngressMsgContext, metaLogConv
 func EgressMessageHandler(handler connectors.EgressLogHandler) nats.MsgHandler {
 	return func(msg *nats.Msg) {
 		ecs := &model.EcsLogEntry{}
-		err := json.Unmarshal(msg.Data, ecs)
+		err := ecs.FromJson(msg.Data)
 		if err != nil {
 			logger := config.Logger()
 			logger.Error().Err(err).Msgf("Can't deserialize json entry %s", string(msg.Data))

@@ -110,6 +110,6 @@ func NewEcsLogEntry() *EcsLogEntry {
 		Service:      nil,
 		Error:        nil,
 		Log:          &Log{},
-		ProcessError: nil,
+		ProcessError: &ProcessError{},
 	}
 }

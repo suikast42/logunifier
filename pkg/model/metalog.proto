@@ -17,10 +17,16 @@ message MetaLog {
   enum PatternKey{
     Unknown =0;
     Nop =1;
+    // Kv value pairs
     LogFmt =2;
+    // Elastic common schema
     Ecs =3;
+    // Timestamp LogLevel Message
     TsLevelMsg =4;
+    // Envoy log format
     Envoy =5;
+    // Common log format
+    Clf =6;
   }
 
   // Time of the log event shipment.

@@ -48,6 +48,7 @@ var CustomPatterns = map[string]string{
 	"GENERIC_TS":                      "%{TS:timestamp}",
 	model.MetaLog_Envoy.String():      `[",',\[]?%{GENERIC_TS}[",',\]]?[",',\[]?%{NUMBER:thread}[",',\]]?[",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]?%{MULTILINE:message}`,
 	model.MetaLog_TsLevelMsg.String(): `[",',\[]?%{GENERIC_TS}[",',\]]? [",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]? %{MULTILINE:message}`,
+	model.MetaLog_Clf.String():        `%{IPORHOST:client_ip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:http_version}\" %{NUMBER:status_code} %{NUMBER:bytes} \"%{DATA:referrer}\" \"%{DATA:user_agent}\"`,
 }
 
 func ParseAndGetRegisteredKey(compiler *grok.CompiledGrok, log string) (map[PatterMatch]string, error) {
@@ -56,9 +57,9 @@ func ParseAndGetRegisteredKey(compiler *grok.CompiledGrok, log string) (map[Patt
 	parsed := compiler.ParseString(log)
 
 	for k, v := range parsed {
+		//result[patternMatchKeys[k]] = v
 		if IsRegisteredKey(k) {
 			result[patternMatchKeys[k]] = v
-			continue
 		}
 
 	}

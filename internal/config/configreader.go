@@ -17,10 +17,11 @@ func ReadConfigs() {
 	fs := flag.NewFlagSet("logunifer", flag.ContinueOnError)
 
 	var (
-		natsServers            arrayFlags
-		lokiServers            arrayFlags
-		pingLog                = fs.Bool("pingLog", false, "log every second a ping in debug level")
-		ingressSubjectJournalD = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "ingress subject journald logs shipped by vector")
+		natsServers             arrayFlags
+		lokiServers             arrayFlags
+		pingLog                 = fs.Bool("pingLog", false, "log every second a ping in debug level")
+		ingressSubjectJournalD  = fs.String("ingressSubjectJournalD", "ingress.logs.journald", "ingress subject journald logs shipped by vector")
+		ingressSubjectNativeEcs = fs.String("ingressSubjectNativeEcs", "ingress.logs.ecs", "ingress subject native ecs logs shipped directly to ingress")
 		//ingressSubjectDocker   = fs.String("ingressSubjectDocker", "ingress.logs.docker", "ingress subject docker container logs shipped by vector")
 		ingressSubjectTest = fs.String("ingressSubjectTest", "ingress.logs.test", "Nats subscription for test logs")
 		egressSubjectEcs   = fs.String("egressSubjectEcs", "egress.logs.ecs", "Standardized logs output")
@@ -41,6 +42,7 @@ func ReadConfigs() {
 	}
 	builder := newBuilder().
 		withIngressSubjectJournald(ingressSubjectJournalD).
+		withIngressSubjectNativeEcs(ingressSubjectNativeEcs).
 		withIngresSubjectTest(ingressSubjectTest).
 		withPingLog(pingLog)
 	//withIngressSubjectDocker(ingressSubjectDocker)

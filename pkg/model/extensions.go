@@ -3,7 +3,10 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 )
 
 func (ecs *EcsLogEntry) HasProcessError() bool {
@@ -53,6 +56,15 @@ func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
 func (ecs *EcsLogEntry) SetTimeStamp(timestamp *timestamppb.Timestamp) {
 	ecs.Timestamp = timestamp
 }
+
+func (ecs *EcsLogEntry) GetTimeStamp() time.Time {
+	if ecs.Timestamp != nil {
+		return ecs.Timestamp.AsTime()
+	}
+
+	return time.Time{}
+}
+
 func (ecs *EcsLogEntry) AppendParseError(_error string) {
 	if len(_error) == 0 {
 		return
@@ -74,6 +86,9 @@ func (log *MetaLog) AppendParseError(_error string) {
 		log.ProcessError.Reason = log.ProcessError.Reason + ",\n" + _error
 	}
 }
+func (log *MetaLog) HasProcessErrors() bool {
+	return log.ProcessError != nil && log.ProcessError.Reason != ""
+}
 
 // MarshalJSON Json serializes for log level enum
 func (s LogLevel) MarshalJSON() ([]byte, error) {
@@ -92,4 +107,64 @@ func (s *LogLevel) UnmarshalJSON(b []byte) error {
 	}
 	*s = StringToLogLevel(j)
 	return nil
+}
+
+func (s LogLevel) Marshal() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(LogLevelToString(s))
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON Json deserializes for log level enum
+func (s *LogLevel) Unmarshal(b []byte) error {
+	var j string
+	err := json.Unmarshal(b, &j)
+	if err != nil {
+		return err
+	}
+	*s = StringToLogLevel(j)
+	return nil
+}
+
+func (ecs *EcsLogEntry) ToJson() ([]byte, error) {
+	// Use proto json for serialization
+	// the regular json package does not tolerate the json annotations of protobuf
+	protoJson, err := protojson.Marshal(ecs)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return protoJson, nil
+}
+
+func (ecs *EcsLogEntry) FromJson(jsonString []byte) error {
+	// The protojson package does not tollerate the UnmarshalJSON logic of json deserilisation
+	// so that we can't do a log level mapping from uppercased log levels fpr example
+	// The native json package works well with the UnmarshalJSON logic but can't handle custom
+	// timestamp formats.
+	// We can't UnmarshalJSON for proto timestamp because that package is not in our control
+	// So we let do the unmarshal ligic his work do and convert afterward only the timestamp field
+	err := json.Unmarshal(jsonString, ecs)
+	if err != nil {
+		return err
+	}
+
+	m := make(map[string]any)
+	err = json.Unmarshal(jsonString, &m)
+	if err != nil {
+		return err
+	}
+	if value, ok := m["@timestamp"]; ok {
+		parsedTs, err := time.Parse(time.RFC3339Nano, fmt.Sprintf("%v", value))
+		if err != nil {
+			return err
+		}
+		ecs.Timestamp = timestamppb.New(parsedTs)
+	}
+	return nil
+}
+
+func (ecs *EcsLogEntry) FromJsonString(jsonString string) error {
+	return ecs.FromJson([]byte(jsonString))
 }
