@@ -27,4 +27,9 @@ func ValidateAndFix(ecs *model.EcsLogEntry, metalog *model.MetaLog) {
 		ecs.SetPattern("NoPattern")
 	}
 
+	// Delete the debug info if there is no error occured there
+	if !ecs.HasProcessError() {
+		ecs.ProcessError = nil
+	}
+
 }

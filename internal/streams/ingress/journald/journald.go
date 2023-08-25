@@ -74,7 +74,7 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 	//	logger := config.Logger()
 	//	logger.Debug().Msg(string(msg.Data))
 	//}
-	if err != err {
+	if err != nil {
 		//logger := config.Logger()
 		//logger.Err(err).Msgf("Can't unmarshal journald ingress.\n[%s]", string(msg.Data))
 		// The parsing error is shipped to the output
@@ -84,6 +84,8 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 				ApplicationVersion: journald.appVersion(),
 				ApplicationName:    journald.appName(),
 				PatternKey:         journald.patternKey(),
+				FallbackTimestamp:  journald.ts(),
+				FallbackLoglevel:   journald.toLogLevel(),
 				ProcessError: &model.ProcessError{
 					Reason:  err.Error(),
 					RawData: string(msg.Data),

@@ -111,6 +111,17 @@ func add(source map[string]string, new map[string]string) error {
 }
 
 func (factory *PatternFactory) Parse(log *model.MetaLog) *model.EcsLogEntry {
+	if log.HasProcessErrors() {
+		entry := model.NewEcsLogEntry()
+		entry.ProcessError = log.ProcessError
+		entry.SetLogLevel(model.LogLevel_fatal)
+		entry.Timestamp = log.FallbackTimestamp
+		entry.SetPattern(log.PatternKey.String())
+		entry.Message = "Can't parse a MetaLog with process errors. See the ProcessError Raw message for further debugging"
+		entry.Labels = log.Labels
+		entry.Tags = log.Tags
+		return entry
+	}
 	extractor := factory.findPatternFor(log)
 	return ExtractFrom(extractor, log)
 }
@@ -143,9 +154,16 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 				Name: model.MetaLog_Nop,
 			},
 		}
-
+	case model.MetaLog_Ecs:
+		return &GrokPatternEcs{
+			GrokPatternDefault: GrokPatternDefault{
+				GrokPattern: GrokPattern{
+					Name: model.MetaLog_Ecs,
+				},
+			},
+		}
 	default:
-		log.AppendParseError(fmt.Sprintf("The iedtified PatternKey %s by the ingress is not mapped to a pattern extractor", log.PatternKey.String()))
+		log.AppendParseError(fmt.Sprintf("The identified PatternKey %s by the ingress is not mapped to a pattern extractor", log.PatternKey.String()))
 		return &GrokPatternDefault{
 			GrokPattern: GrokPattern{
 				Name: model.MetaLog_Nop,
@@ -153,14 +171,4 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 		}
 	}
 
-}
-
-func (factory *PatternFactory) ParseGrokWithKey(key string, data string) (map[utils.PatterMatch]string, error) {
-	if compiledGrok, found := factory.compilers[key]; found {
-		return utils.ParseAndGetRegisteredKey(compiledGrok, data)
-	}
-	return nil, errors.New(fmt.Sprintf("No compiler found for key [%s]", key))
-}
-func (factory *PatternFactory) ParseGrok(key model.MetaLog_PatternKey, data string) (map[utils.PatterMatch]string, error) {
-	return factory.ParseGrokWithKey(key.String(), data)
 }

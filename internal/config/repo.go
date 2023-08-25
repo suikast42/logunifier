@@ -9,7 +9,8 @@ import (
 
 // region type Config
 type Config struct {
-	ingressNatsJournald string
+	ingressNatsJournald  string
+	ingressNatsNativeEcs string
 	//ingressNatsDocker   string
 	ingresSubjectTest string
 	natsServers       []string
@@ -34,6 +35,10 @@ loglevel: %v,
 
 func (c Config) IngressNatsJournald() string {
 	return c.ingressNatsJournald
+}
+
+func (c Config) IngressNatsNativeEcs() string {
+	return c.ingressNatsNativeEcs
 }
 
 func (c Config) PingLog() bool {
@@ -113,6 +118,11 @@ func (r *ConfigBuilder) withEgressSubjectEcs(egressSubjectEcs *string) *ConfigBu
 
 func (r *ConfigBuilder) withIngressSubjectJournald(ingressNatsJournald *string) *ConfigBuilder {
 	r.cfg.ingressNatsJournald = *ingressNatsJournald
+	return r
+}
+
+func (r *ConfigBuilder) withIngressSubjectNativeEcs(ingressNatsNativeEcs *string) *ConfigBuilder {
+	r.cfg.ingressNatsNativeEcs = *ingressNatsNativeEcs
 	return r
 }
 func (r *ConfigBuilder) withIngresSubjectTest(ingresSubjectTest *string) *ConfigBuilder {

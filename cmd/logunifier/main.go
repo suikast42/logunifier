@@ -7,6 +7,7 @@ import (
 	"github.com/suikast42/logunifier/internal/health"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
+	"github.com/suikast42/logunifier/internal/streams/ingress/ecs"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
@@ -78,9 +79,11 @@ func main() {
 			[]string{
 				cfg.IngressNatsJournald(),
 				cfg.IngresNatsTest(),
+				cfg.IngressNatsNativeEcs(),
 				//cfg.IngressNatsDocker(),
 			}),
 	}
+
 	streamDefinitions[streamNameLogStreamEgress] = bootstrap.NatsStreamConfiguration{
 		StreamConfiguration: bootstrap.StreamConfig(streamNameLogStreamEgress,
 			"Egress stream that contains ecs logs in json format for ship in various sinks",
@@ -90,8 +93,9 @@ func main() {
 	}
 
 	const (
-		ingressConsumerTest     = "ConsumerIngressTest"
-		ingressConsumerJournalD = "ConsumerIngressJournalD"
+		ingressConsumerTest      = "ConsumerIngressTest"
+		ingressConsumerJournalD  = "ConsumerIngressJournalD"
+		ingressConsumerNativeEcs = "ConsumerIngressEcsNative"
 		//ingressConsumerDocker   = "ConsumerIngressDocker"
 		egressLokiShipper  = "ConsumerEgressLokiShipper"
 		egressLokiShipper2 = "ConsumerEgressLokiShipper2"
@@ -120,6 +124,18 @@ func main() {
 		StreamName: streamNameLogStreamIngress,
 		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
 	}
+
+	streamConsumerDefinitions[ingressConsumerNativeEcs] = bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			ingressConsumerNativeEcs,
+			ingressConsumerNativeEcs+"_Group",
+			streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
+			cfg.IngressNatsNativeEcs(),
+		),
+		StreamName: streamNameLogStreamIngress,
+		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &ecs.EcsWrapper{}),
+	}
+
 	//streamConsumerDefinitions[ingressConsumerDocker] = bootstrap.NatsConsumerConfiguration{
 	//	ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 	//		ingressConsumerDocker,

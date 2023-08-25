@@ -125,7 +125,7 @@ func (g *GrokPatternDefault) userInfo() GrokPatternExtractor {
 func (g *GrokPatternDefault) extract() *model.EcsLogEntry {
 
 	ecs := model.NewEcsLogEntry()
-	ecs.Timestamp = g._timeStamp
+	ecs.SetTimeStamp(g._timeStamp)
 	ecs.Log = g._logInfo
 	ecs.Message = g._message
 	ecs.Labels = g._labels
@@ -144,4 +144,8 @@ func (g *GrokPatternDefault) extract() *model.EcsLogEntry {
 		ecs.AppendParseError(strings.Join(g._parseErrors, "\n"))
 	}
 	return ecs
+}
+
+func (g *GrokPatternEcs) hasParseError() bool {
+	return len(g._parseErrors) > 0
 }
