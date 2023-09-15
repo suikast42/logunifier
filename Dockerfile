@@ -1,7 +1,7 @@
 # syntax=docker.io/docker/dockerfile:1.4.3
 #https://docs.docker.com/build/building/multi-stage/
 # Builkit docu https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md
-FROM golang:1.20.2-alpine AS builder
+FROM golang:1.21.1-alpine AS builder
 RUN  apk add git
 WORKDIR /logunifier
 ENV CGO_ENABLED=0
