@@ -567,7 +567,7 @@ func TestNativeEcsSerde(t *testing.T) {
 		ThreadName: "fooThread",
 		Origin: &model.Log_Origin{
 			File: &model.Log_Origin_File{
-				Line: 42,
+				Line: "42",
 				Name: "KannAlles",
 			},
 			Function: "hasiFunc",
@@ -575,12 +575,12 @@ func TestNativeEcsSerde(t *testing.T) {
 		Original: "",
 		Syslog: &model.Log_Syslog{
 			Facility: &model.Log_Syslog_Facility{
-				Code: 0,
+				Code: "0",
 				Name: "Hans",
 			},
-			Priority: 0,
+			Priority: "0",
 			Severity: &model.Log_Syslog_Severity{
-				Code: 0,
+				Code: "0",
 				Name: "HasiSevirity",
 			},
 		},

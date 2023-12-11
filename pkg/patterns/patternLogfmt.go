@@ -5,7 +5,6 @@ import (
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"strconv"
 	"strings"
 )
 
@@ -104,12 +103,9 @@ func (g *GrokPatternLogfmt) logInfo() GrokPatternExtractor {
 		}()
 		split := strings.Split(caller, ":")
 		var log = split[0]
-		var line = int32(-1)
+		var line = "-1"
 		if len(split) == 2 {
-			_line, err := strconv.ParseInt(split[1], 10, 32)
-			if err != nil {
-				line = int32(_line)
-			}
+			line = split[1]
 		}
 		g._logInfo.Origin = &model.Log_Origin{
 			File: &model.Log_Origin_File{

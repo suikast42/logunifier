@@ -159,7 +159,7 @@ func (m *MetaLog) EcsHostInfo() *Host {
 			Name:         "",
 			Os:           nil,
 			Type:         "",
-			Uptime:       0,
+			Uptime:       "0",
 			User:         nil,
 		}
 	}

@@ -114,7 +114,7 @@ message Host {
   string name = 10;
   Os os = 12;
   string type = 13;
-  int64 uptime = 14;
+  string uptime = 14;
   User user = 15;
 }
 
@@ -176,7 +176,7 @@ message Log {
 
   message Origin {
     message File {
-      int32 line = 1;
+      string line = 1;
       string name = 2;
     }
 
@@ -186,17 +186,17 @@ message Log {
 
   message Syslog {
     message Facility {
-      int64 code = 1;
+      string code = 1;
       string name = 2;
     }
 
     message Severity {
-      int64 code = 1;
+      string code = 1;
       string name = 2;
     }
 
     Facility facility = 1;
-    int64 priority = 2;
+    string priority = 2;
     Severity severity = 3;
   }
 
