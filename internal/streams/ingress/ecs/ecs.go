@@ -67,9 +67,9 @@ func extractLabelsParsed(msg *nats.Msg, parsed *EcsWrapper) map[string]string {
 		labels[string(model.StaticLabelHost)] = "NotDefined"
 	}
 	if parsed.Service != nil && parsed.Service.Name != "" {
-		labels[string(model.StaticLabelHost)] = parsed.Service.Name
+		labels[string(model.StaticLabelJob)] = parsed.Service.Name
 	} else {
-		labels[string(model.StaticLabelHost)] = "NotDefined"
+		labels[string(model.StaticLabelJob)] = "NotDefined"
 	}
 	return labels
 }
