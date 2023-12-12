@@ -42,7 +42,7 @@ func (r *EcsWrapper) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 		NatsMsg: msg,
 		MetaLog: &model.MetaLog{
 			Message:    string(msg.Data),
-			Labels:     extractLabels(msg),
+			Labels:     extractLabelsParsed(msg, &entry),
 			PatternKey: model.MetaLog_Ecs,
 			ProcessError: &model.ProcessError{
 				RawData: string(msg.Data),
@@ -55,6 +55,21 @@ func (r *EcsWrapper) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 func extractLabels(msg *nats.Msg) map[string]string {
 	var labels = make(map[string]string)
 	labels[string(model.StaticLabelIngress)] = msg.Subject
+	return labels
+}
 
+func extractLabelsParsed(msg *nats.Msg, parsed *EcsWrapper) map[string]string {
+	var labels = make(map[string]string)
+	labels[string(model.StaticLabelIngress)] = msg.Subject
+	if parsed.Host != nil && parsed.Host.Hostname != "" {
+		labels[string(model.StaticLabelHost)] = parsed.Host.Hostname
+	} else {
+		labels[string(model.StaticLabelHost)] = "NotDefined"
+	}
+	if parsed.Service != nil && parsed.Service.Name != "" {
+		labels[string(model.StaticLabelHost)] = parsed.Service.Name
+	} else {
+		labels[string(model.StaticLabelHost)] = "NotDefined"
+	}
 	return labels
 }
