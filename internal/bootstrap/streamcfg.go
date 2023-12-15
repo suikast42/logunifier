@@ -58,7 +58,7 @@ func IngressMsgHandler(pushChannel chan<- ingress.IngressMsgContext, metaLogConv
 	}
 }
 
-func EgressMessageHandler(handler connectors.EgressLogHandler) nats.MsgHandler {
+func EgressMessageHandler(processChannel chan<- connectors.EgressMsgContext) nats.MsgHandler {
 	return func(msg *nats.Msg) {
 		ecs := &model.EcsLogEntry{}
 		err := ecs.FromJson(msg.Data)
@@ -71,7 +71,10 @@ func EgressMessageHandler(handler connectors.EgressLogHandler) nats.MsgHandler {
 			}
 			return
 		}
-		handler.Handle(msg, ecs)
+		processChannel <- connectors.EgressMsgContext{
+			NatsMsg: msg,
+			Ecs:     ecs,
+		}
 	}
 }
 

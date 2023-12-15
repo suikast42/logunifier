@@ -5,6 +5,11 @@ import (
 	"github.com/suikast42/logunifier/pkg/model"
 )
 
+type EgressMsgContext struct {
+	NatsMsg *nats.Msg
+	Ecs     *model.EcsLogEntry
+}
+
 type EgressLogHandler interface {
 
 	// Handle receives the converted messages from the egress channel and is responsible for

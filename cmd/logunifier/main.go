@@ -5,6 +5,7 @@ import (
 	"github.com/suikast42/logunifier/internal/bootstrap"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/health"
+	"github.com/suikast42/logunifier/internal/streams/connectors"
 	"github.com/suikast42/logunifier/internal/streams/connectors/lokishipper"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/ecs"
@@ -24,6 +25,7 @@ func main() {
 	//fmt.Printf("GRPC_GO_LOG_VERBOSITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")) // 99
 	//fmt.Printf("GRPC_GO_LOG_SEVERITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL"))  // info
 	processChannel := make(chan ingress.IngressMsgContext, 4096)
+	egressChannelLoki := make(chan connectors.EgressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
 	c := make(chan os.Signal)
@@ -58,6 +60,7 @@ func main() {
 		logger.Error().Err(err).Stack().Msg("Can't start process channel")
 		os.Exit(1)
 	}
+
 	//Initialize pattern factory
 	_, err = internalPatterns.Initialize()
 	if err != nil {
@@ -150,8 +153,10 @@ func main() {
 	lokiShipper := &lokishipper.LokiShipper{
 		Logger:        config.Logger(),
 		LokiAddresses: cfg.LokiServers(),
+		AckTimeout:    time.Second * time.Duration(cfg.AckTimeoutS()),
 	}
 	lokiShipper.Connect()
+	lokiShipper.StartReceive(egressChannelLoki)
 
 	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
@@ -161,7 +166,7 @@ func main() {
 			cfg.EgressSubjectEcs(),
 		),
 		StreamName: streamNameLogStreamEgress,
-		MsgHandler: bootstrap.EgressMessageHandler(lokiShipper),
+		MsgHandler: bootstrap.EgressMessageHandler(egressChannelLoki),
 	}
 
 	dialer, err := bootstrap.New(streamDefinitions, streamConsumerDefinitions)

@@ -17,10 +17,12 @@ import (
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/internal/streams/connectors"
 	"github.com/suikast42/logunifier/pkg/model"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -38,6 +40,7 @@ type LokiShipper struct {
 	connected                bool
 	lokiReconnectionInterval time.Duration
 	natsRedeliverInterval    time.Duration
+	AckTimeout               time.Duration
 }
 
 func (loki *LokiShipper) Health(ctx context.Context) error {
@@ -45,6 +48,46 @@ func (loki *LokiShipper) Health(ctx context.Context) error {
 		return errors.New("not connected yet")
 	}
 	return nil
+}
+
+var lock = &sync.Mutex{}
+
+func (loki *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsgContext) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	defer func() {
+		if r := recover(); r != nil {
+			// Log fatal do an os.Exit(1)
+			logger := config.Logger()
+			stack := debug.Stack()
+			logger.Fatal().Msgf("Unexpected error: %+v\n%s", r, string(stack))
+		}
+	}()
+
+	go func() {
+		logger := config.Logger()
+		for {
+			select {
+			case receivedCtx, ok := <-processChannel:
+				if !ok {
+					logger.Error().Msgf("Lokishipper. Nothing received %v %v", receivedCtx, ok)
+					return
+				}
+				err := receivedCtx.NatsMsg.InProgress()
+				if err != nil {
+					logger.Error().Err(err).Msg("Lokishipper. Can't set message InProgress")
+					continue
+				}
+				go loki.Handle(receivedCtx.NatsMsg, receivedCtx.Ecs)
+			case <-time.After(loki.AckTimeout):
+				logger.Warn().Msgf("Lokishipper. Nothing received after %v ", loki.AckTimeout)
+				continue
+
+			}
+		}
+	}()
+
 }
 
 func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
