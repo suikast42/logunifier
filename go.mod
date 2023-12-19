@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/prometheus v0.42.0
 	github.com/rs/zerolog v1.29.1
 	github.com/trivago/grok v1.0.0
-	go.uber.org/automaxprocs v1.5.3
+	go.uber.org/automaxprocs v1.5.1
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 )
@@ -111,3 +111,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+//replace go.uber.org/automaxprocs v1.5.3 => github.com/emadolsky/automaxprocs v1.4.0
