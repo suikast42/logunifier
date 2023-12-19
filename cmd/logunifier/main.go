@@ -13,6 +13,8 @@ import (
 	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
+	// https://levelup.gitconnected.com/know-gomaxprocs-before-deploying-your-go-app-to-kubernetes-7a458fb63af1
+	_ "go.uber.org/automaxprocs"
 	"os"
 	"os/signal"
 	"runtime/debug"
