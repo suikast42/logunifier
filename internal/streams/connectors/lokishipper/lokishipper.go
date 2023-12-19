@@ -1,20 +1,8 @@
 package lokishipper
 
-// The loki client has an issue with the mod version in v2
-// see https://github.com/grafana/loki/issues/2826
-// For upgrading the loki client version go to GitHub and find out the commit id
-// After that execute go get github.com/grafana/loki@9f5c2c845040a49514133a8f2d7addf18c42df62
-// This commit  id above resolves a go module github.com/grafana/loki v1.6.2-0.20230227104037-9f809eda70ba
-// For loki v 2.9.0
-// Furthermore, the weavework/common dependency from loki has a incompatibility with the grpc > 1.45
-// Thus you must patch it with go get github.com/weaveworks/common@e2613bee6b73c78d2038e248e52fcc824dfe02d0
-// Grafana loki model parsing https://github.com/grafana/loki/issues/114
 import (
-	"context"
 	"github.com/grafana/loki/pkg/logproto"
 	"github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
-	lokiLabels "github.com/prometheus/prometheus/model/labels"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors"
@@ -26,6 +14,23 @@ import (
 	"strings"
 	"sync"
 	"time"
+)
+
+// The loki client has an issue with the mod version in v2
+// see https://github.com/grafana/loki/issues/2826
+// For upgrading the loki client version go to GitHub and find out the commit id
+// After that execute
+// 1. go get github.com/grafana/loki@2535f9bedeae5f27abdbfaf0cc1a8e9f91b6c96d
+// 2. go get github.com/grafana/loki/pkg/push@2535f9bedeae5f27abdbfaf0cc1a8e9f91b6c96d
+// This commit  id above resolves a go module github.com/grafana/loki v1.6.2-0.20231211180320-2535f9bedeae
+// For loki v 2.9.3
+// Furthermore, the weavework/common dependency from loki has a incompatibility with the grpc > 1.45
+// Thus you must patch it with go get github.com/weaveworks/common@e2613bee6b73c78d2038e248e52fcc824dfe02d0
+// Grafana loki model parsing https://github.com/grafana/loki/issues/114
+import (
+	"context"
+	"github.com/pkg/errors"
+	lokiLabels "github.com/prometheus/prometheus/model/labels"
 )
 
 type LokiShipper struct {
