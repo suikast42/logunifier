@@ -15,6 +15,7 @@ require (
 	go.uber.org/automaxprocs v1.5.1
 	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.31.0
+
 )
 
 require (
@@ -88,6 +89,7 @@ require (
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/weaveworks/promrus v1.2.0 // indirect
+	github.com/xyproto/jpath v0.6.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.4 // indirect

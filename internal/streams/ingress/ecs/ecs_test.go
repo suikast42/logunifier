@@ -68,12 +68,32 @@ func TestEcsVectorIngress(t *testing.T) {
 	}
 }
 
-func TestNativeEcs(t *testing.T) {
-	log := `{"@timestamp":"2023-06-07T15:08:51.584+02:00","ecs":{"version":"1.3.0"},"log":{"level":"DEBUG","thread_name":"main","logger":"com.boxbay.wms.internal.test.curd.WmsCrudTest","origin":{"file":{"line":"56","name":"StartupInfoLogger.java"},"function":"logStarting"}},"service":{"name":"boxbay-wms-test","ephemeral_id":"cc6a891f-4642-485a-abd0-b13a230376e7"},"organization":{"name":"boxbay"},"host":{"hostname":"WAP130259","name":"WAP130259"},"message":"Running with Spring Boot v2.4.4, Spring v5.3.5"}`
+// With log line as string
+func TestNativeEcs1(t *testing.T) {
+	log := `{"@timestamp":"2024-01-06T00:18:29.089+01:00","ecs":{"version":"1.3.0"},"log":{"level":"DEBUG","thread_name":"main","logger":"com.boxbay.wms.internal.test.curd.WmsCrudTest","origin":{"file":{"line":"56","name":"StartupInfoLogger.java"},"function":"logStarting"}},"service":{"name":"boxbay-wms-test","ephemeral_id":"cc6a891f-4642-485a-abd0-b13a230376e7"},"organization":{"name":"boxbay"},"host":{"hostname":"WAP130259","name":"WAP130259"},"message":"Running with Spring Boot v2.4.4, Spring v5.3.5"}`
 	entry := EcsWrapper{}
 	err := entry.FromJson([]byte(log))
 
 	if err != nil {
 		t.Error(err)
 	}
+	if "2024-01-05 23:18:29.089 +0000 UTC" != entry.Timestamp.AsTime().String() {
+		t.Errorf("TS does not match %s", entry.Timestamp.AsTime().String())
+	}
+}
+
+// With log line as int
+func TestNativeEcs2(t *testing.T) {
+	log := `{"@timestamp":"2024-01-06T00:18:29.089+01:00","ecs":{"version":"1.3.0"},"log":{"level":"DEBUG","thread_name":"scheduling-1","logger":"com.boxbay.emulation.stc.integration.StcEmulationIntegrationCommunication","origin":{"file":{"line":251,"name":"StcEmulationIntegrationCommunication.java"},"function":"handle"}},"service":{"name":"stc-emulation","ephemeral_id":"3622a316-da26-47c5-805c-16a9643819b8"},"organization":{"name":"boxbay"},"host":{"hostname":"WAP153441","name":"WAP153441"},"message":"Position: X: 78794  Y: 199  Z: 0  R1: 100  R2: 3165"}`
+	entry := EcsWrapper{}
+	err := entry.FromJson([]byte(log))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if "2024-01-05 23:18:29.089 +0000 UTC" != entry.Timestamp.AsTime().String() {
+		t.Errorf("TS does not match %s", entry.Timestamp.AsTime().String())
+	}
+
 }
