@@ -41,9 +41,10 @@ func (r *EcsWrapper) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 	return ingress.IngressMsgContext{
 		NatsMsg: msg,
 		MetaLog: &model.MetaLog{
-			Message:    string(msg.Data),
-			Labels:     extractLabelsParsed(msg, &entry),
-			PatternKey: model.MetaLog_Ecs,
+			Message:          string(msg.Data),
+			Labels:           extractLabelsParsed(msg, &entry),
+			PatternKey:       model.MetaLog_Ecs,
+			FallbackLoglevel: model.LogLevel_unknown,
 			ProcessError: &model.ProcessError{
 				RawData: string(msg.Data),
 				Subject: msg.Subject,

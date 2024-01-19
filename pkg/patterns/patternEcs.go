@@ -125,5 +125,9 @@ func (g *GrokPatternEcs) extract() *model.EcsLogEntry {
 	if len(g._parseErrors) > 0 {
 		g._parsedEcs.AppendParseError(strings.Join(g._parseErrors, "\n"))
 	}
+	if g._parsedEcs.Log != nil {
+		g._parsedEcs.Log.LevelEmoji = model.LogLevelToEmoji(g._parsedEcs.Log.Level)
+	}
+
 	return g._parsedEcs
 }
