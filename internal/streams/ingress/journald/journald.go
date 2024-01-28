@@ -87,6 +87,9 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 		// Delegate the message parsing and override some metadata
 		// from journald and nomad context
 		entry := ecs.EcsWrapper{}
+		// The message field contains the native ECS message
+		// So we override the message
+		msg.Data = []byte(journald.Message)
 		msgCtx := entry.ConvertToMetaLog(msg)
 		journald.extractMetadataFromJournald(msg, msgCtx.MetaLog.EcsLogEntry)
 		return msgCtx
@@ -185,6 +188,7 @@ func (r *IngressSubjectJournald) extractServiceMetadata(ecs *model.EcsLogEntry) 
 	ecs.Service.Stack = r.COM_HASHICORP_NOMAD_JOB_NAME
 	ecs.Service.Group = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME
 	ecs.Service.Namespace = r.COM_HASHICORP_NOMAD_NAMESPACE
+	ecs.Service.Version = r.COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION
 	ecs.Service.Name = r.appName()
 }
 

@@ -66,6 +66,7 @@ func TestEcsVectorIngress(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 }
 
 // With log line as string
@@ -77,6 +78,7 @@ func TestNativeEcs1(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	if "2024-01-05 23:18:29.089 +0000 UTC" != entry.Timestamp.AsTime().String() {
 		t.Errorf("TS does not match %s", entry.Timestamp.AsTime().String())
 	}

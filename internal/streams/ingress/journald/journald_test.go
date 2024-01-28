@@ -45,18 +45,14 @@ func TestDockerServiceLog(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_LogFmt.String() {
 		t.Errorf("Expected pattern %s but got %s", model.MetaLog_LogFmt.String(), grok)
-	}
-	if parsed.Log == nil {
-		t.Error("Expected not nil but got nil")
 	}
 
 	if parsed.Log.Level != model.LogLevel_error {
@@ -112,17 +108,14 @@ func TestGrafanaLog(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_LogFmt.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_LogFmt.String(), grok)
-	}
-	if parsed.Log == nil {
-		t.Error("Expected not nil but got nil")
 	}
 
 	if parsed.Log.Level != model.LogLevel_info {
@@ -177,12 +170,11 @@ func TestTraefikInvalidLogFmt(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_LogFmt.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_LogFmt.String(), grok)
@@ -204,13 +196,11 @@ func TestNomadLog(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
 
+	grok := parsed.Log.PatternKey
 	if grok != model.MetaLog_TsLevelMsg.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
 	}
@@ -264,12 +254,11 @@ func TestConsulConnectLog(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_Envoy.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_Envoy.String(), grok)
@@ -324,12 +313,11 @@ func TestInvalidTsLevelMsg(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_TsLevelMsg.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
@@ -362,12 +350,11 @@ func TestLogunifier(t *testing.T) {
 	if parsed == nil {
 		t.Error("Expected not nil but got nil")
 	}
-
-	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsed.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsed.Log.PatternKey
 
 	if grok != model.MetaLog_TsLevelMsg.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_TsLevelMsg.String(), grok)
@@ -425,18 +412,20 @@ func TestEcsOverJournald(t *testing.T) {
 	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldEcs), t)
 
 	if log.HasProcessErrors() {
-		t.Errorf("Metalog with process errors %s", log.EcsLogEntry.ProcessError.String())
+		t.Errorf("Metalog with process errors %s", log.EcsLogEntry.ProcessError.Reason)
+		t.Errorf("Raw data [%s]", log.EcsLogEntry.ProcessError.RawData)
 	}
 	parsedEcs := patternfactory.Parse(log)
+
 	if parsedEcs == nil {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsedEcs.Labels[(log.EcsLogEntry.Log.PatternKey)]
-
-	if !ok {
-		t.Error("Can't find pattern")
+	if parsedEcs.Log == nil {
+		t.Error("Expected not nil but got nil")
 	}
+
+	grok := parsedEcs.Log.PatternKey
 
 	if grok != model.MetaLog_Ecs.String() {
 		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_Ecs.String(), grok)
@@ -457,6 +446,44 @@ func TestEcsOverJournald(t *testing.T) {
 		t.Errorf("Expected a valid ts but got %+v", parsedEcs.GetTimeStamp())
 	}
 
+	if parsedEcs.Container == nil {
+		t.Errorf("Expected Container metadata is nil")
+	}
+
+	if parsedEcs.Container != nil && !strings.HasPrefix(parsedEcs.Container.Name, "grafana") {
+		t.Errorf("Expected Container name starts with grafana but is %s ", parsedEcs.Container.Name)
+	}
+	if parsedEcs.Log.Ingress != "test" {
+		t.Errorf("Expected ingress subject test but is %s", parsedEcs.Log.Ingress)
+	}
+
+	if parsedEcs.Service == nil {
+		t.Errorf("Expected Service metadata is nil")
+	}
+
+	if parsedEcs.Service != nil && parsedEcs.Service.Stack != "observability" {
+		t.Errorf("Expected Service stack is observability but was %s", parsedEcs.Service.Stack)
+	}
+
+	if parsedEcs.Service != nil && parsedEcs.Service.Version != "9.4.3.0" {
+		t.Errorf("Expected Service version is 9.4.3.0 but was %s", parsedEcs.Service.Version)
+	}
+
+	if parsedEcs.Service != nil && parsedEcs.Service.Group != "grafana" {
+		t.Errorf("Expected Service version is grafana but was %s", parsedEcs.Service.Group)
+	}
+
+	if parsedEcs.Host == nil {
+		t.Errorf("Expected Host metadata is nil")
+	}
+
+	if parsedEcs.Host != nil && parsedEcs.Host.Name != "WAP130259" {
+		t.Errorf("Expected Host name is WAP130259 but was %s", parsedEcs.Host.Name)
+	}
+
+	if parsedEcs.Host != nil && parsedEcs.Host.Id != "ceacb99587e34bcc840bc7a7cc0d4453" {
+		t.Errorf("Expected Host is is ceacb99587e34bcc840bc7a7cc0d4453 but was %s", parsedEcs.Host.Id)
+	}
 	//2023-03-30T20:13:52.774125Z
 	time := parsedEcs.GetTimeStamp()
 	year := 2023

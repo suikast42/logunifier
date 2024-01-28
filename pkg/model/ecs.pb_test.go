@@ -27,6 +27,7 @@ func TestEcsAggTags(t *testing.T) {
 
 func TestEcsAggLabels(t *testing.T) {
 	entry := EcsLogEntry{}
+	entry.Labels = map[string]string{}
 	entry.Labels["1"] = "1"
 	entry.Labels["2"] = "2"
 	entry.Labels["3"] = "3"
