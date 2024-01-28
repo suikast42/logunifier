@@ -264,5 +264,11 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	} else {
 		labelsMap["validation_error"] = "false"
 	}
+
+	if ecs.HasExceptionStackStrace() {
+		labelsMap["error_stack"] = "true"
+	} else {
+		labelsMap["error_stack"] = "false"
+	}
 	return labelsMap
 }

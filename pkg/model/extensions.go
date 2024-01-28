@@ -20,6 +20,10 @@ func (ecs *EcsLogEntry) HasValidationError() bool {
 	return ecs.ValidationError != nil && len(ecs.ValidationError.Errors) > 0
 }
 
+func (ecs *EcsLogEntry) HasExceptionStackStrace() bool {
+	return ecs.Error != nil && len(ecs.Error.StackTrace) > 0
+}
+
 func (ecs *EcsLogEntry) IsIngressSet() bool {
 	return ecs.Log != nil && len(ecs.Log.Ingress) > 0
 }
