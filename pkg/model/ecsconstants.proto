@@ -10,6 +10,6 @@ option optimize_for= SPEED;
 // All fields  that defines constants should defined here
 message Constants{
   message Ecs{
-    required string version = 1  [default = "1.0"];
+    required string version = 1  [default = "1.1"];
   }
 }

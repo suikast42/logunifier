@@ -189,12 +189,18 @@ func (loki *LokiShipper) watch() {
 					loki.Logger.Info().Msgf("Connected to Loki. State is %s", state)
 				}
 				loki.connected = true
-			case connectivity.TransientFailure, connectivity.Idle:
+			case connectivity.TransientFailure, connectivity.Idle, connectivity.Connecting:
 				loki.Logger.Info().Msgf("Reconnecting to Loki. State is %s", state)
 				go func() {
 					// Disconnect will trigger a loki.ctx cancel
 					loki.DisConnect()
 					loki.Connect()
+				}()
+			case connectivity.Shutdown:
+				loki.Logger.Info().Msgf("Shutting down to . State is %s", state)
+				go func() {
+					// Disconnect will trigger a loki.ctx cancel
+					loki.DisConnect()
 				}()
 			}
 
@@ -236,48 +242,25 @@ func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string
 // ingress , host, job ,job_type, task, task_group,  job_type , namespace ,  stack , level , used_grok
 func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	labelsMap := make(map[string]string)
-
-	// Ingress index for loki
-	extractLabel(labelsMap, ecs, string(model.StaticLabelIngress))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelHost))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelJob))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelJobType))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelTask))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelTaskGroup))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelNameSpace))
-	extractLabel(labelsMap, ecs, string(model.StaticLabelStack))
-	extractLabel(labelsMap, ecs, string(model.DynamicLabelUsedGrok))
-
-	// The level label is autodetected by grafana log panel
-	// Thus we duplicate this
-	extractLabelWithDefault(labelsMap, ecs, string(model.DynamicLabelLevel), model.LogLevelToString(ecs.Log.Level))
-
-	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerName))
-	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageName))
-	//extractLabelIgnoreWhen(labelsMap, ecs, string(model.ContainerImageRevision))
+	labelsMap["ingress"] = ecs.Log.Ingress
+	labelsMap["org_name"] = ecs.Organization.Name
+	labelsMap["service_name"] = ecs.Service.Name
+	labelsMap["service_type"] = ecs.Service.Type
+	labelsMap["log_level"] = ecs.Log.Level.String()
+	labelsMap["pattern"] = ecs.Log.PatternKey
+	labelsMap["environment"] = ecs.Environment.Name
+	labelsMap["service_stack"] = ecs.Service.Stack
 
 	if ecs.HasProcessError() {
-		labelsMap[string(model.StaticLabelProcessError)] = "true"
+		labelsMap["process_error"] = "true"
 	} else {
-		labelsMap[string(model.StaticLabelProcessError)] = "false"
+		labelsMap["process_error"] = "false"
+	}
+
+	if ecs.HasValidationError() {
+		labelsMap["validation_error"] = "true"
+	} else {
+		labelsMap["validation_error"] = "false"
 	}
 	return labelsMap
-}
-
-func extractLabel(_map map[string]string, ecs *model.EcsLogEntry, key string) {
-	extractLabelWithDefault(_map, ecs, key, "NotDefined")
-}
-
-func extractLabelIgnoreWhen(_map map[string]string, ecs *model.EcsLogEntry, key string) {
-	extractLabelWithDefault(_map, ecs, key, "")
-}
-
-func extractLabelWithDefault(_map map[string]string, ecs *model.EcsLogEntry, key string, _default string) {
-	if val, ok := ecs.Labels[key]; ok {
-		_map[key] = val
-	} else {
-		if len(_default) > 0 {
-			_map[key] = _default
-		}
-	}
 }

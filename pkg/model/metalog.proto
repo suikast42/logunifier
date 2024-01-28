@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/protobuf/timestamp.proto";
 import "pkg/model/ecs.proto";
 
 option go_package = "github.com/suikast42/logunifier/pkg/model";
@@ -15,52 +14,27 @@ package model;
 message MetaLog {
 
   enum PatternKey{
-    Unknown =0;
-    Nop =1;
+    Unknown = 0;
+    Nop = 1;
     // Kv value pairs
-    LogFmt =2;
+    LogFmt = 2;
     // Elastic common schema
-    Ecs =3;
+    Ecs = 3;
     // Timestamp LogLevel Message
-    TsLevelMsg =4;
+    TsLevelMsg = 4;
     // Envoy log format
-    Envoy =5;
+    Envoy = 5;
     // Common log format
-    Clf =6;
+    Clf = 6;
   }
-
-  // Time of the log event shipment.
-  // This ts will considered as log ts if the ts canot exctracted from the message
-  google.protobuf.Timestamp fallbackTimestamp = 1 ;
-
-  // This loglevel will be used if the loglevel can't be extracted from the ingested message
-  LogLevel fallbackLoglevel = 2 ;
-
 
   // a PatternKey for parsing the log content
   // An ingress channel have to decide the which pattern have to be choose
-  PatternKey patternKey = 3;
+  PatternKey patternKey = 1;
 
-  // Unique name of an application
-  string applicationName =4;
-
-  // Version of the running instance of the application
-  string applicationVersion =5;
-  reserved 6 to 10;
-
-  // Labels captured from the log shipper source
-  // This labels will be added to the final logs as log labels.
-  map <string, string> labels = 11 ;
   // The log message
-  string  message = 12;
+  string  rawMessage = 2;
 
-  // tags
-  repeated string tags = 13 ;
-
-  // If the log can't be unmarshalled from the ingress topic
-  // If the log has validation errors
-  // If something goes wrong in pattern matching
-  ProcessError processError = 14;
-
+  EcsLogEntry ecsLogEntry =3;
 
 }

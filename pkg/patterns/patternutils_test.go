@@ -84,8 +84,14 @@ func TestGenericTsPattern(t *testing.T) {
 		},
 	}
 	log := &model.MetaLog{
-		ApplicationName:    "Test",
-		ApplicationVersion: "1",
+		PatternKey: 0,
+		RawMessage: "",
+		EcsLogEntry: &model.EcsLogEntry{
+			Service: &model.Service{
+				Name:    "Foo",
+				Version: "1",
+			},
+		},
 	}
 	for _, test := range tests {
 		kv, parseError := patternfactory.parseGrokWithKey(test.patternKey, test.data)

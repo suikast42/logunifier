@@ -46,7 +46,7 @@ func TestDockerServiceLog(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -112,7 +112,7 @@ func TestGrafanaLog(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -178,7 +178,7 @@ func TestTraefikInvalidLogFmt(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -205,7 +205,7 @@ func TestNomadLog(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -265,7 +265,7 @@ func TestConsulConnectLog(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -325,7 +325,7 @@ func TestInvalidTsLevelMsg(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -343,15 +343,11 @@ func TestInvalidTsLevelMsg(t *testing.T) {
 		t.Error("Expected a message nothing")
 	}
 
-	if parsed.Log.Level != log.FallbackLoglevel {
-		t.Errorf("Expected a %+v level but got %+v", log.FallbackLoglevel, parsed.Log.Level)
+	if parsed.Log.Level == model.LogLevel_not_set {
+		t.Errorf("Expected a %+v level but got %+v", model.LogLevel_not_set, parsed.Log.Level)
 	}
 	if parsed.GetTimeStamp().IsZero() {
 		t.Errorf("Expected a valid ts but got %+v", parsed.GetTimeStamp())
-	}
-
-	if parsed.GetTimeStamp() != log.FallbackTimestamp.AsTime() {
-		t.Errorf("Expected FallbackTimestamp %+v but got %+v", log.FallbackTimestamp.AsTime(), parsed.GetTimeStamp())
 	}
 
 	if parsed.Message != "Invalid message" {
@@ -367,7 +363,7 @@ func TestLogunifier(t *testing.T) {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsed.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsed.Labels[log.EcsLogEntry.Log.PatternKey]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -429,14 +425,14 @@ func TestEcsOverJournald(t *testing.T) {
 	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldEcs), t)
 
 	if log.HasProcessErrors() {
-		t.Errorf("Metalog with process errors %s", log.ProcessError.String())
+		t.Errorf("Metalog with process errors %s", log.EcsLogEntry.ProcessError.String())
 	}
 	parsedEcs := patternfactory.Parse(log)
 	if parsedEcs == nil {
 		t.Error("Expected not nil but got nil")
 	}
 
-	grok, ok := parsedEcs.Labels[(string(model.DynamicLabelUsedGrok))]
+	grok, ok := parsedEcs.Labels[(log.EcsLogEntry.Log.PatternKey)]
 
 	if !ok {
 		t.Error("Can't find pattern")
@@ -503,7 +499,7 @@ func TestEcsOverJournald(t *testing.T) {
 
 func TestNativeEcsFromJson(t *testing.T) {
 
-	parsedEcs := model.NewEcsLogEntry()
+	parsedEcs := model.EcsLogEntry{}
 	err := parsedEcs.FromJson([]byte(testNatviceEcs))
 	if err != nil {
 		t.Error("Can't unmarshal ecs ", err)
@@ -600,7 +596,7 @@ func TestNativeEcsSerde(t *testing.T) {
 		RawData: "{2321}",
 		Subject: "hasi.foo.bongo",
 	}
-	toSerialize := model.NewEcsLogEntry()
+	toSerialize := &model.EcsLogEntry{}
 	toSerialize.SetTimeStamp(timestamppb.New(ts))
 
 	toSerialize.Message = message
@@ -614,7 +610,7 @@ func TestNativeEcsSerde(t *testing.T) {
 		t.Errorf("Can't marshal ecs %s", err)
 	}
 
-	fromJson := model.NewEcsLogEntry()
+	fromJson := &model.EcsLogEntry{}
 	err = fromJson.FromJson(json)
 	if err != nil {
 		t.Errorf("Can't unmarshal ecs %s", err)

@@ -83,7 +83,7 @@ func TestMetaLogFromJournalD(fromJson []byte, message string, t *testing.T) *mod
 		Sub:     nil,
 	})
 	if len(message) > 0 {
-		toMetaLog.MetaLog.Message = message
+		toMetaLog.MetaLog.EcsLogEntry.Message = message
 	}
 
 	return toMetaLog.MetaLog

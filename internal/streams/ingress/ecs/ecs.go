@@ -4,7 +4,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type EcsWrapper struct {
@@ -13,64 +12,44 @@ type EcsWrapper struct {
 
 func (r *EcsWrapper) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
 	entry := EcsWrapper{}
+	result := ingress.IngressMsgContext{
+		NatsMsg: msg,
+		MetaLog: &model.MetaLog{
+			PatternKey: model.MetaLog_Ecs,
+			RawMessage: string(msg.Data),
+		},
+	}
 	err := entry.FromJson(msg.Data)
-
+	r.fillMissing(err, msg, &entry.EcsLogEntry)
+	result.MetaLog.EcsLogEntry = &entry.EcsLogEntry
 	if err != nil {
-		//logger := config.Logger()
-		//logger.Err(err).Msgf("Can't unmarshal journald ingress.\n[%s]", string(msg.Data))
-		// The parsing error is shipped to the output
-		return ingress.IngressMsgContext{
-			NatsMsg: msg,
+		result.MetaLog.EcsLogEntry.ProcessError.Reason = err.Error()
+	}
+	return result
 
-			MetaLog: &model.MetaLog{
-				ApplicationVersion: "",
-				ApplicationName:    "",
-				Labels:             extractLabels(msg),
-				PatternKey:         model.MetaLog_Ecs,
-				FallbackTimestamp:  timestamppb.Now(),
-				FallbackLoglevel:   model.LogLevel_error,
-				ProcessError: &model.ProcessError{
-					Reason:  err.Error(),
-					RawData: string(msg.Data),
-					Subject: msg.Subject,
-				},
-			},
+}
+
+func (r *EcsWrapper) fillMissing(err error, msg *nats.Msg, ecs *model.EcsLogEntry) {
+	if ecs.Timestamp == nil {
+		ecs.Timestamp = ingress.TimestampFromIngestion(msg)
+	}
+	if ecs.Log == nil {
+		ecs.Log = &model.Log{
+			Level: model.LogLevel_not_set,
 		}
 	}
 
-	return ingress.IngressMsgContext{
-		NatsMsg: msg,
-		MetaLog: &model.MetaLog{
-			Message:          string(msg.Data),
-			Labels:           extractLabelsParsed(msg, &entry),
-			PatternKey:       model.MetaLog_Ecs,
-			FallbackLoglevel: model.LogLevel_unknown,
-			ProcessError: &model.ProcessError{
-				RawData: string(msg.Data),
-				Subject: msg.Subject,
-			},
-		},
+	ecs.Log.PatternKey = model.MetaLog_Ecs.String()
+	ecs.Log.LevelEmoji = model.LogLevelToEmoji(ecs.Log.Level)
+	ecs.Log.Ingress = msg.Subject
+	if ecs.Id != "" {
+		ecs.Id = model.UUID()
 	}
-}
-
-func extractLabels(msg *nats.Msg) map[string]string {
-	var labels = make(map[string]string)
-	labels[string(model.StaticLabelIngress)] = msg.Subject
-	return labels
-}
-
-func extractLabelsParsed(msg *nats.Msg, parsed *EcsWrapper) map[string]string {
-	var labels = make(map[string]string)
-	labels[string(model.StaticLabelIngress)] = msg.Subject
-	if parsed.Host != nil && parsed.Host.Hostname != "" {
-		labels[string(model.StaticLabelHost)] = parsed.Host.Hostname
-	} else {
-		labels[string(model.StaticLabelHost)] = "NotDefined"
+	ecs.ProcessError = &model.ProcessError{
+		RawData: string(msg.Data),
+		Subject: msg.Subject,
 	}
-	if parsed.Service != nil && parsed.Service.Name != "" {
-		labels[string(model.StaticLabelJob)] = parsed.Service.Name
-	} else {
-		labels[string(model.StaticLabelJob)] = "NotDefined"
+	if err != nil {
+		ecs.ProcessError.Reason = err.Error()
 	}
-	return labels
 }

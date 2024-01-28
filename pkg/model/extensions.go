@@ -16,36 +16,92 @@ func (ecs *EcsLogEntry) HasProcessError() bool {
 	return ecs.ProcessError != nil && len(ecs.ProcessError.Reason) > 0
 }
 
-func (ecs *EcsLogEntry) IsJobNameSet() bool {
-	return len(ecs.Labels[string(StaticLabelJob)]) > 0
+func (ecs *EcsLogEntry) HasValidationError() bool {
+	return ecs.ValidationError != nil && len(ecs.ValidationError.Errors) > 0
 }
 
-func (ecs *EcsLogEntry) JobName() string {
-	return ecs.Labels[string(StaticLabelJob)]
+func (ecs *EcsLogEntry) IsIngressSet() bool {
+	return ecs.Log != nil && len(ecs.Log.Ingress) > 0
+}
+func (ecs *EcsLogEntry) IsServiceNameSet() bool {
+	return ecs.Service != nil && len(ecs.Service.Name) > 0
 }
 
-func (ecs *EcsLogEntry) SetJobName(jobName string) {
-	ecs.Labels[string(StaticLabelJob)] = jobName
+func (ecs *EcsLogEntry) SetJobName(serviceName string) {
+	if ecs.Service != nil {
+		ecs.Service = &Service{}
+	}
+	ecs.Service.Name = serviceName
 }
 
-func (ecs *EcsLogEntry) IsJobTypeSet() bool {
-	return len(ecs.Labels[string(StaticLabelJobType)]) > 0
+func (ecs *EcsLogEntry) SetIngress(ingress string) {
+	if ecs.Log != nil {
+		ecs.Log = &Log{}
+	}
+	ecs.Log.Ingress = ingress
 }
 
-func (ecs *EcsLogEntry) JobType() string {
-	return ecs.Labels[string(StaticLabelJobType)]
+func (ecs *EcsLogEntry) IsServiceTypeSet() bool {
+	return ecs.Service != nil && len(ecs.Service.Type) > 0
 }
 
-func (ecs *EcsLogEntry) SetJobType(jobType string) {
-	ecs.Labels[string(StaticLabelJobType)] = jobType
+func (ecs *EcsLogEntry) IsLogLevelSet() bool {
+	return ecs.Log != nil && ecs.Log.Level != LogLevel_not_set
+}
+func (ecs *EcsLogEntry) SetJobType(serviceType string) {
+	if ecs.Service != nil {
+		ecs.Service = &Service{}
+	}
+	ecs.Service.Name = serviceType
 }
 
 func (ecs *EcsLogEntry) IsPatternSet() bool {
-	return len(ecs.Labels[string(DynamicLabelUsedGrok)]) > 0
+	return ecs.Log != nil && len(ecs.Log.PatternKey) > 0
+}
+
+func (ecs *EcsLogEntry) IsOrgNameSet() bool {
+	return ecs.Organization != nil && len(ecs.Organization.Name) > 0
+}
+
+func (ecs *EcsLogEntry) IsEnvironmentSet() bool {
+	return ecs.Environment != nil && len(ecs.Environment.Name) > 0
+}
+
+func (ecs *EcsLogEntry) IsStackSet() bool {
+	return ecs.Service != nil && len(ecs.Service.Stack) > 0
+}
+
+func (ecs *EcsLogEntry) IsServiceNameSpaceSet() bool {
+	return ecs.Service != nil && len(ecs.Service.Namespace) > 0
+}
+
+func (ecs *EcsLogEntry) SetServiceNameSpace(namespace string) {
+	if ecs.Service == nil {
+		ecs.Service = &Service{}
+	}
+	ecs.Service.Namespace = namespace
 }
 
 func (ecs *EcsLogEntry) SetPattern(pattern string) {
-	ecs.Labels[string(DynamicLabelUsedGrok)] = pattern
+	if ecs.Log == nil {
+		ecs.Log = &Log{}
+	}
+	ecs.Log.PatternKey = pattern
+}
+
+func (ecs *EcsLogEntry) SetOrgName(orgName string) {
+	if ecs.Organization == nil {
+		ecs.Organization = &Organization{}
+	}
+	ecs.Organization.Name = orgName
+	ecs.Organization.Id = "0"
+}
+
+func (ecs *EcsLogEntry) SetEnvironment(environment string) {
+	if ecs.Environment == nil {
+		ecs.Environment = &Environment{}
+	}
+	ecs.Environment.Name = environment
 }
 
 func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
@@ -79,18 +135,30 @@ func (ecs *EcsLogEntry) AppendParseError(_error string) {
 	}
 }
 
+func (ecs *EcsLogEntry) AppendValidationError(_error string) {
+	if len(_error) == 0 {
+		return
+	}
+	if len(ecs.ValidationError.Errors) == 0 {
+		ecs.ValidationError.Errors = _error
+	} else {
+		ecs.ValidationError.Errors = ecs.ValidationError.Errors + ",\n" + _error
+	}
+
+}
+
 func (log *MetaLog) AppendParseError(_error string) {
 	if len(_error) == 0 {
 		return
 	}
-	if len(log.ProcessError.Reason) == 0 {
-		log.ProcessError.Reason = _error
+	if len(log.EcsLogEntry.ProcessError.Reason) == 0 {
+		log.EcsLogEntry.ProcessError.Reason = _error
 	} else {
-		log.ProcessError.Reason = log.ProcessError.Reason + ",\n" + _error
+		log.EcsLogEntry.ProcessError.Reason = log.EcsLogEntry.ProcessError.Reason + ",\n" + _error
 	}
 }
 func (log *MetaLog) HasProcessErrors() bool {
-	return log.ProcessError != nil && log.ProcessError.Reason != ""
+	return log.EcsLogEntry.ProcessError != nil && log.EcsLogEntry.ProcessError.Reason != ""
 }
 
 // MarshalJSON Json serializes for log level enum
@@ -143,8 +211,8 @@ func (ecs *EcsLogEntry) ToJson() ([]byte, error) {
 
 func (ecs *EcsLogEntry) FromJson(jsonString []byte) error {
 	// TODO: https://github.com/suikast42/logunifier/issues/26
-	// The protojson package does not tollerate the UnmarshalJSON logic of json deserilisation
-	// so that we can't do a log level mapping from uppercased log levels fpr example
+	// The protojson package does not tolerate the UnmarshalJSON logic of json deserialization
+	// so that we can't do a log level mapping from uppercase log levels fpr example
 	// The native json package works well with the UnmarshalJSON logic but can't handle custom
 	// timestamp formats.
 	// We can't UnmarshalJSON for proto timestamp because that package is not in our control

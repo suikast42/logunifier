@@ -35,8 +35,13 @@ message EcsLogEntry {
   ProcessError processError = 15;
   User user = 16;
   Event event = 17;
+  Environment environment = 18;
+  ValidationError validationError = 19;
 }
 
+message Environment {
+  string name =1;
+}
 
 message Event {
   string kind =1;
@@ -58,6 +63,7 @@ message Container {
   string name = 4;
   string runtime = 5;
   google.protobuf.Timestamp  createdAt = 6;
+  repeated string  tags = 7;
 }
 
 // The agent information of the client
@@ -157,6 +163,9 @@ message Service {
   string state = 5;
   string type = 6;
   string version = 7;
+  string stack=8;
+  string group=9;
+  string namespace = 10;
 }
 
 // Log error information
@@ -208,10 +217,13 @@ message Log {
   string original = 6;
   Syslog syslog = 7;
   string levelEmoji = 8;
+  string ingress = 9;
+  string patternKey=10;
 }
 
 enum LogLevel{
   unknown = 0 ;
+  not_set = -1 ;
   trace = 100;
   debug = 200;
   info = 300;
@@ -226,4 +238,9 @@ message ProcessError{
   // String representation of the raw data
   string rawData = 2;
   string subject = 3;
+}
+
+message ValidationError{
+  // List of process errors
+   string errors = 1;
 }

@@ -26,6 +26,7 @@ var logLevelToStringMap = map[LogLevel]string{
 	LogLevel_error:   "error",
 	LogLevel_fatal:   "fatal",
 	LogLevel_unknown: "unknown",
+	LogLevel_not_set: "not_set",
 }
 
 func StringToLogPatternKey(pattern string) MetaLog_PatternKey {
@@ -65,6 +66,7 @@ var stringToLogLevelMap = map[string]LogLevel{
 	"crit":                   LogLevel_fatal,
 	"critical":               LogLevel_fatal,
 	string(LogLevel_unknown): LogLevel_unknown,
+	string(LogLevel_not_set): LogLevel_not_set,
 }
 
 var loglevelToEmoji = map[LogLevel]string{
@@ -73,8 +75,9 @@ var loglevelToEmoji = map[LogLevel]string{
 	LogLevel_info:    "✅",
 	LogLevel_warn:    "⚠",
 	LogLevel_error:   "❌",
-	LogLevel_fatal:   "📛",
+	LogLevel_fatal:   "🚨",
 	LogLevel_unknown: "🤷",
+	LogLevel_not_set: "❓",
 }
 
 func LogLevelToString(level LogLevel) string {
@@ -91,25 +94,4 @@ func LogLevelToEmoji(level LogLevel) string {
 		return loglevelToEmoji[LogLevel_unknown]
 	}
 	return loglevel
-}
-
-func NewEcsLogEntry() *EcsLogEntry {
-
-	return &EcsLogEntry{
-		Id:           UUID(),
-		Timestamp:    nil,
-		Message:      "",
-		Tags:         nil,
-		Labels:       make(map[string]string),
-		Version:      nil,
-		Container:    nil,
-		Agent:        nil,
-		Host:         nil,
-		Trace:        nil,
-		Organization: nil,
-		Service:      nil,
-		Error:        nil,
-		Log:          &Log{},
-		ProcessError: &ProcessError{},
-	}
 }

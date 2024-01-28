@@ -99,19 +99,23 @@ var StandardTimeFormats = []string{
 var tsFormatCahce = make(map[string]string)
 
 func cachedLayoutForLog(log *model.MetaLog) (string, bool) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	ts, found := tsFormatCahce[cahceKey]
+	ts, found := tsFormatCahce[cacheKeyForLog(log)]
 	return ts, found
 }
 
 func cacheLayoutForLog(log *model.MetaLog, ts string) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	tsFormatCahce[cahceKey] = ts
+	tsFormatCahce[cacheKeyForLog(log)] = ts
 }
 
 func deleteCachedLayoutForLog(log *model.MetaLog) {
-	cahceKey := log.ApplicationName + "@" + log.ApplicationVersion
-	delete(tsFormatCahce, cahceKey)
+	delete(tsFormatCahce, cacheKeyForLog(log))
+}
+
+func cacheKeyForLog(log *model.MetaLog) string {
+	if log.EcsLogEntry != nil && log.EcsLogEntry.Service != nil {
+		return log.EcsLogEntry.Service.Name + "@" + log.EcsLogEntry.Service.Version
+	}
+	return "NoService@NoVersion"
 }
 
 // ParseTimeUncached with all standardTimeFormats and return the first match

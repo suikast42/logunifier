@@ -112,15 +112,13 @@ func add(source map[string]string, new map[string]string) error {
 
 func (factory *PatternFactory) Parse(log *model.MetaLog) *model.EcsLogEntry {
 	if log.HasProcessErrors() {
-		entry := model.NewEcsLogEntry()
-		entry.ProcessError = log.ProcessError
-		entry.SetLogLevel(model.LogLevel_fatal)
-		entry.Timestamp = log.FallbackTimestamp
-		entry.SetPattern(log.PatternKey.String())
-		entry.Message = "Can't parse a MetaLog with process errors. See the ProcessError Raw message for further debugging"
-		entry.Labels = log.Labels
-		entry.Tags = log.Tags
-		return entry
+		log.EcsLogEntry.Message = "Can't parse a MetaLog with process errors. See the ProcessError Raw message for further debugging"
+		log.EcsLogEntry.SetLogLevel(model.LogLevel_fatal)
+		return log.EcsLogEntry
+	}
+	// Native Ecs.
+	if log.PatternKey == model.MetaLog_Ecs {
+		return log.EcsLogEntry
 	}
 	extractor := factory.findPatternFor(log)
 	return ExtractFrom(extractor, log)
@@ -152,14 +150,6 @@ func (factory *PatternFactory) findPatternFor(log *model.MetaLog) GrokPatternExt
 		return &GrokPatternDefault{
 			GrokPattern: GrokPattern{
 				Name: model.MetaLog_Nop,
-			},
-		}
-	case model.MetaLog_Ecs:
-		return &GrokPatternEcs{
-			GrokPatternDefault: GrokPatternDefault{
-				GrokPattern: GrokPattern{
-					Name: model.MetaLog_Ecs,
-				},
 			},
 		}
 	default:

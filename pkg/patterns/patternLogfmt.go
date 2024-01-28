@@ -19,7 +19,7 @@ func (g *GrokPatternLogfmt) from(log *model.MetaLog) GrokPatternExtractor {
 	g._metaLog = log
 	g._this = g
 	g._logfmtKv = map[string]string{}
-	logMessage, err := utils.DecodeLogFmt(log.Message)
+	logMessage, err := utils.DecodeLogFmt(g._metaLog.RawMessage)
 	if err != nil {
 		g._parseErrors = append(g._parseErrors, err.Error())
 		//return g._this
@@ -49,7 +49,7 @@ func (g *GrokPatternLogfmt) timeStamp() GrokPatternExtractor {
 		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))
 		return g._this
 	}
-	g._timeStamp = timestamppb.New(parsedTs)
+	g._metaLog.EcsLogEntry.Timestamp = timestamppb.New(parsedTs)
 
 	return g._this
 }
@@ -63,7 +63,7 @@ func (g *GrokPatternLogfmt) message() GrokPatternExtractor {
 	defer func() {
 		delete(g._logfmtKv, string(utils.LogfmtKeyMessage))
 	}()
-	g._message = message
+	g._metaLog.EcsLogEntry.Message = message
 	return g._this
 }
 
@@ -80,7 +80,7 @@ func (g *GrokPatternLogfmt) errorInfo() GrokPatternExtractor {
 			StackTrace: "",
 			Type:       "",
 		}
-		g._errorInfo = &err
+		g._metaLog.EcsLogEntry.Error = &err
 	}
 
 	return g._this
@@ -88,15 +88,7 @@ func (g *GrokPatternLogfmt) errorInfo() GrokPatternExtractor {
 
 func (g *GrokPatternLogfmt) logInfo() GrokPatternExtractor {
 	caller, callerFound := g._logfmtKv[string(utils.LogfmtKeyCaller)]
-	g._logInfo = &model.Log{
-		File:       nil,
-		Level:      g._metaLog.FallbackLoglevel,
-		Logger:     "",
-		ThreadName: "",
-		Original:   "",
-		Syslog:     nil,
-		LevelEmoji: model.LogLevelToEmoji(g._metaLog.FallbackLoglevel),
-	}
+
 	if callerFound {
 		defer func() {
 			delete(g._logfmtKv, string(utils.LogfmtKeyCaller))
@@ -107,7 +99,7 @@ func (g *GrokPatternLogfmt) logInfo() GrokPatternExtractor {
 		if len(split) == 2 {
 			line = split[1]
 		}
-		g._logInfo.Origin = &model.Log_Origin{
+		g._metaLog.EcsLogEntry.Log.Origin = &model.Log_Origin{
 			File: &model.Log_Origin_File{
 				Line: line,
 				Name: log,
@@ -121,8 +113,8 @@ func (g *GrokPatternLogfmt) logInfo() GrokPatternExtractor {
 		defer func() {
 			delete(g._logfmtKv, string(utils.LogfmtKeyLevel))
 		}()
-		g._logInfo.Level = model.StringToLogLevel(level)
-		g._logInfo.LevelEmoji = model.LogLevelToEmoji(g._logInfo.Level)
+		g._metaLog.EcsLogEntry.Log.Level = model.StringToLogLevel(level)
+		g._metaLog.EcsLogEntry.Log.LevelEmoji = model.LogLevelToEmoji(g._metaLog.EcsLogEntry.Log.Level)
 	}
 	return g._this
 
@@ -133,7 +125,7 @@ func (g *GrokPatternLogfmt) userInfo() GrokPatternExtractor {
 		defer func() {
 			delete(g._logfmtKv, string(utils.LogfmtKeyUser))
 		}()
-		g._userInfo = &model.User{Name: user}
+		g._metaLog.EcsLogEntry.User = &model.User{Name: user}
 	}
 
 	return g._this
@@ -145,7 +137,7 @@ func (g *GrokPatternLogfmt) eventInfo() GrokPatternExtractor {
 		defer func() {
 			delete(g._logfmtKv, string(utils.LogfmtKeyEvent))
 		}()
-		g._eventInfo = &model.Event{Kind: kind}
+		g._metaLog.EcsLogEntry.Event = &model.Event{Kind: kind}
 	}
 	return g._this
 }
@@ -158,7 +150,7 @@ func (g *GrokPatternLogfmt) tracingInfo() GrokPatternExtractor {
 			delete(g._logfmtKv, string(utils.LogfmtKeyTraceID))
 			delete(g._logfmtKv, string(utils.LogfmtKeySpanID))
 		}()
-		g._traceInfo = &model.Tracing{
+		g._metaLog.EcsLogEntry.Trace = &model.Tracing{
 			Span:        &model.Tracing_Span{Id: spanid},
 			Trace:       &model.Tracing_Trace{Id: traceid},
 			Transaction: nil,

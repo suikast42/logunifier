@@ -22,31 +22,27 @@ func (r *TestEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgCon
 	}
 	logger.Debug().Msgf("Counter %d. Message %s", r.testCounter, string(msg.Data))
 
-	return ingress.IngressMsgContext{
+	result := ingress.IngressMsgContext{
 		NatsMsg: msg,
 		MetaLog: &model.MetaLog{
-			FallbackTimestamp:  timestamppb.New(ts),
-			FallbackLoglevel:   model.LogLevel_unknown,
-			ApplicationName:    "NoName",
-			ApplicationVersion: "NoVersion",
-			PatternKey:         model.MetaLog_Nop,
-			Labels:             extractLabels(msg),
-			Message:            string(msg.Data),
-			Tags:               nil,
-			ProcessError: &model.ProcessError{
-				RawData: string(msg.Data),
-				Subject: msg.Subject,
+			PatternKey: model.MetaLog_Ecs,
+			RawMessage: string(msg.Data),
+			EcsLogEntry: &model.EcsLogEntry{
+				Timestamp: timestamppb.New(ts),
+				Message:   string(msg.Data),
 			},
 		},
 	}
+	r.extractServiceMetadata(result.MetaLog.EcsLogEntry)
+	return result
 
 }
-func extractLabels(msg *nats.Msg) map[string]string {
-	var labels = make(map[string]string)
-	labels[string(model.StaticLabelIngress)] = msg.Subject
-	labels[string(model.StaticLabelJob)] = "test"
-	labels[string(model.StaticLabelJobType)] = "test"
-	labels[string(model.StaticLabelTask)] = "task"
-
-	return labels
+func (r *TestEcsConverter) extractServiceMetadata(ecs *model.EcsLogEntry) {
+	if ecs.Service == nil {
+		ecs.Service = &model.Service{}
+	}
+	ecs.Service.Stack = "Test"
+	ecs.Service.Group = "Test"
+	ecs.Service.Namespace = "Test"
+	ecs.Service.Name = "Test"
 }

@@ -18,10 +18,10 @@ func (g *GrokPatternTsLevelMsg) from(log *model.MetaLog) GrokPatternExtractor {
 	g._this = g
 	g._metaLog = log
 	if compilerFor == nil {
-		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't a pattern for key %s", g.GrokPatternDefault.Name))
+		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find a pattern for key %s", g.GrokPatternDefault.Name))
 		return g._this
 	}
-	g._extractedFields = compilerFor.ParseString(log.Message)
+	g._extractedFields = compilerFor.ParseString(log.RawMessage)
 	return g._this
 }
 
@@ -29,7 +29,7 @@ func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 	tsstring, ok := g._extractedFields[string(utils.PatternMatchTimeStamp)]
 	if !ok {
 		g._parseErrors = append(g._parseErrors, "Can't find timestamp")
-		g._timeStamp = g._metaLog.FallbackTimestamp
+
 		return g._this
 	}
 	defer func() {
@@ -41,8 +41,7 @@ func (g *GrokPatternTsLevelMsg) timeStamp() GrokPatternExtractor {
 		g._parseErrors = append(g._parseErrors, fmt.Sprintf("Can't find timestamp for %s", tsstring))
 		return g._this
 	}
-	g._timeStamp = timestamppb.New(parsedTs)
-
+	g._metaLog.EcsLogEntry.Timestamp = timestamppb.New(parsedTs)
 	return g._this
 }
 
@@ -51,33 +50,24 @@ func (g *GrokPatternTsLevelMsg) message() GrokPatternExtractor {
 	message, ok := g._extractedFields[string(utils.PatternMatchKeyMessage)]
 	if !ok {
 		g._parseErrors = append(g._parseErrors, "Can't find a message")
-		g._message = g._metaLog.Message
+		g._metaLog.EcsLogEntry.Message = g._metaLog.RawMessage
 		return g._this
 	}
 	defer func() {
 		delete(g._extractedFields, string(utils.PatternMatchKeyMessage))
 	}()
-	g._message = message
+	g._metaLog.EcsLogEntry.Message = message
 	return g._this
 }
 func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
-	g._logInfo = &model.Log{
-		File:       nil,
-		Level:      g._metaLog.FallbackLoglevel,
-		Logger:     "",
-		ThreadName: "",
-		Original:   "",
-		Syslog:     nil,
-		LevelEmoji: model.LogLevelToEmoji(g._metaLog.FallbackLoglevel),
-	}
 
 	level, levelFound := g._extractedFields[string(utils.PatternMatchKeyLevel)]
 	if levelFound {
 		defer func() {
 			delete(g._extractedFields, string(utils.PatternMatchKeyLevel))
 		}()
-		g._logInfo.Level = model.StringToLogLevel(level)
-		g._logInfo.LevelEmoji = model.LogLevelToEmoji(g._logInfo.Level)
+		g._metaLog.EcsLogEntry.Log.Level = model.StringToLogLevel(level)
+		g._metaLog.EcsLogEntry.Log.LevelEmoji = model.LogLevelToEmoji(g._metaLog.EcsLogEntry.Log.Level)
 	}
 
 	return g._this

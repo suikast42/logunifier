@@ -2,8 +2,11 @@ package ingress
 
 import (
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog/log"
 	"github.com/suikast42/logunifier/pkg/model"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"strings"
+	"time"
 )
 
 type MetaLogConverter interface {
@@ -21,11 +24,6 @@ type IngressMsgContext struct {
 
 // LabelStatic. Labels can be emmited during ingress phase
 
-var JobTypes = []JobType{
-	JobTypeNomadJob,
-	JobTypeContainer,
-}
-
 type JobType string
 
 const (
@@ -34,6 +32,14 @@ const (
 	JobTypeDaemon    JobType = "daemon"
 )
 
+func TimestampFromIngestion(msg *nats.Msg) *timestamppb.Timestamp {
+	metadata, err := msg.Metadata()
+	if err != nil {
+		log.Error().Err(err).Msg("Can't extract timestamp from message metadata. Use ts.now() instead")
+		return timestamppb.New(time.Now())
+	}
+	return timestamppb.New(metadata.Timestamp)
+}
 func HeaderToMap(header nats.Header) map[string]string {
 	m := make(map[string]string)
 	for k, v := range header {

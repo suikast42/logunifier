@@ -5,6 +5,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
+	"github.com/suikast42/logunifier/internal/streams/ingress/ecs"
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -78,74 +79,123 @@ func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.Ingres
 		//logger := config.Logger()
 		//logger.Err(err).Msgf("Can't unmarshal journald ingress.\n[%s]", string(msg.Data))
 		// The parsing error is shipped to the output
-		return ingress.IngressMsgContext{
-			NatsMsg: msg,
-			MetaLog: &model.MetaLog{
-				ApplicationVersion: journald.appVersion(),
-				ApplicationName:    journald.appName(),
-				PatternKey:         journald.patternKey(),
-				FallbackTimestamp:  journald.ts(),
-				FallbackLoglevel:   journald.toLogLevel(),
+		return journald.toMetaLog(msg, err)
+	}
+
+	if journald.patternKey() == model.MetaLog_Ecs {
+		// We have a native ecs message
+		// Delegate the message parsing and override some metadata
+		// from journald and nomad context
+		entry := ecs.EcsWrapper{}
+		msgCtx := entry.ConvertToMetaLog(msg)
+		journald.extractMetadataFromJournald(msg, msgCtx.MetaLog.EcsLogEntry)
+		return msgCtx
+
+	}
+
+	// No error and no native ecs log. Parse over pattern factory
+	return journald.toMetaLog(msg, err)
+}
+
+func (r *IngressSubjectJournald) toMetaLog(msg *nats.Msg, err error) ingress.IngressMsgContext {
+	var result = ingress.IngressMsgContext{
+		NatsMsg: msg,
+		MetaLog: &model.MetaLog{
+			PatternKey: r.patternKey(),
+			RawMessage: r.message(),
+			EcsLogEntry: &model.EcsLogEntry{
+				Labels: make(map[string]string),
+				// Define a fallback timestamp
+				Timestamp: r.ts(),
+				Log: &model.Log{
+					// Define a fallback Loglevel
+					Level:      r.toLogLevel(),
+					LevelEmoji: model.LogLevelToEmoji(r.toLogLevel()),
+					PatternKey: r.patternKey().String(),
+				},
+				Service: &model.Service{
+					Node: &model.Service_Node{
+						Name: r.nodeName(),
+					},
+					Name:    r.appName(),
+					Version: r.appVersion(),
+					Type:    string(r.jobType()),
+				},
 				ProcessError: &model.ProcessError{
-					Reason:  err.Error(),
 					RawData: string(msg.Data),
 					Subject: msg.Subject,
 				},
 			},
-		}
-	}
-
-	return ingress.IngressMsgContext{
-		NatsMsg: msg,
-		MetaLog: &model.MetaLog{
-			ApplicationVersion: journald.appVersion(),
-			ApplicationName:    journald.appName(),
-			PatternKey:         journald.patternKey(),
-			FallbackTimestamp:  journald.ts(),
-			FallbackLoglevel:   journald.toLogLevel(),
-			Labels:             journald.extractLabels(msg),
-			Tags:               journald.tags(),
-			Message:            journald.message(),
-			ProcessError: &model.ProcessError{
-				RawData: string(msg.Data),
-				Subject: msg.Subject,
-			},
 		},
 	}
+	if err != nil {
+		result.MetaLog.EcsLogEntry.ProcessError.Reason = err.Error()
+	}
+	r.extractMetadataFromJournald(msg, result.MetaLog.EcsLogEntry)
+	return result
 }
 
-func (r *IngressSubjectJournald) extractLabels(msg *nats.Msg) map[string]string {
-	var labels = make(map[string]string)
-	labels[string(model.StaticLabelIngress)] = msg.Subject
-	labels[string(model.StaticLabelJob)] = r.jobName()
-	labels[string(model.StaticLabelJobType)] = string(r.jobType())
-	if len(r.COM_HASHICORP_NOMAD_NAMESPACE) > 0 {
-		labels[string(model.StaticLabelNameSpace)] = r.COM_HASHICORP_NOMAD_NAMESPACE
+func (r *IngressSubjectJournald) extractMetadataFromJournald(msg *nats.Msg, ecs *model.EcsLogEntry) {
+	if ecs.Id != "" {
+		ecs.Id = model.UUID()
 	}
-	if len(r.COM_HASHICORP_NOMAD_TASK_NAME) > 0 {
-		labels[string(model.StaticLabelTask)] = r.COM_HASHICORP_NOMAD_TASK_NAME
-	}
+	r.extractContainerLabels(ecs)
+	r.extractLogMetadata(msg, ecs)
+	r.extractServiceMetadata(ecs)
+	r.extractHostMetadata(ecs)
 
-	if len(r.COM_HASHICORP_NOMAD_JOB_NAME) > 0 {
-		labels[string(model.StaticLabelStack)] = r.COM_HASHICORP_NOMAD_JOB_NAME
-	}
-	if len(r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME) > 0 {
-		labels[string(model.StaticLabelTaskGroup)] = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME
-	}
+}
 
+func (r *IngressSubjectJournald) extractContainerLabels(ecs *model.EcsLogEntry) {
 	if len(r.CONTAINER_NAME) > 0 {
-		labels[string(model.ContainerID)] = r.CONTAINER_ID
-		labels[string(model.ContainerIDFull)] = r.CONTAINER_ID_FULL
-		labels[string(model.ContainerName)] = r.CONTAINER_NAME
-		labels[string(model.ContainerImageName)] = r.IMAGE_NAME
-		labels[string(model.ContainerImageRevision)] = r.ORG_OPENCONTAINERS_IMAGE_REVISION
-		labels[string(model.ContainerImageSource)] = r.ORG_OPENCONTAINERS_IMAGE_SOURCE
-		labels[string(model.ContainerImageTitle)] = r.ORG_OPENCONTAINERS_IMAGE_TITLE
+		if ecs.Container == nil {
+			ecs.Container = &model.Container{}
+		}
+		containerLabels := make(map[string]string)
+		containerLabels["CONTAINER_ID_FULL"] = r.CONTAINER_ID_FULL
+		containerLabels["ORG_OPENCONTAINERS_IMAGE_REVISION"] = r.ORG_OPENCONTAINERS_IMAGE_REVISION
+		containerLabels["ORG_OPENCONTAINERS_IMAGE_SOURCE"] = r.ORG_OPENCONTAINERS_IMAGE_SOURCE
+		containerLabels["ORG_OPENCONTAINERS_IMAGE_TITLE"] = r.ORG_OPENCONTAINERS_IMAGE_TITLE
+		ecs.Container = &model.Container{
+			Id: r.CONTAINER_ID,
+			Image: &model.Container_Image{
+				Name: r.IMAGE_NAME,
+				Tag:  []string{r.ORG_OPENCONTAINERS_IMAGE_REVISION},
+			},
+			Labels:    containerLabels,
+			Name:      r.CONTAINER_NAME,
+			Tags:      r.tags(),
+			Runtime:   "",
+			CreatedAt: nil,
+		}
 	}
-	labels[string(model.StaticLabelHost)] = r.Host
-	labels[string(model.StaticLabelHostId)] = r.MACHINEID
-	return labels
 }
+
+func (r *IngressSubjectJournald) extractLogMetadata(msg *nats.Msg, ecs *model.EcsLogEntry) {
+	if ecs.Log == nil {
+		ecs.Log = &model.Log{}
+	}
+	ecs.Log.Ingress = msg.Subject
+}
+
+func (r *IngressSubjectJournald) extractServiceMetadata(ecs *model.EcsLogEntry) {
+	if ecs.Service == nil {
+		ecs.Service = &model.Service{}
+	}
+	ecs.Service.Stack = r.COM_HASHICORP_NOMAD_JOB_NAME
+	ecs.Service.Group = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME
+	ecs.Service.Namespace = r.COM_HASHICORP_NOMAD_NAMESPACE
+	ecs.Service.Name = r.appName()
+}
+
+func (r *IngressSubjectJournald) extractHostMetadata(ecs *model.EcsLogEntry) {
+	if ecs.Host == nil {
+		ecs.Host = &model.Host{}
+	}
+	ecs.Host.Hostname = r.Host
+	ecs.Host.Id = r.MACHINEID
+}
+
 func (r *IngressSubjectJournald) ts() *timestamppb.Timestamp {
 	ts, err := strconv.ParseInt(r.REALTIMETIMESTAMP, 10, 64)
 	if err != nil {
@@ -162,7 +212,7 @@ func (r *IngressSubjectJournald) toLogLevel() model.LogLevel {
 
 	jobType := r.jobType()
 	if jobType == ingress.JobTypeNomadJob {
-		return model.LogLevel_unknown
+		return model.LogLevel_not_set
 	}
 	if len(r.PRIORITY) == 0 {
 		return model.LogLevel_unknown
@@ -180,8 +230,15 @@ func (r *IngressSubjectJournald) toLogLevel() model.LogLevel {
 		return model.LogLevel_debug
 
 	default:
-		return model.LogLevel_unknown
+		return model.LogLevel_not_set
 	}
+}
+
+func (r *IngressSubjectJournald) nodeName() string {
+	return r.Host
+}
+func (r *IngressSubjectJournald) nodeNameId() string {
+	return r.MACHINEID
 }
 
 func (r *IngressSubjectJournald) jobName() string {
