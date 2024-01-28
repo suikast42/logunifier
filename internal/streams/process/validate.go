@@ -55,6 +55,11 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 		ecs.AppendValidationError("No namespace set")
 		ecs.SetServiceNameSpace("NoNameSpace")
 	}
+
+	if !ecs.IsHostNameSet() {
+		ecs.AppendValidationError("No host name set")
+		ecs.SetHostName("NoHost")
+	}
 	// Delete the debug info if there is no error occured there
 	if !ecs.HasProcessError() {
 		ecs.ProcessError = nil

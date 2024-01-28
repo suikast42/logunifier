@@ -82,6 +82,17 @@ func (ecs *EcsLogEntry) SetServiceNameSpace(namespace string) {
 	ecs.Service.Namespace = namespace
 }
 
+func (ecs *EcsLogEntry) IsHostNameSet() bool {
+	return ecs.Host != nil && len(ecs.Host.Name) > 0
+}
+
+func (ecs *EcsLogEntry) SetHostName(hostName string) {
+	if ecs.Host == nil {
+		ecs.Host = &Host{}
+	}
+	ecs.Host.Name = hostName
+}
+
 func (ecs *EcsLogEntry) SetPattern(pattern string) {
 	if ecs.Log == nil {
 		ecs.Log = &Log{}

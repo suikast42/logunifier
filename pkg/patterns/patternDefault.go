@@ -71,7 +71,8 @@ func (g *GrokPatternDefault) eventInfo() GrokPatternExtractor {
 }
 
 func (g *GrokPatternDefault) logInfo() GrokPatternExtractor {
-	//We do not expect a special log info in the default log pattern
+	//We don't know the log level
+	g._metaLog.EcsLogEntry.SetLogLevel(model.LogLevel_unknown)
 	return g._this
 }
 

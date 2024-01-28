@@ -66,8 +66,7 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 		defer func() {
 			delete(g._extractedFields, string(utils.PatternMatchKeyLevel))
 		}()
-		g._metaLog.EcsLogEntry.Log.Level = model.StringToLogLevel(level)
-		g._metaLog.EcsLogEntry.Log.LevelEmoji = model.LogLevelToEmoji(g._metaLog.EcsLogEntry.Log.Level)
+		g._metaLog.EcsLogEntry.SetLogLevel(model.StringToLogLevel(level))
 	}
 
 	return g._this

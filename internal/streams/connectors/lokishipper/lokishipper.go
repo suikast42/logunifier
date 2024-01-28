@@ -239,17 +239,19 @@ func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string
 }
 
 // toLokiLabels extract loki index labels from ecs log labels
-// ingress , host, job ,job_type, task, task_group,  job_type , namespace ,  stack , level , used_grok
+// ingress , host, org_name ,environment,service_stack, service_name, service_type,  service_type , service_namespace , log_level , pattern
 func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	labelsMap := make(map[string]string)
 	labelsMap["ingress"] = ecs.Log.Ingress
+	labelsMap["host"] = ecs.Host.Name
 	labelsMap["org_name"] = ecs.Organization.Name
-	labelsMap["service_name"] = ecs.Service.Name
-	labelsMap["service_type"] = ecs.Service.Type
-	labelsMap["log_level"] = ecs.Log.Level.String()
-	labelsMap["pattern"] = ecs.Log.PatternKey
 	labelsMap["environment"] = ecs.Environment.Name
 	labelsMap["service_stack"] = ecs.Service.Stack
+	labelsMap["service_name"] = ecs.Service.Name
+	labelsMap["service_type"] = ecs.Service.Type
+	labelsMap["service_namespace"] = ecs.Service.Namespace
+	labelsMap["log_level"] = ecs.Log.Level.String()
+	labelsMap["pattern"] = ecs.Log.PatternKey
 
 	if ecs.HasProcessError() {
 		labelsMap["process_error"] = "true"
