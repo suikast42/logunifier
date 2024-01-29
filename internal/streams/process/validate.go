@@ -26,7 +26,7 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 		ecs.SetJobType("Empty")
 	}
 
-	if ecs.IsLogLevelSet() {
+	if !ecs.IsLogLevelSet() {
 		ecs.AppendValidationError("Log level not found")
 		ecs.SetLogLevel(model.LogLevel_not_set)
 	}

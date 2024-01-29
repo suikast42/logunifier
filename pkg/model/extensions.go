@@ -93,7 +93,7 @@ func (ecs *EcsLogEntry) SetStack(stackname string) {
 }
 
 func (ecs *EcsLogEntry) IsHostNameSet() bool {
-	return ecs.Host != nil && len(ecs.Host.Name) > 0
+	return ecs.Host != nil && len(ecs.Host.Name) > 0 && len(ecs.Host.Hostname) > 0
 }
 
 func (ecs *EcsLogEntry) SetHostName(hostName string) {
@@ -101,6 +101,7 @@ func (ecs *EcsLogEntry) SetHostName(hostName string) {
 		ecs.Host = &Host{}
 	}
 	ecs.Host.Name = hostName
+	ecs.Host.Hostname = hostName
 }
 
 func (ecs *EcsLogEntry) SetPattern(pattern string) {

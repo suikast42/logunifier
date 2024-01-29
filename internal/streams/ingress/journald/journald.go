@@ -29,6 +29,8 @@ type IngressSubjectJournald struct {
 	COM_HASHICORP_NOMAD_TASK_NAME                 string `json:"COM_HASHICORP_NOMAD_TASK_NAME"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_NAME        string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_NAME"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION     string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_ORG         string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_ORG"`
+	COM_GITHUB_LOGUNIFIER_APPLICATION_ENV         string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_ENV"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY"`
 	COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI  string `json:"COM_GITHUB_LOGUNIFIER_APPLICATION_STRIP_ANSI"`
 	CONTAINER_ID                                  string `json:"CONTAINER_ID"`
@@ -146,7 +148,8 @@ func (r *IngressSubjectJournald) extractMetadataFromJournald(msg *nats.Msg, ecs 
 	r.extractLogMetadata(msg, ecs)
 	r.extractServiceMetadata(ecs)
 	r.extractHostMetadata(ecs)
-
+	r.extractEnvMetadata(ecs)
+	r.extractOrgMetadata(ecs)
 }
 
 func (r *IngressSubjectJournald) extractContainerLabels(ecs *model.EcsLogEntry) {
@@ -197,7 +200,22 @@ func (r *IngressSubjectJournald) extractHostMetadata(ecs *model.EcsLogEntry) {
 		ecs.Host = &model.Host{}
 	}
 	ecs.Host.Hostname = r.Host
+	ecs.Host.Name = r.Host
 	ecs.Host.Id = r.MACHINEID
+}
+
+func (r *IngressSubjectJournald) extractOrgMetadata(ecs *model.EcsLogEntry) {
+	if ecs.Organization == nil {
+		ecs.Organization = &model.Organization{}
+	}
+	ecs.Organization.Name = r.COM_GITHUB_LOGUNIFIER_APPLICATION_ORG
+}
+
+func (r *IngressSubjectJournald) extractEnvMetadata(ecs *model.EcsLogEntry) {
+	if ecs.Environment == nil {
+		ecs.Environment = &model.Environment{}
+	}
+	ecs.Environment.Name = r.COM_GITHUB_LOGUNIFIER_APPLICATION_ENV
 }
 
 func (r *IngressSubjectJournald) ts() *timestamppb.Timestamp {
