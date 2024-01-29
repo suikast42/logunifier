@@ -31,7 +31,7 @@ func (ecs *EcsLogEntry) IsServiceNameSet() bool {
 	return ecs.Service != nil && len(ecs.Service.Name) > 0
 }
 
-func (ecs *EcsLogEntry) SetJobName(serviceName string) {
+func (ecs *EcsLogEntry) SetSetServiceName(serviceName string) {
 	if ecs.Service != nil {
 		ecs.Service = &Service{}
 	}
@@ -52,11 +52,11 @@ func (ecs *EcsLogEntry) IsServiceTypeSet() bool {
 func (ecs *EcsLogEntry) IsLogLevelSet() bool {
 	return ecs.Log != nil && ecs.Log.Level != LogLevel_not_set
 }
-func (ecs *EcsLogEntry) SetJobType(serviceType string) {
-	if ecs.Service != nil {
+func (ecs *EcsLogEntry) SetServiceType(serviceType string) {
+	if ecs.Service == nil {
 		ecs.Service = &Service{}
 	}
-	ecs.Service.Name = serviceType
+	ecs.Service.Type = serviceType
 }
 
 func (ecs *EcsLogEntry) IsPatternSet() bool {

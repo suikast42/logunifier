@@ -8,8 +8,8 @@ import (
 
 func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 	if !ecs.IsIngressSet() {
-		ecs.AppendValidationError("Service name is empty ")
-		ecs.SetJobName("Empty")
+		ecs.AppendValidationError("Ingress is empty")
+		ecs.SetIngress("Empty")
 	}
 
 	if !ecs.IsOrgNameSet() {
@@ -18,12 +18,12 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 	}
 
 	if !ecs.IsServiceNameSet() {
-		ecs.AppendValidationError("Log ingress not set ")
-		ecs.SetIngress("Empty")
+		ecs.AppendValidationError("Service name is empty")
+		ecs.SetSetServiceName("Empty")
 	}
 	if !ecs.IsServiceTypeSet() {
 		ecs.AppendValidationError("Service type is empty")
-		ecs.SetJobType("Empty")
+		ecs.SetServiceType("Empty")
 	}
 
 	if !ecs.IsLogLevelSet() {
