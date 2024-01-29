@@ -197,9 +197,9 @@ func (r *IngressSubjectJournald) extractServiceMetadata(ecs *model.EcsLogEntry) 
 	}
 	ecs.Service.Group = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME
 	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE) > 0 {
-		ecs.Service.Stack = r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE
+		ecs.Service.Namespace = r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE
 	} else {
-		ecs.Service.Stack = r.COM_HASHICORP_NOMAD_NAMESPACE
+		ecs.Service.Namespace = r.COM_HASHICORP_NOMAD_NAMESPACE
 	}
 	ecs.Service.Version = r.COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION
 	ecs.Service.Name = r.appName()
