@@ -152,6 +152,7 @@ func (r *IngressSubjectJournald) extractMetadataFromJournald(msg *nats.Msg, ecs 
 	r.extractHostMetadata(ecs)
 	r.extractEnvMetadata(ecs)
 	r.extractOrgMetadata(ecs)
+	r.extractNameSpaceMetadata(ecs)
 }
 
 func (r *IngressSubjectJournald) extractContainerLabels(ecs *model.EcsLogEntry) {
@@ -196,7 +197,11 @@ func (r *IngressSubjectJournald) extractServiceMetadata(ecs *model.EcsLogEntry) 
 		ecs.Service.Stack = r.COM_HASHICORP_NOMAD_JOB_NAME
 	}
 	ecs.Service.Group = r.COM_HASHICORP_NOMAD_TASK_GROUP_NAME
-	ecs.Service.Namespace = r.COM_HASHICORP_NOMAD_NAMESPACE
+	if len(r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE) > 0 {
+		ecs.Service.Stack = r.COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE
+	} else {
+		ecs.Service.Stack = r.COM_HASHICORP_NOMAD_NAMESPACE
+	}
 	ecs.Service.Version = r.COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION
 	ecs.Service.Name = r.appName()
 }
