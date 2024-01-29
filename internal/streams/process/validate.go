@@ -43,12 +43,12 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 
 	if !ecs.IsEnvironmentSet() {
 		ecs.AppendValidationError("No environment set")
-		ecs.SetOrgName("NoEnv")
+		ecs.SetEnvironment("NoEnv")
 	}
 
 	if !ecs.IsStackSet() {
 		ecs.AppendValidationError("No stack set")
-		ecs.SetOrgName("NoStack")
+		ecs.SetStack("NoStack")
 	}
 
 	if !ecs.IsServiceNameSpaceSet() {

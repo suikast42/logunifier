@@ -85,6 +85,12 @@ func (ecs *EcsLogEntry) SetServiceNameSpace(namespace string) {
 	}
 	ecs.Service.Namespace = namespace
 }
+func (ecs *EcsLogEntry) SetStack(stackname string) {
+	if ecs.Service == nil {
+		ecs.Service = &Service{}
+	}
+	ecs.Service.Stack = stackname
+}
 
 func (ecs *EcsLogEntry) IsHostNameSet() bool {
 	return ecs.Host != nil && len(ecs.Host.Name) > 0
@@ -143,6 +149,13 @@ func (ecs *EcsLogEntry) AppendParseError(_error string) {
 	if len(_error) == 0 {
 		return
 	}
+	if ecs.ProcessError == nil {
+		ecs.ProcessError = &ProcessError{
+			Reason:  "",
+			RawData: "",
+			Subject: "Unknown",
+		}
+	}
 	if len(ecs.ProcessError.Reason) == 0 {
 		ecs.ProcessError.Reason = _error
 	} else {
@@ -153,6 +166,9 @@ func (ecs *EcsLogEntry) AppendParseError(_error string) {
 func (ecs *EcsLogEntry) AppendValidationError(_error string) {
 	if len(_error) == 0 {
 		return
+	}
+	if ecs.ValidationError == nil {
+		ecs.ValidationError = &ValidationError{}
 	}
 	if len(ecs.ValidationError.Errors) == 0 {
 		ecs.ValidationError.Errors = _error
