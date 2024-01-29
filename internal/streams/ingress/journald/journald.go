@@ -152,7 +152,6 @@ func (r *IngressSubjectJournald) extractMetadataFromJournald(msg *nats.Msg, ecs 
 	r.extractHostMetadata(ecs)
 	r.extractEnvMetadata(ecs)
 	r.extractOrgMetadata(ecs)
-	r.extractNameSpaceMetadata(ecs)
 }
 
 func (r *IngressSubjectJournald) extractContainerLabels(ecs *model.EcsLogEntry) {
