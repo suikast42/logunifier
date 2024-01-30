@@ -132,6 +132,18 @@ func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
 	}
 	ecs.Log.Level = level
 	ecs.Log.LevelEmoji = LogLevelToEmoji(level)
+
+}
+
+func (ecs *EcsLogEntry) SetMarkerEmojis() {
+	if len(ecs.Tags) > 0 {
+		ecs.Log.LevelEmoji = ecs.Log.LevelEmoji + " " + EmojiMarker()
+	}
+
+	if ecs.HasExceptionStackStrace() {
+		ecs.Log.LevelEmoji = ecs.Log.LevelEmoji + " " + EmojiStackStrace()
+	}
+
 }
 
 func (ecs *EcsLogEntry) SetTimeStamp(timestamp *timestamppb.Timestamp) {

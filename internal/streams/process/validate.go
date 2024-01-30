@@ -69,4 +69,5 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 		ecs.ValidationError = nil
 	}
 
+	ecs.SetMarkerEmojis()
 }

@@ -95,3 +95,11 @@ func LogLevelToEmoji(level LogLevel) string {
 	}
 	return loglevel
 }
+
+func EmojiMarker() string {
+	return "🏷️"
+}
+
+func EmojiStackStrace() string {
+	return "🔖️"
+}
