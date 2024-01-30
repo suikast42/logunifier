@@ -3,6 +3,7 @@ package ecs
 import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
+	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"os"
 	"testing"
@@ -98,4 +99,57 @@ func TestNativeEcs2(t *testing.T) {
 		t.Errorf("TS does not match %s", entry.Timestamp.AsTime().String())
 	}
 
+}
+
+func TestNativeEcs3(t *testing.T) {
+	log := `
+{
+  "@timestamp": "2024-01-29T15:21:52.136+01:00",
+  "ecs": {
+    "version": "1.3.0"
+  },
+  "log": {
+    "level": "DEBUG",
+    "thread_name": "Thread-809 (ActiveMQ-client-global-threads)",
+    "logger": "eu.amova.assan.server.routing.ASSANHbsManagerOPCache",
+    "origin": {
+      "file": {
+        "line": "1719",
+        "name": "AbstractAreaManagerOPCache.java"
+      },
+      "function": "logEnterMethod"
+    }
+  },
+  "service": {
+    "name": "wms-assan",
+    "ephemeral_id": "77764cbf-f214-44e1-9db7-a5b67f207282"
+  },
+  "organization": {
+    "name": "assan"
+  },
+  "host": {
+    "hostname": "WAP153441",
+    "name": "WAP153441"
+  },
+  "message": "ENTER Method : getAreaManagerByDevice",
+  "tags": []
+}
+`
+	ecs := model.EcsLogEntry{}
+	err := ecs.FromJson([]byte(log))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if "2024-01-29 14:21:52.136 +0000 UTC" != ecs.Timestamp.AsTime().String() {
+		t.Errorf("TS does not match %s", ecs.Timestamp.AsTime().String())
+	}
+
+	if "wms-assan" != ecs.Service.Name {
+		t.Errorf("ecs.Service.Name does not match %s", ecs.Service.Name)
+	}
+	//if "1.3.0" != ecs.Version.GetVersion() {
+	//	t.Errorf("Version does not match %s", ecs.Version)
+	//}
 }
