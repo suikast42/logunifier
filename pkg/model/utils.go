@@ -73,11 +73,11 @@ var loglevelToEmoji = map[LogLevel]string{
 	LogLevel_trace:   "👀",
 	LogLevel_debug:   "🐞",
 	LogLevel_info:    "✅",
-	LogLevel_warn:    "⚠",
-	LogLevel_error:   "❌",
-	LogLevel_fatal:   "🚨",
+	LogLevel_warn:    "⚠️",
+	LogLevel_error:   "🚨",
+	LogLevel_fatal:   "🔥",
 	LogLevel_unknown: "🤷",
-	LogLevel_not_set: "❓",
+	LogLevel_not_set: "⁉️",
 }
 
 func LogLevelToString(level LogLevel) string {
