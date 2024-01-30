@@ -24,6 +24,10 @@ func (ecs *EcsLogEntry) HasExceptionStackStrace() bool {
 	return ecs.Error != nil && len(ecs.Error.StackTrace) > 0
 }
 
+func (ecs *EcsLogEntry) HasTags() bool {
+	return ecs.Tags != nil && len(ecs.Tags) > 0
+}
+
 func (ecs *EcsLogEntry) IsIngressSet() bool {
 	return ecs.Log != nil && len(ecs.Log.Ingress) > 0
 }
@@ -136,7 +140,7 @@ func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
 }
 
 func (ecs *EcsLogEntry) SetMarkerEmojis() {
-	if len(ecs.Tags) > 0 {
+	if ecs.HasTags() {
 		ecs.Log.LevelEmoji = ecs.Log.LevelEmoji + " " + EmojiMarker()
 	}
 

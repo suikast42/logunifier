@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -106,6 +107,19 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	}
 
 	labels := toLokiLabels(ecs)
+	// Loki does not support array fields.
+	// Merge the tags in tge labels if there's some
+	if ecs.HasTags() {
+		if ecs.Labels == nil {
+			ecs.Labels = map[string]string{}
+		}
+		for i := 0; i < len(ecs.Tags); i++ {
+			val := ecs.Tags[i]
+			if len(val) > 0 {
+				ecs.Labels["tags_"+strconv.Itoa(i)] = val
+			}
+		}
+	}
 	marshal, marshalError := ecs.ToJson()
 	if marshalError != nil {
 		loki.Logger.Err(marshalError).Msgf("Can't marshal message %+v", ecs)
@@ -270,5 +284,6 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	} else {
 		labelsMap["error_stack"] = "false"
 	}
+
 	return labelsMap
 }
