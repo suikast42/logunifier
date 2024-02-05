@@ -872,8 +872,9 @@ type Service struct {
 	Type        string        `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	Version     string        `protobuf:"bytes,7,opt,name=version,proto3" json:"version,omitempty"`
 	Stack       string        `protobuf:"bytes,8,opt,name=stack,proto3" json:"stack,omitempty"`
-	Group       string        `protobuf:"bytes,9,opt,name=group,proto3" json:"group,omitempty"`
-	Namespace   string        `protobuf:"bytes,10,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// Nomad task group
+	Group     string `protobuf:"bytes,9,opt,name=group,proto3" json:"group,omitempty"`
+	Namespace string `protobuf:"bytes,10,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
 func (x *Service) Reset() {

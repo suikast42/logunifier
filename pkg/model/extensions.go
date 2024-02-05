@@ -96,6 +96,14 @@ func (ecs *EcsLogEntry) IsHostNameSet() bool {
 	return ecs.Host != nil && len(ecs.Host.Name) > 0 && len(ecs.Host.Hostname) > 0
 }
 
+func (ecs *EcsLogEntry) IsTraceIdSet() bool {
+	return ecs.Trace != nil && ecs.Trace.Trace != nil && len(ecs.Trace.Trace.Id) > 0
+}
+
+func (ecs *EcsLogEntry) IsSpanIdSet() bool {
+	return ecs.Trace != nil && ecs.Trace.Span != nil && len(ecs.Trace.Span.Id) > 0
+}
+
 func (ecs *EcsLogEntry) SetHostName(hostName string) {
 	if ecs.Host == nil {
 		ecs.Host = &Host{}

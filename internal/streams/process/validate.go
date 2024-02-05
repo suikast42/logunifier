@@ -2,6 +2,7 @@ package process
 
 import (
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog/log"
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/pkg/model"
 )
@@ -59,6 +60,11 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 	if !ecs.IsHostNameSet() {
 		ecs.AppendValidationError("No host name set")
 		ecs.SetHostName("NoHost")
+	}
+
+	if ecs.IsTraceIdSet() {
+		log.Debug().Msg("TraceId " + ecs.Trace.Trace.Id)
+		log.Debug().Msg("SpanID " + ecs.Trace.Span.Id)
 	}
 	// Delete the debug info if there is no error occured there
 	if !ecs.HasProcessError() {

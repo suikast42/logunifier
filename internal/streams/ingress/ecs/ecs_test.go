@@ -6,6 +6,7 @@ import (
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/patterns"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -148,6 +149,82 @@ func TestNativeEcs3(t *testing.T) {
 
 	if "wms-assan" != ecs.Service.Name {
 		t.Errorf("ecs.Service.Name does not match %s", ecs.Service.Name)
+	}
+	//if "1.3.0" != ecs.Version.GetVersion() {
+	//	t.Errorf("Version does not match %s", ecs.Version)
+	//}
+}
+
+func TestNativeEcsApm(t *testing.T) {
+	log := `
+{
+  "environment": {
+    "name": "dev"
+  },
+  "trace": {
+   "trace": {
+    "id": "8795cd88e90fbfce1e35acfcfaeada5e"
+  },
+  "span": {
+    "id": "8795cd88e90fbfce1e35acfcfaeada5e"
+  }
+  },
+  "@timestamp": "2024-02-05T13:22:25.483+01:00",
+  "ecs": {
+    "version": "1.3.0"
+  },
+  "log": {
+    "level": "INFO",
+    "thread_name": "ServerService Thread Pool -- 48",
+    "logger": "pas.core.server.initalize.WMSInitalizer",
+    "origin": {
+      "file": {
+        "line": "66",
+        "name": "WMSInitalizer.java"
+      },
+      "function": "initCompos"
+    }
+  },
+  "service": {
+    "stack": "wms",
+    "name": "wms-assan",
+    "namespace": "default",
+    "ephemeral_id": "5c5160cc-b79e-40cc-b8e5-e4a5f17adf86",
+    "type": "external",
+    "version": "1.0.0-SNAPSHOT"
+  },
+  "organization": {
+    "name": "assan"
+  },
+  "host": {
+    "hostname": "WAP153441",
+    "name": "WAP153441"
+  },
+  "message": "Starting the initialisation phase for ASSAN",
+  "tags": []
+}
+`
+	ecs := model.EcsLogEntry{}
+	err := ecs.FromJson([]byte(log))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !ecs.IsTraceIdSet() {
+		t.Error("Trace id not set ")
+	}
+
+	if !ecs.IsSpanIdSet() {
+		t.Error("Span id not set ")
+	}
+
+	if ecs.IsTraceIdSet() && !strings.EqualFold(ecs.Trace.Trace.Id, "8795cd88e90fbfce1e35acfcfaeada5e") {
+		t.Errorf("expect trace id  %s  but was %s", "8795cd88e90fbfce1e35acfcfaeada5e", ecs.Trace.Trace.Id)
+	}
+
+	if ecs.IsSpanIdSet() && !strings.EqualFold(ecs.Trace.Span.Id, "8795cd88e90fbfce1e35acfcfaeada5e") {
+		t.Errorf("expect span id  %s  but was %s", "8795cd88e90fbfce1e35acfcfaeada5e", ecs.Trace.Span.Id)
 	}
 	//if "1.3.0" != ecs.Version.GetVersion() {
 	//	t.Errorf("Version does not match %s", ecs.Version)

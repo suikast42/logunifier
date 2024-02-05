@@ -164,6 +164,7 @@ message Service {
   string type = 6;
   string version = 7;
   string stack=8;
+  //Nomad task group
   string group=9;
   string namespace = 10;
 }
