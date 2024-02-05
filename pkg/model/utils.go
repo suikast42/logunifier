@@ -103,3 +103,7 @@ func EmojiMarker() string {
 func EmojiStackStrace() string {
 	return "🔖️"
 }
+
+func ApmMarker() string {
+	return "🧬"
+}

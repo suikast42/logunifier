@@ -158,6 +158,12 @@ func (ecs *EcsLogEntry) SetMarkerEmojis() {
 
 }
 
+func (ecs *EcsLogEntry) SetMarkerApm() {
+	if ecs.IsTraceIdSet() {
+		ecs.Log.LevelEmoji = ecs.Log.LevelEmoji + " " + ApmMarker()
+	}
+}
+
 func (ecs *EcsLogEntry) SetTimeStamp(timestamp *timestamppb.Timestamp) {
 	ecs.Timestamp = timestamp
 }
