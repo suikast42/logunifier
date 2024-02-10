@@ -21,6 +21,12 @@ func ValidateAndFix(ecs *model.EcsLogEntry, msg *nats.Msg) {
 		ecs.AppendValidationError("Service name is empty")
 		ecs.SetSetServiceName("Empty")
 	}
+
+	if !ecs.IsLoggerSet() {
+		ecs.AppendValidationError("No Logger set")
+		ecs.SetLogger("Empty")
+	}
+
 	if !ecs.IsServiceTypeSet() {
 		ecs.AppendValidationError("Service type is empty")
 		ecs.SetServiceType("Empty")

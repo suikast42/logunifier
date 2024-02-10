@@ -264,6 +264,7 @@ func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
 	labelsMap["service_name"] = ecs.Service.Name
 	labelsMap["service_type"] = ecs.Service.Type
 	labelsMap["service_namespace"] = ecs.Service.Namespace
+	labelsMap["log_logger"] = ecs.Log.Logger
 	labelsMap["level"] = ecs.Log.Level.String()
 	labelsMap["pattern_key"] = ecs.Log.PatternKey
 

@@ -53,6 +53,10 @@ func (ecs *EcsLogEntry) IsServiceTypeSet() bool {
 	return ecs.Service != nil && len(ecs.Service.Type) > 0
 }
 
+func (ecs *EcsLogEntry) IsLoggerSet() bool {
+	return ecs.Log != nil && len(ecs.Log.Logger) > 0
+}
+
 func (ecs *EcsLogEntry) IsLogLevelSet() bool {
 	return ecs.Log != nil && ecs.Log.Level != LogLevel_not_set
 }
@@ -61,6 +65,13 @@ func (ecs *EcsLogEntry) SetServiceType(serviceType string) {
 		ecs.Service = &Service{}
 	}
 	ecs.Service.Type = serviceType
+}
+
+func (ecs *EcsLogEntry) SetLogger(logger string) {
+	if ecs.Log == nil {
+		ecs.Log = &Log{}
+	}
+	ecs.Log.Logger = logger
 }
 
 func (ecs *EcsLogEntry) IsPatternSet() bool {
