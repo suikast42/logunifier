@@ -36,14 +36,14 @@ func (ecs *EcsLogEntry) IsServiceNameSet() bool {
 }
 
 func (ecs *EcsLogEntry) SetSetServiceName(serviceName string) {
-	if ecs.Service != nil {
+	if ecs.Service == nil {
 		ecs.Service = &Service{}
 	}
 	ecs.Service.Name = serviceName
 }
 
 func (ecs *EcsLogEntry) SetIngress(ingress string) {
-	if ecs.Log != nil {
+	if ecs.Log == nil {
 		ecs.Log = &Log{}
 	}
 	ecs.Log.Ingress = ingress
