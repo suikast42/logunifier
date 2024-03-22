@@ -26,6 +26,8 @@ type NatsDialer struct {
 	streamConfigurations map[string]NatsStreamConfiguration
 	// The key should be the same as the Consumer name
 	consumerConfigurations map[string]NatsConsumerConfiguration
+
+	subscriptions map[string]*nats.Subscription
 }
 
 // NatsStreamConfiguration definition of a nats stream
@@ -63,6 +65,7 @@ func New(streamConfigurations map[string]NatsStreamConfiguration, consumerConfig
 			connectTimeWait:        time.Second * 1,
 			streamConfigurations:   streamConfigurations,
 			consumerConfigurations: consumerConfigurations,
+			subscriptions:          make(map[string]*nats.Subscription),
 		}
 		return instance, nil
 	}
@@ -167,16 +170,18 @@ func (nd *NatsDialer) Disconnect() error {
 		nd.logger.Info().Msg("Not connected to server nothing todo")
 		return nil
 	}
+	for key, subscription := range nd.subscriptions {
+		err := subscription.Drain()
+		if err != nil {
+			nd.logger.Error().Err(err).Msgf("Can't drain subscription %s", key)
+		}
+	}
 	// Disconnect and flush pending messages
 	if err := nd.nc.Drain(); err != nil {
 		nd.logger.Error().Err(err).Msg("Can't Drain")
-		return err
+		//return err
 	}
 	nd.ctx = context.WithValue(nd.ctx, "DisconnectRequest", true)
-	err := nd.nc.Flush()
-	if err != nil {
-		nd.logger.Error().Err(err).Msg("Can't Flush")
-	}
 	nd.nc.Close()
 	nd.logger.Info().Msg("Disconnected")
 	return nil
@@ -321,11 +326,13 @@ func (nd *NatsDialer) startSubscriptions() error {
 			nats.Durable(definition.ConsumerConfiguration.Durable),
 			nats.ManualAck(), // Control the ack inProgress and nack self
 		}
-		_, err = js.QueueSubscribe(definition.ConsumerConfiguration.FilterSubject, definition.ConsumerConfiguration.DeliverGroup, definition.MsgHandler, subOpts...)
+		sub, err := js.QueueSubscribe(definition.ConsumerConfiguration.FilterSubject, definition.ConsumerConfiguration.DeliverGroup, definition.MsgHandler, subOpts...)
 		if err != nil {
 			logger.Error().Err(err).Msgf("QueueSubscribe to %s failed", definition.ConsumerConfiguration.Name)
 			return err
 		}
+
+		nd.subscriptions[key] = sub
 	}
 
 	for streamInfo := range js.Streams() {
