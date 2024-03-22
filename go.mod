@@ -3,20 +3,19 @@ module github.com/suikast42/logunifier
 go 1.22
 
 require (
-	github.com/alexliesenfeld/health v0.6.0
-	github.com/google/uuid v1.3.0
-	github.com/grafana/loki v1.6.2-0.20231211180320-2535f9bedeae
+	github.com/alexliesenfeld/health v0.8.0
+	github.com/google/uuid v1.6.0
+	github.com/grafana/loki v1.6.2-0.20240321101415-318652035059
 	github.com/nats-io/nats.go v1.34.0
-	github.com/peterbourgon/ff/v3 v3.3.0
+	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/prometheus v0.43.1-0.20230419161410-69155c6ba1e9
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.32.0
 	github.com/trivago/grok v1.0.0
 	github.com/xyproto/jpath v0.6.1
-	go.uber.org/automaxprocs v1.5.1
+	go.uber.org/automaxprocs v1.5.3
 	google.golang.org/grpc v1.56.3
-	google.golang.org/protobuf v1.31.0
-
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
@@ -43,7 +42,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grafana/dskit v0.0.0-20230804003603-740f56bd2934 // indirect
-	github.com/grafana/loki/pkg/push v0.0.0-20231211180320-2535f9bedeae // indirect
+	github.com/grafana/loki/pkg/push v0.0.0-20240321101415-318652035059 // indirect
 	github.com/grafana/regexp v0.0.0-20221122212121-6b5c0a4cb7fd // indirect
 	github.com/hashicorp/consul/api v1.20.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

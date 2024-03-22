@@ -173,6 +173,10 @@ func (nd *NatsDialer) Disconnect() error {
 		return err
 	}
 	nd.ctx = context.WithValue(nd.ctx, "DisconnectRequest", true)
+	err := nd.nc.Flush()
+	if err != nil {
+		nd.logger.Error().Err(err).Msg("Can't Flush")
+	}
 	nd.nc.Close()
 	nd.logger.Info().Msg("Disconnected")
 	return nil
