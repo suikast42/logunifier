@@ -1,0 +1,44 @@
+{
+  "environment": {
+    "name": "dev"
+  },
+  "trace": {
+    "id": "8795cd88e90fbfce1e35acfcfaeada5e"
+  },
+  "@timestamp": "2024-02-05T13:22:25.483+01:00",
+  "ecs": {
+    "version": "1.3.0"
+  },
+  "log": {
+    "level": "INFO",
+    "thread_name": "ServerService Thread Pool -- 48",
+    "logger": "pas.core.server.initalize.WMSInitalizer",
+    "origin": {
+      "file": {
+        "line": "66",
+        "name": "WMSInitalizer.java"
+      },
+      "function": "initCompos"
+    }
+  },
+  "service": {
+    "stack": "wms",
+    "name": "wms-assan",
+    "namespace": "default",
+    "ephemeral_id": "5c5160cc-b79e-40cc-b8e5-e4a5f17adf86",
+    "type": "external",
+    "version": "1.0.0-SNAPSHOT"
+  },
+  "organization": {
+    "name": "assan"
+  },
+  "host": {
+    "hostname": "WAP153441",
+    "name": "WAP153441"
+  },
+  "message": "Starting the initialisation phase for ASSAN",
+  "tags": [],
+  "span": {
+    "id": "8795cd88e90fbfce1e35acfcfaeada5e"
+  }
+}

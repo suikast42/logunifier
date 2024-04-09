@@ -1,0 +1,38 @@
+{
+  "@timestamp": "2024-01-29T11:16:42.960702Z",
+  "message": "  results=",
+  "host": {
+    "hostname": "master-01",
+    "id": "eb1caec5420f4903b0e1c0a660eeb7ed",
+    "name": "master-01"
+  },
+  "organization": {
+    "name": "cloud.private"
+  },
+  "service": {
+    "name": "nomad.service",
+    "node": {
+      "name": "master-01"
+    },
+    "type": "daemon",
+    "stack": "default",
+    "namespace": "NoNameSpace"
+  },
+  "log": {
+    "level": "info",
+    "levelEmoji": "✅",
+    "ingress": "ingress.logs.journald",
+    "patternKey": "TsLevelMsg"
+  },
+  "processError": {
+    "reason": "Can't find timestamp\nCan't find a message",
+    "rawData": "{\"COM_GITHUB_LOGUNIFIER_APPLICATION_ENV\":\"dev\",\"COM_GITHUB_LOGUNIFIER_APPLICATION_NAMESPACE\":\"default\",\"COM_GITHUB_LOGUNIFIER_APPLICATION_ORG\":\"cloud.private\",\"COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY\":\"tslevelmsg\",\"COM_GITHUB_LOGUNIFIER_APPLICATION_STACK\":\"core\",\"PRIORITY\":\"6\",\"SYSLOG_FACILITY\":\"3\",\"SYSLOG_IDENTIFIER\":\"nomad\",\"_BOOT_ID\":\"a63191809c144be5bde6e851c936c370\",\"_CAP_EFFECTIVE\":\"0\",\"_CMDLINE\":\"/usr/local/bin/nomad agent -config /etc/nomad.d\",\"_COMM\":\"nomad\",\"_EXE\":\"/usr/local/bin/nomad\",\"_GID\":\"1004\",\"_MACHINE_ID\":\"eb1caec5420f4903b0e1c0a660eeb7ed\",\"_PID\":\"1589\",\"_SELINUX_CONTEXT\":\"unconfined\\n\",\"_STREAM_ID\":\"7724ad6c0f58452fa8f196adfba9f19f\",\"_SYSTEMD_CGROUP\":\"/system.slice/nomad.service\",\"_SYSTEMD_INVOCATION_ID\":\"c31bfaee5bb342c4b526399f483cfc14\",\"_SYSTEMD_SLICE\":\"system.slice\",\"_SYSTEMD_UNIT\":\"nomad.service\",\"_TRANSPORT\":\"stdout\",\"_UID\":\"997\",\"__MONOTONIC_TIMESTAMP\":\"12938398764\",\"__REALTIME_TIMESTAMP\":\"1706527002960702\",\"host\":\"master-01\",\"message\":\"  results=\",\"source_type\":\"journald\",\"timestamp\":\"2024-01-29T11:16:42.960702Z\"}",
+    "subject": "ingress.logs.journald"
+  },
+  "environment": {
+    "name": "dev"
+  },
+  "validationError": {
+    "errors": "No namespace set"
+  }
+}
