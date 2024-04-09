@@ -3,7 +3,7 @@ package utils
 import (
 	"bytes"
 	"errors"
-	"github.com/grafana/loki/pkg/logql/log/logfmt"
+	"github.com/grafana/loki/v3/pkg/logql/log/logfmt"
 	"strings"
 )
 

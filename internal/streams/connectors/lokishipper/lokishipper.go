@@ -1,7 +1,7 @@
 package lokishipper
 
 import (
-	"github.com/grafana/loki/pkg/logproto"
+	"github.com/grafana/loki/v3/pkg/logproto"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
@@ -17,7 +17,8 @@ import (
 	"time"
 )
 
-// The loki client has an issue with the mod version in v2
+// !!! The module issue is fixed with the V3 version of loki !!!
+//The loki client has an issue with the mod version in v2
 // see https://github.com/grafana/loki/issues/2826
 // For upgrading the loki client version go to GitHub and find out the commit id
 // After that execute
@@ -27,6 +28,7 @@ import (
 // For loki v 2.9.6
 // Furthermore, the weavework/common dependency from loki has a incompatibility with the grpc > 1.45
 // Thus you must patch it with go get github.com/weaveworks/common@e2613bee6b73c78d2038e248e52fcc824dfe02d0
+
 // Grafana loki model parsing https://github.com/grafana/loki/issues/114
 import (
 	"context"

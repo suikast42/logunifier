@@ -161,7 +161,7 @@ var lock = &sync.Mutex{}
 
 func Instance() (*Config, error) {
 	if instance == nil {
-		errors.New("no config parsed. Use the builder at first")
+		return nil, errors.New("no config parsed. Use the builder at first")
 	}
 
 	return instance, nil
