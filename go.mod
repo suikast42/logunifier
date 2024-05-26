@@ -6,7 +6,7 @@ require (
 	github.com/alexliesenfeld/health v0.8.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/loki/v3 v3.0.0
-	github.com/nats-io/nats.go v1.34.1
+	github.com/nats-io/nats.go v1.35.0
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/prometheus v0.51.1
