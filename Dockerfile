@@ -16,7 +16,7 @@ RUN  --mount=type=cache,target=/root/.cache/go-build \
 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /out/logunifier .
 
 #Second build layer
-FROM alpine:3.20.0
+FROM alpine:3.20.2
 COPY --from=builder /out/logunifier /logunifier
 COPY --from=builder /logunifier/internal/config/local.cfg /cfg/local.cfg
 ENTRYPOINT [ "/logunifier","-config" ,"/cfg/local.cfg" ]
