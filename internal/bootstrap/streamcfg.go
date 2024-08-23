@@ -54,7 +54,16 @@ func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, stream
 
 func IngressMsgHandler(pushChannel chan<- ingress.IngressMsgContext, metaLogConverter ingress.MetaLogConverter) nats.MsgHandler {
 	return func(msg *nats.Msg) {
-		pushChannel <- metaLogConverter.ConvertToMetaLog(msg)
+		log := metaLogConverter.ConvertToMetaLog(msg)
+		if !log.Skip {
+			pushChannel <- log
+		} else {
+			err := msg.Ack()
+			if err != nil {
+				logger := config.Logger()
+				logger.Error().Err(err).Msg("Can't ack message")
+			}
+		}
 	}
 }
 

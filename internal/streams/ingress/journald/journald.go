@@ -9,10 +9,13 @@ import (
 	"github.com/suikast42/logunifier/pkg/model"
 	"github.com/suikast42/logunifier/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var multiLineCache = map[string][]IngressSubjectJournald{}
 
 type JournaldDToEcsConverter struct {
 }
@@ -39,6 +42,10 @@ type IngressSubjectJournald struct {
 	CONTAINER_ID_FULL                             string `json:"CONTAINER_ID_FULL"`
 	CONTAINER_NAME                                string `json:"CONTAINER_NAME"`
 	CONTAINER_TAG                                 string `json:"CONTAINER_TAG"`
+	CONTAINER_PARTIAL_ID                          string `json:"CONTAINER_PARTIAL_ID"`
+	CONTAINER_PARTIAL_LAST                        string `json:"CONTAINER_PARTIAL_LAST"`
+	CONTAINER_PARTIAL_ORDINAL                     string `json:"CONTAINER_PARTIAL_ORDINAL"`
+	CONTAINER_PARTIAL_MESSAGE                     string `json:"CONTAINER_PARTIAL_MESSAGE"`
 	//CONTAINER_PARTIAL_MESSAGE           string    `json:"CONTAINER_PARTIAL_MESSAGE"`
 	IMAGE_NAME                        string    `json:"IMAGE_NAME"`
 	ORG_OPENCONTAINERS_IMAGE_REVISION string    `json:"ORG_OPENCONTAINERS_IMAGE_REVISION"`
@@ -72,20 +79,58 @@ type IngressSubjectJournald struct {
 	Timestamp                         time.Time `json:"timestamp"`
 }
 
+type MultiPartSorter []IngressSubjectJournald
+
+// Len returns the number of elements in the collection.
+func (a MultiPartSorter) Len() int { return len(a) }
+
+// Less reports whether the element with index i should sort before the element with index j.
+func (a MultiPartSorter) Less(i, j int) bool { return a[i].partialPostion() < a[j].partialPostion() }
+
+// Swap swaps the elements with indexes i and j.
+func (a MultiPartSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
 func (r *JournaldDToEcsConverter) ConvertToMetaLog(msg *nats.Msg) ingress.IngressMsgContext {
+	//fmt.Println("[" + string(msg.Data) + "]")
 	journald := IngressSubjectJournald{}
 	err := json.Unmarshal(msg.Data, &journald)
 	//if strings.Contains(string(msg.Data), "mimir") {
 	//	logger := config.Logger()
 	//	logger.Debug().Msg(string(msg.Data))
 	//}
+
 	if err != nil {
 		//logger := config.Logger()
 		//logger.Err(err).Msgf("Can't unmarshal journald ingress.\n[%s]", string(msg.Data))
 		// The parsing error is shipped to the output
+
 		return journald.toMetaLog(msg, err)
 	}
 
+	if journald.isPartial() {
+		partialMessages, ok := multiLineCache[journald.CONTAINER_PARTIAL_ID]
+		// If the key exists
+		if !ok {
+			multiLineCache[journald.CONTAINER_PARTIAL_ID] = make([]IngressSubjectJournald, 0)
+			partialMessages = multiLineCache[journald.CONTAINER_PARTIAL_ID]
+		}
+		multiLineCache[journald.CONTAINER_PARTIAL_ID] = append(partialMessages, journald)
+		if !journald.isLatPartial() {
+			return ingress.IngressMsgContext{
+				Skip: true,
+			}
+		}
+		// remove the partial
+		partialMessages = multiLineCache[journald.CONTAINER_PARTIAL_ID]
+		delete(multiLineCache, journald.CONTAINER_PARTIAL_ID)
+		// Sort the partials by its index
+		sort.Sort(MultiPartSorter(partialMessages))
+		var tmpMsg = ""
+		for _, tmpJournald := range partialMessages {
+			tmpMsg += tmpJournald.Message
+		}
+		journald.Message = tmpMsg
+	}
 	if journald.patternKey() == model.MetaLog_Ecs {
 		// We have a native ecs message
 		// Delegate the message parsing and override some metadata
@@ -226,6 +271,27 @@ func (r *IngressSubjectJournald) extractEnvMetadata(ecs *model.EcsLogEntry) {
 		ecs.Environment = &model.Environment{}
 	}
 	ecs.Environment.Name = r.COM_GITHUB_LOGUNIFIER_APPLICATION_ENV
+}
+
+func (r *IngressSubjectJournald) isPartial() bool {
+	return r.partialPostion() > 0 && len(r.CONTAINER_PARTIAL_ID) > 0
+}
+
+func (r *IngressSubjectJournald) isLatPartial() bool {
+	return "true" == r.CONTAINER_PARTIAL_LAST && len(r.CONTAINER_PARTIAL_ID) > 0
+}
+
+func (r *IngressSubjectJournald) partialPostion() int32 {
+	if len(r.CONTAINER_PARTIAL_ORDINAL) == 0 {
+		return 0
+	}
+	num, err := strconv.Atoi(r.CONTAINER_PARTIAL_ORDINAL)
+	if err != nil {
+		// ?? what todo if not a number ?
+		return 0
+	}
+	return int32(num)
+
 }
 
 func (r *IngressSubjectJournald) ts() *timestamppb.Timestamp {

@@ -1,6 +1,7 @@
 package journald
 
 import (
+	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/pkg/model"
@@ -8,6 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -644,5 +646,154 @@ func TestNativeEcsSerde(t *testing.T) {
 	}
 	if !proto.Equal(toSerialize, fromJson) {
 		t.Errorf("\ntoSerialize\n[%v]\nfromJson\n[%v]", toSerialize, fromJson)
+	}
+
+}
+
+func TestMultiLine(t *testing.T) {
+	part1 := `
+  {
+    "CONTAINER_ID_FULL": "fd973ef56c295e4cbfcee89144320326d4185ab5ddffbf4f8bd3cbb08b77f441",
+    "_SYSTEMD_INVOCATION_ID": "c83ed454c19b47948dc6642f29322041",
+    "MESSAGE": null,
+    "COM_HASHICORP_NOMAD_ALLOC_ID": "3607011c-319e-9e2b-db2a-3ed3bc7f1f79",
+    "_SYSTEMD_UNIT": "docker.service",
+    "_CMDLINE": "/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock",
+    "CONTAINER_TAG": "fd973ef56c29",
+    "_TRANSPORT": "journal",
+    "PRIORITY": "6",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_NAME": "amovabi_services.devicetracking_service[0]",
+    "COM_HASHICORP_NOMAD_NODE_NAME": "worker-01",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY": "ecs",
+    "CONTAINER_ID": "fd973ef56c29",
+    "SYSLOG_IDENTIFIER": "fd973ef56c29",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_ENV": "dev",
+    "_SOURCE_REALTIME_TIMESTAMP": "1724414678319480",
+    "__REALTIME_TIMESTAMP": "1724414678321239",
+    "__MONOTONIC_TIMESTAMP": "17895303600",
+    "_SYSTEMD_CGROUP": "/system.slice/docker.service",
+    "_BOOT_ID": "03ff567220e2431795e42279271b4808",
+    "IMAGE_NAME": "registry.cloud.private/amovabi/device-tracking-service:2.0.0-CR23",
+    "COM_HASHICORP_NOMAD_TASK_GROUP_NAME": "devicetracking_service",
+    "CONTAINER_NAME": "devicetracking_service_task-3607011c-319e-9e2b-db2a-3ed3bc7f1f79",
+    "_GID": "0",
+    "COM_HASHICORP_NOMAD_JOB_ID": "amovabi_services",
+    "CONTAINER_LOG_EPOCH": "6845af5b79aa83a96d0b213bc15da43cb0c1c2a75367bae29afc6533eae26875",
+    "COM_HASHICORP_NOMAD_NAMESPACE": "default",
+    "_MACHINE_ID": "f903ee60ec3c49c6b810aa51534b93c3",
+    "_UID": "0",
+    "_SYSTEMD_SLICE": "system.slice",
+    "COM_HASHICORP_NOMAD_JOB_NAME": "amovabi_services",
+    "CONTAINER_LOG_ORDINAL": "6378",
+    "COM_HASHICORP_NOMAD_NODE_ID": "70f52bd2-411a-bc3e-6244-2883e42568e9",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION": "2.0.0-CR23",
+    "_EXE": "/usr/bin/dockerd",
+    "COM_HASHICORP_NOMAD_TASK_NAME": "devicetracking_service_task",
+    "__CURSOR": "s=52d6bbae8b5445f7a4155820202b5da6;i=7822d9;b=03ff567220e2431795e42279271b4808;m=42aa4a9b0;t=620589458c857;x=82ad08a70faa61e6",
+    "SYSLOG_TIMESTAMP": "2024-08-23T12:04:38.319435796Z",
+    "_SELINUX_CONTEXT": "unconfined\n",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_ORG": "amova",
+    "_HOSTNAME": "worker-01",
+    "CONTAINER_PARTIAL_MESSAGE": "true",
+    "CONTAINER_PARTIAL_LAST": "false",
+    "CONTAINER_PARTIAL_ORDINAL": "1",
+    "_COMM": "dockerd",
+    "_CAP_EFFECTIVE": "1ffffffffff",
+    "_PID": "1251",
+    "CONTAINER_PARTIAL_ID": "0c4de2f5604ca894fe3896bbc0ecf9477ffbdea5967e53f6223fdeb68364f80c"
+  }
+`
+
+	part2 := `
+{
+    "_SYSTEMD_CGROUP": "/system.slice/docker.service",
+    "SYSLOG_IDENTIFIER": "fd973ef56c29",
+    "_TRANSPORT": "journal",
+    "_SYSTEMD_UNIT": "docker.service",
+    "_SYSTEMD_INVOCATION_ID": "c83ed454c19b47948dc6642f29322041",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_ORG": "amova",
+    "_GID": "0",
+    "CONTAINER_LOG_EPOCH": "6845af5b79aa83a96d0b213bc15da43cb0c1c2a75367bae29afc6533eae26875",
+    "CONTAINER_LOG_ORDINAL": "6379",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_VERSION": "2.0.0-CR23",
+    "_MACHINE_ID": "f903ee60ec3c49c6b810aa51534b93c3",
+    "COM_HASHICORP_NOMAD_NODE_ID": "70f52bd2-411a-bc3e-6244-2883e42568e9",
+    "CONTAINER_PARTIAL_LAST": "true",
+    "CONTAINER_NAME": "devicetracking_service_task-3607011c-319e-9e2b-db2a-3ed3bc7f1f79",
+    "COM_HASHICORP_NOMAD_TASK_NAME": "devicetracking_service_task",
+    "_COMM": "dockerd",
+    "_CMDLINE": "/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock",
+    "CONTAINER_TAG": "fd973ef56c29",
+    "_BOOT_ID": "03ff567220e2431795e42279271b4808",
+    "CONTAINER_PARTIAL_ORDINAL": "2",
+    "CONTAINER_ID_FULL": "fd973ef56c295e4cbfcee89144320326d4185ab5ddffbf4f8bd3cbb08b77f441",
+    "__CURSOR": "s=52d6bbae8b5445f7a4155820202b5da6;i=7822da;b=03ff567220e2431795e42279271b4808;m=42aa4aa69;t=620589458c910;x=6ded1baa6a60f040",
+    "CONTAINER_PARTIAL_ID": "0c4de2f5604ca894fe3896bbc0ecf9477ffbdea5967e53f6223fdeb68364f80c",
+    "_SYSTEMD_SLICE": "system.slice",
+    "PRIORITY": "6",
+    "_SOURCE_REALTIME_TIMESTAMP": "1724414678319497",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_NAME": "amovabi_services.devicetracking_service[0]",
+    "COM_HASHICORP_NOMAD_JOB_ID": "amovabi_services",
+    "__REALTIME_TIMESTAMP": "1724414678321424",
+    "COM_HASHICORP_NOMAD_NODE_NAME": "worker-01",
+    "_UID": "0",
+    "IMAGE_NAME": "registry.cloud.private/amovabi/device-tracking-service:2.0.0-CR23",
+    "COM_HASHICORP_NOMAD_TASK_GROUP_NAME": "devicetracking_service",
+    "__MONOTONIC_TIMESTAMP": "17895303785",
+    "MESSAGE": "'1c2375cc-9e7e-4efa-96f1-72c97e65de57'::uuid), ('2024-06-30 16:23:49.389+00'), ('2024-06-30 16:23:46.975+00'), ('2024-06-30 16:23:46.975+00'), ('2024-06-30 16:23:48.299+00'), ('2024-06-30 16:23:48.299+00'), ('CLC227'), (NULL), ('TP227'), ('CDT227'), (NULL), (NULL), ('AUTO'), ('AUTO'), ('OK'), ('OK'), ('AUTO'), ('AUTO'), ('1.324'::double precision), ('0.0'::double precision), ('1.324'::double precision), ('NOT_SET'), ('NOT_SET'), ('0.0,0.0,8500.0'), ('0.0,0.0,2270.0'), ('-1,-1,-1'), ('-1,-1,-1'), ('TRUE'::boolean), ('FALSE'::boolean), ('FALSE'::boolean), ('TRUE'::boolean), ('224052528\\u0000'), (NULL), ('0'::int8), ('0'::int8), ('0'::int8), ('{\\\"moveDirection\\\":\\\"ETL_INPUT->ETL\\\",\\\"PICK_FROM\\\":\\\"ETL_INPUT\\\",\\\"PLACE_PLACE_TO\\\":\\\"ETL\\\"}'), ('{\\\"WEIGHT_CLASS\\\":\\\"7000\\\",\\\"WEIGHT_KG\\\":\\\"7447.0\\\"}')\\n) was aborted: ERROR: invalid byte sequence for encoding \\\"UTF8\\\": 0x00\\n  Where: unnamed portal parameter $32  Call getNextException to see other errors in the batch.\",\"type\":\"org.springframework.dao.DataIntegrityViolationException\"}}",
+    "COM_HASHICORP_NOMAD_NAMESPACE": "default",
+    "_HOSTNAME": "worker-01",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_PATTERN_KEY": "ecs",
+    "_PID": "1251",
+    "_CAP_EFFECTIVE": "1ffffffffff",
+    "_SELINUX_CONTEXT": "unconfined\n",
+    "COM_HASHICORP_NOMAD_JOB_NAME": "amovabi_services",
+    "COM_HASHICORP_NOMAD_ALLOC_ID": "3607011c-319e-9e2b-db2a-3ed3bc7f1f79",
+    "_EXE": "/usr/bin/dockerd",
+    "SYSLOG_TIMESTAMP": "2024-08-23T12:04:38.319435796Z",
+    "CONTAINER_ID": "fd973ef56c29",
+    "COM_GITHUB_LOGUNIFIER_APPLICATION_ENV": "dev"
+  }
+`
+	converter := JournaldDToEcsConverter{}
+
+	metaPart1 := converter.ConvertToMetaLog(&nats.Msg{
+		Subject: "test",
+		Header:  nil,
+		Data:    []byte(part1),
+		Sub:     nil,
+	})
+
+	embeddedJsonMessage := strings.ReplaceAll(testNatviceEcs, "\"", "\\\"")
+	noPart := []byte(strings.ReplaceAll(testJournaldEcs, "##MSG##", embeddedJsonMessage))
+	metaNoPart := converter.ConvertToMetaLog(&nats.Msg{
+		Subject: "test",
+		Header:  nil,
+		Data:    noPart,
+		Sub:     nil,
+	})
+	metaPart2 := converter.ConvertToMetaLog(&nats.Msg{
+		Subject: "test",
+		Header:  nil,
+		Data:    []byte(part2),
+		Sub:     nil,
+	})
+	if metaNoPart.MetaLog.HasProcessErrors() {
+		t.Errorf("Expect no Process error But got %s", metaNoPart.MetaLog.EcsLogEntry.ProcessError)
+	}
+
+	if !metaPart1.Skip {
+		t.Errorf("Expect skip value true. But got %v", metaPart1.Skip)
+	}
+	if reflect.ValueOf(metaPart2).IsZero() {
+		t.Errorf("Expect not nil value. But got %v", metaPart2)
+	}
+	if metaPart2.Skip {
+		t.Errorf("Expect skip value false. But got %v", metaPart2.Skip)
+	}
+
+	// metaPart1 +metaPart2 are not valid ECS
+	if !metaPart2.MetaLog.HasProcessErrors() {
+		t.Errorf("Expect no Process error But got %s", metaPart2.MetaLog.EcsLogEntry.ProcessError)
 	}
 }

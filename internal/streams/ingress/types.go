@@ -18,6 +18,7 @@ type MetaLogConverter interface {
 }
 
 type IngressMsgContext struct {
+	Skip    bool
 	NatsMsg *nats.Msg
 	MetaLog *model.MetaLog
 }
