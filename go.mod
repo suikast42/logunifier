@@ -1,6 +1,6 @@
 module github.com/suikast42/logunifier
 
-go 1.22
+go 1.23
 
 require (
 	github.com/alexliesenfeld/health v0.8.0
