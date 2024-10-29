@@ -1,15 +1,16 @@
 package lokishipper
 
 import (
+	"github.com/grafana/loki/pkg/push"
 	"github.com/grafana/loki/v3/pkg/logproto"
 	"github.com/nats-io/nats.go"
+	pmodel "github.com/prometheus/common/model"
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors"
 	"github.com/suikast42/logunifier/pkg/model"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
+	"os"
+	"os/signal"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -32,35 +33,51 @@ import (
 // Grafana loki model parsing https://github.com/grafana/loki/issues/114
 import (
 	"context"
-	"github.com/pkg/errors"
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
+
+	"github.com/grafana/loki-client-go/loki"
+	_ "github.com/grafana/loki/pkg/push"
+	_ "github.com/prometheus/common/model"
 )
 
 type LokiShipper struct {
 	//GRPC_GO_LOG_VERBOSITY_LEVEL=99
 	//GRPC_GO_LOG_SEVERITY_LEVEL=info
-	Logger                   zerolog.Logger
-	LokiAddresses            []string
-	grpcConnection           *grpc.ClientConn
-	client                   logproto.PusherClient
+	logger                   zerolog.Logger
+	lokiAddresses            []string
+	client                   *loki.Client
 	ctx                      context.Context
 	cancelFnc                context.CancelFunc
-	connected                bool
 	lokiReconnectionInterval time.Duration
 	natsRedeliverInterval    time.Duration
-	AckTimeout               time.Duration
+	ackTimeout               time.Duration
+	levelAdapters            map[pmodel.LabelValue]pmodel.LabelSet
 }
 
-func (loki *LokiShipper) Health(ctx context.Context) error {
-	if !loki.connected {
-		return errors.New("not connected yet")
+func NewLokiShipper(cfg *config.Config) *LokiShipper {
+	adapters := make(map[pmodel.LabelValue]pmodel.LabelSet)
+	_labels := make(pmodel.LabelSet)
+	levels := model.LogLevels()
+	for _, v := range levels {
+		adapters[pmodel.LabelValue(v.String())] = _labels.Merge(pmodel.LabelSet{"level": pmodel.LabelValue(v.String())})
 	}
+	return &LokiShipper{
+		logger:        config.Logger(),
+		lokiAddresses: cfg.LokiServers(),
+		ackTimeout:    time.Second * time.Duration(cfg.AckTimeoutS()),
+		levelAdapters: adapters,
+	}
+}
+func (l *LokiShipper) Health(ctx context.Context) error {
 	return nil
 }
 
 var lock = &sync.Mutex{}
 
-func (loki *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsgContext) {
+func (l *LokiShipper) LokiAddresses() []string {
+	return l.lokiAddresses
+}
+func (l *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsgContext) {
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -87,9 +104,9 @@ func (loki *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsg
 					logger.Error().Err(err).Msg("Lokishipper. Can't set message InProgress")
 					continue
 				}
-				go loki.Handle(receivedCtx.NatsMsg, receivedCtx.Ecs)
-			case <-time.After(loki.AckTimeout):
-				logger.Warn().Msgf("Lokishipper. Nothing received after %v ", loki.AckTimeout)
+				go l.Handle(receivedCtx.NatsMsg, receivedCtx.Ecs)
+			case <-time.After(l.ackTimeout):
+				logger.Warn().Msgf("Lokishipper. Nothing received after %v ", l.ackTimeout)
 				continue
 
 			}
@@ -98,15 +115,10 @@ func (loki *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsg
 
 }
 
-func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
-	if !loki.connected {
-		//loki.Logger.Debug().Msg("not connected to loki")
-		err := msg.NakWithDelay(loki.natsRedeliverInterval)
-		if err != nil {
-			loki.Logger.Error().Err(err).Msg("Can't nack message")
-		}
-		return
-	}
+func (l *LokiShipper) Logger() *zerolog.Logger {
+	return &l.logger
+}
+func (l *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 
 	labels := toLokiLabels(ecs)
 	// Loki does not support array fields.
@@ -124,121 +136,93 @@ func (loki *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 	}
 	marshal, marshalError := ecs.ToJson()
 	if marshalError != nil {
-		loki.Logger.Err(marshalError).Msgf("Can't marshal message %+v", ecs)
+		l.Logger().Err(marshalError).Msgf("Can't marshal message %+v", ecs)
 		err := msg.Term()
 		if err != nil {
-			loki.Logger.Error().Err(err).Msg("Can't terminate message")
+			l.Logger().Error().Err(err).Msg("Can't terminate message")
 		}
 		return
 	}
-	pushRequest := loki.buildPushRequest(ecs.Timestamp.AsTime(), labels, string(marshal))
-	pushResponse, pushErr := loki.client.Push(loki.ctx, pushRequest)
-	if pushErr != nil {
-		//"entry too far behind, the oldest acceptable timestamp is: " + m.cutoff.Format(time.RFC3339)
-		//if chunkenc.IsErrTooFarBehind(pushErr) {
-		if strings.Contains(strings.ToLower(pushErr.Error()), "entry too far behind") {
-			loki.Logger.Error().Err(pushErr).Msgf("Event lost. Can't push message to loki. Lost message: [%s]", marshal)
+	lokiSendError := l.LogWithMetadata(toLokiLevel(ecs), labels, ecs.Timestamp.AsTime(), string(marshal), structuredMetadata(ecs))
+	if lokiSendError != nil {
+		if strings.Contains(strings.ToLower(lokiSendError.Error()), "entry too far behind") {
+			l.Logger().Error().Err(lokiSendError).Msgf("Event lost. Can't push message to l. Lost message: [%s]", marshal)
 			err := msg.Term()
 			if err != nil {
-				loki.Logger.Error().Err(err).Msg("Can't terminate message")
+				l.Logger().Error().Err(err).Msg("Can't terminate message")
 			}
 		} else {
-			//loki.Logger.Error().Err(pushErr).Msgf("Can't push message to loki. %s", marshal)
-			err := msg.NakWithDelay(loki.natsRedeliverInterval)
+			//l.Logger().Error().Err(pushErr).Msgf("Can't push message to l. %s", marshal)
+			err := msg.NakWithDelay(l.natsRedeliverInterval)
 			if err != nil {
-				loki.Logger.Error().Err(err).Msg("Can't nack message")
+				l.Logger().Error().Err(err).Msg("Can't nack message")
 			}
 		}
-
 		return
 	}
+
 	err := msg.Ack()
 	if err != nil {
-		loki.Logger.Err(pushErr).Msgf("Can't ack message. Push response %s", pushResponse)
+		l.Logger().Err(lokiSendError).Msgf("Can't ack message. ")
 	}
 }
 
 var conSync sync.Mutex
 
-func (loki *LokiShipper) Connect() {
+func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmodel.LabelSet, t time.Time, message string, metadata push.LabelsAdapter) error {
+	lvlCtxLabels, ok := app.levelAdapters[level]
+	labels := pmodel.LabelSet{}
+	if ok {
+		labels = lvlCtxLabels.Merge(lokiLabels)
+	} else {
+		labels = lokiLabels
+	}
+	err := app.client.HandleWithMetadata(labels, t, message, metadata)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (l *LokiShipper) Connect() {
 	go func(conSync *sync.Mutex) {
 		conSync.Lock()
 
 		defer conSync.Unlock()
-		if loki.connected || loki.grpcConnection != nil {
-			return
-		}
-		cfg, _ := config.Instance()
-		loki.lokiReconnectionInterval = time.Second * 5
-		loki.natsRedeliverInterval = loki.lokiReconnectionInterval + time.Second*5
-		grpcConnection, err := grpc.Dial(cfg.LokiServers()[0], grpc.WithTransportCredentials(insecure.NewCredentials()))
+		// TODO: how to connect to a loki cluster ?
+		cfg, err := loki.NewDefaultConfig(l.LokiAddresses()[0] + "/loki/api/v1/push")
 		if err != nil {
-			loki.Logger.Error().Err(err).Msgf("Can't create connection to loki %s. Try in %v", loki.LokiAddresses, loki.lokiReconnectionInterval)
-			time.Sleep(loki.lokiReconnectionInterval)
-			go loki.Connect()
-			return
+			panic(err)
 		}
+		cfg.BackoffConfig.MaxRetries = 1
+		cfg.BackoffConfig.MinBackoff = 100 * time.Millisecond
+		cfg.BackoffConfig.MaxBackoff = 100 * time.Millisecond
+		client, err := loki.New(cfg)
+		l.client = client
+		if err != nil {
+			panic(err)
+		}
+		//defer client.Stop()
+		//
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+		//defer stop()
 
-		ctx, cancel := context.WithCancel(context.Background())
-		loki.ctx = ctx
-		loki.cancelFnc = cancel
-		loki.grpcConnection = grpcConnection
-		loki.client = logproto.NewPusherClient(grpcConnection)
-		go loki.watch()
+		l.cancelFnc = stop
+		l.ctx = ctx
 
 	}(&conSync)
 
 }
-func (loki *LokiShipper) watch() {
-	loki.Logger.Info().Msg("Loki watcher is started")
-	for {
-		select {
-		case <-loki.ctx.Done():
-			loki.Logger.Info().Msg("Loki watcher is stopped")
-			return
-		case <-time.After(loki.lokiReconnectionInterval):
-			state := loki.grpcConnection.GetState()
-			//loki.Logger.Debug().Msgf("Loki Watcher is running. State is %s", state)
-			switch state {
-			case connectivity.Ready:
-				if !loki.connected {
-					loki.Logger.Info().Msgf("Connected to Loki. State is %s", state)
-				}
-				loki.connected = true
-			case connectivity.TransientFailure, connectivity.Idle, connectivity.Connecting:
-				loki.Logger.Info().Msgf("Reconnecting to Loki. State is %s", state)
-				go func() {
-					// Disconnect will trigger a loki.ctx cancel
-					loki.DisConnect()
-					loki.Connect()
-				}()
-			case connectivity.Shutdown:
-				loki.Logger.Info().Msgf("Shutting down to . State is %s", state)
-				go func() {
-					// Disconnect will trigger a loki.ctx cancel
-					loki.DisConnect()
-				}()
-			}
 
-		}
-	}
+func (l *LokiShipper) DisConnect() {
+	l.cancelFnc()
+	l.client.Stop()
+	//conSync.Lock()
+	//defer conSync.Unlock()
+	//l.client.Stop()
 }
 
-func (loki *LokiShipper) DisConnect() {
-	conSync.Lock()
-	defer conSync.Unlock()
-	if loki.grpcConnection != nil {
-		loki.connected = false
-		loki.cancelFnc()
-		err := loki.grpcConnection.Close()
-		if err != nil {
-			loki.Logger.Error().Err(err).Msgf("Can't close connection to loki %s", loki.LokiAddresses)
-		}
-	}
-	loki.grpcConnection = nil
-}
-
-func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string, line string) *logproto.PushRequest {
+func (l *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string, line string) *logproto.PushRequest {
 	req := &logproto.PushRequest{}
 	_labels := lokiLabels.FromMap(labels)
 	req.Streams = append(req.Streams, logproto.Stream{
@@ -254,39 +238,45 @@ func (loki *LokiShipper) buildPushRequest(ts time.Time, labels map[string]string
 	return req
 }
 
+func structuredMetadata(ecs *model.EcsLogEntry) push.LabelsAdapter {
+	adapters := make([]push.LabelAdapter, 0)
+	if ecs.IsTraceIdSet() {
+		labelAdapter := push.LabelAdapter{Name: "traceID", Value: ecs.Trace.Trace.Id}
+		adapters = append(adapters, labelAdapter)
+	}
+	if ecs.IsSpanIdSet() {
+		labelAdapter := push.LabelAdapter{Name: "spanID", Value: ecs.Trace.Span.Id}
+		adapters = append(adapters, labelAdapter)
+	}
+	if ecs.IsSpanIdSet() {
+		labelAdapter := push.LabelAdapter{Name: "user", Value: ecs.User.Name}
+		adapters = append(adapters, labelAdapter)
+	}
+	return adapters
+}
+
 // toLokiLabels extract loki index labels from ecs log labels
 // ingress , host, org_name ,environment,service_stack, service_name, service_type,  service_type , service_namespace , log_level , pattern
-func toLokiLabels(ecs *model.EcsLogEntry) map[string]string {
-	labelsMap := make(map[string]string)
-	labelsMap["ingress"] = ecs.Log.Ingress
-	labelsMap["host"] = ecs.Host.Name
-	labelsMap["org_name"] = ecs.Organization.Name
-	labelsMap["environment"] = ecs.Environment.Name
-	labelsMap["service_stack"] = ecs.Service.Stack
-	labelsMap["service_name"] = ecs.Service.Name
-	labelsMap["service_type"] = ecs.Service.Type
-	labelsMap["service_namespace"] = ecs.Service.Namespace
-	labelsMap["log_logger"] = ecs.Log.Logger
-	labelsMap["level"] = ecs.Log.Level.String()
-	labelsMap["pattern_key"] = ecs.Log.PatternKey
-
-	if ecs.HasProcessError() {
-		labelsMap["process_error"] = "true"
-	} else {
-		labelsMap["process_error"] = "false"
-	}
-
-	if ecs.HasValidationError() {
-		labelsMap["validation_error"] = "true"
-	} else {
-		labelsMap["validation_error"] = "false"
-	}
-
-	if ecs.HasExceptionStackStrace() {
-		labelsMap["error_stack"] = "true"
-	} else {
-		labelsMap["error_stack"] = "false"
-	}
+func toLokiLabels(ecs *model.EcsLogEntry) pmodel.LabelSet {
+	labelsMap := make(pmodel.LabelSet)
+	labelsMap[pmodel.LabelName("ingress")] = pmodel.LabelValue(ecs.Log.Ingress)
+	labelsMap[pmodel.LabelName("host")] = pmodel.LabelValue(ecs.Host.Name)
+	labelsMap[pmodel.LabelName("org_name")] = pmodel.LabelValue(ecs.Organization.Name)
+	labelsMap[pmodel.LabelName("environment")] = pmodel.LabelValue(ecs.Environment.Name)
+	labelsMap[pmodel.LabelName("service_stack")] = pmodel.LabelValue(ecs.Service.Stack)
+	labelsMap[pmodel.LabelName("service_name")] = pmodel.LabelValue(ecs.Service.Name)
+	labelsMap[pmodel.LabelName("service_type")] = pmodel.LabelValue(ecs.Service.Type)
+	labelsMap[pmodel.LabelName("service_namespace")] = pmodel.LabelValue(ecs.Service.Namespace)
+	labelsMap[pmodel.LabelName("log_logger")] = pmodel.LabelValue(ecs.Log.Logger)
+	labelsMap[pmodel.LabelName("level")] = pmodel.LabelValue(ecs.Log.Level.String())
+	labelsMap[pmodel.LabelName("pattern_key")] = pmodel.LabelValue(ecs.Log.PatternKey)
+	labelsMap[pmodel.LabelName("process_error")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasProcessError()))
+	labelsMap[pmodel.LabelName("validation_error")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasValidationError()))
+	labelsMap[pmodel.LabelName("error_stack")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasExceptionStackStrace()))
 
 	return labelsMap
+}
+
+func toLokiLevel(ecs *model.EcsLogEntry) pmodel.LabelValue {
+	return pmodel.LabelValue(ecs.Log.Level.Enum().String())
 }

@@ -152,11 +152,7 @@ func main() {
 	//	MsgHandler: bootstrap.IngressMsgHandler(processChannel, &dockerlogs.DockerToEcsConverter{}),
 	//}
 	// Egress stream Consumer configuration
-	lokiShipper := &lokishipper.LokiShipper{
-		Logger:        config.Logger(),
-		LokiAddresses: cfg.LokiServers(),
-		AckTimeout:    time.Second * time.Duration(cfg.AckTimeoutS()),
-	}
+	lokiShipper := lokishipper.NewLokiShipper(cfg)
 	lokiShipper.Connect()
 	lokiShipper.StartReceive(egressChannelLoki)
 

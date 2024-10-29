@@ -29,6 +29,13 @@ var logLevelToStringMap = map[LogLevel]string{
 	LogLevel_not_set: "not_set",
 }
 
+func LogLevels() []LogLevel {
+	result := []LogLevel{}
+	for k, _ := range logLevelToStringMap {
+		result = append(result, k)
+	}
+	return result
+}
 func StringToLogPatternKey(pattern string) MetaLog_PatternKey {
 	lowercased := strings.ToLower(pattern)
 	key, found := logPatternStringMap[lowercased]
