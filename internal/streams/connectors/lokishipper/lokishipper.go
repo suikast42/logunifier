@@ -248,7 +248,7 @@ func structuredMetadata(ecs *model.EcsLogEntry) push.LabelsAdapter {
 		labelAdapter := push.LabelAdapter{Name: "spanID", Value: ecs.Trace.Span.Id}
 		adapters = append(adapters, labelAdapter)
 	}
-	if ecs.IsSpanIdSet() {
+	if ecs.IsUserSet() {
 		labelAdapter := push.LabelAdapter{Name: "user", Value: ecs.User.Name}
 		adapters = append(adapters, labelAdapter)
 	}

@@ -118,7 +118,9 @@ func (ecs *EcsLogEntry) IsTraceIdSet() bool {
 func (ecs *EcsLogEntry) IsSpanIdSet() bool {
 	return ecs.Trace != nil && ecs.Trace.Span != nil && len(ecs.Trace.Span.Id) > 0
 }
-
+func (ecs *EcsLogEntry) IsUserSet() bool {
+	return ecs.User != nil
+}
 func (ecs *EcsLogEntry) SetHostName(hostName string) {
 	if ecs.Host == nil {
 		ecs.Host = &Host{}
