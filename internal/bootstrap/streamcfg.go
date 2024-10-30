@@ -43,12 +43,13 @@ func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, stream
 		FilterSubject: subjectFilter,
 		MaxAckPending: 1024,
 		// That must match with the name for queue subscription
-		DeliverGroup:   name,
-		DeliverSubject: consumerGroup,
-		Replicas:       streamConfig.Replicas,
-		MemoryStorage:  false,
-		FlowControl:    true,
-		Heartbeat:      time.Second * time.Duration(3),
+		DeliverGroup:      name,
+		DeliverSubject:    consumerGroup,
+		Replicas:          streamConfig.Replicas,
+		MemoryStorage:     false,
+		FlowControl:       true,
+		InactiveThreshold: time.Hour * 24,
+		Heartbeat:         time.Second * time.Duration(3),
 	}
 }
 

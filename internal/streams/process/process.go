@@ -78,7 +78,7 @@ func (eg *LogProcessor) startReceiving() {
 		case receivedCtx, ok := <-eg.processChannel:
 			if !ok {
 				instance = nil
-				eg.logger.Error().Msgf("Nothing received %v %v", receivedCtx, ok)
+				eg.logger.Error().Msgf("Processor Nothing received %v %v", receivedCtx, ok)
 				return
 			}
 			err := receivedCtx.NatsMsg.InProgress()
@@ -134,7 +134,7 @@ func (eg *LogProcessor) startReceiving() {
 			}(async, receivedCtx, time.Second*2)
 
 		case <-time.After(eg.ackTimeout):
-			eg.logger.Warn().Msgf("Nothing received after %v ", eg.ackTimeout)
+			eg.logger.Warn().Msgf("Processor Nothing received after %v ", eg.ackTimeout)
 			continue
 		}
 	}

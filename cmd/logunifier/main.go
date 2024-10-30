@@ -102,8 +102,7 @@ func main() {
 		ingressConsumerJournalD  = "ConsumerIngressJournalD"
 		ingressConsumerNativeEcs = "ConsumerIngressEcsNative"
 		//ingressConsumerDocker   = "ConsumerIngressDocker"
-		egressLokiShipper  = "ConsumerEgressLokiShipper"
-		egressLokiShipper2 = "ConsumerEgressLokiShipper2"
+		egressLokiShipper = "ConsumerEgressLokiShipper"
 	)
 
 	// Ingress stream Consumer configuration
@@ -166,24 +165,26 @@ func main() {
 		StreamName: streamNameLogStreamEgress,
 		MsgHandler: bootstrap.EgressMessageHandler(egressChannelLoki),
 	}
+	var dialer *bootstrap.NatsDialer
+	go func() {
+		dialer, err = bootstrap.New(streamDefinitions, streamConsumerDefinitions)
+		if err != nil {
+			logger.Error().Err(err).Msg("Instantiation error during bootstrap")
+			os.Exit(1)
+		}
+		//Connect to nats server
+		err = dialer.Connect()
+		if err != nil {
+			logger.Error().Err(err).Stack().Msg("Can't connect to nats")
+			os.Exit(1)
+		}
+		err = health.Start("/health", 3000, dialer, lokiShipper)
+		if err != nil {
+			logger.Error().Err(err).Stack().Msg("Can't start health check endpoint")
+			os.Exit(1)
+		}
+	}()
 
-	dialer, err := bootstrap.New(streamDefinitions, streamConsumerDefinitions)
-	if err != nil {
-		logger.Error().Err(err).Msg("Instantiation error during bootstrap")
-		os.Exit(1)
-	}
-	//Connect to nats server
-	err = dialer.Connect()
-	if err != nil {
-		logger.Error().Err(err).Stack().Msg("Can't connect to nats")
-		os.Exit(1)
-	}
-
-	err = health.Start("/health", 3000, dialer, lokiShipper)
-	if err != nil {
-		logger.Error().Err(err).Stack().Msg("Can't start health check endpoint")
-		os.Exit(1)
-	}
 	//processChannel := make(chan *ingress.IngressMsgContext, 4096)
 
 	//TODO find a nicer way to define the JetStream subscriptions
@@ -238,6 +239,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 	// Handle interrupt and send ping to nats
+
 	for {
 		select {
 		case exit := <-c:
