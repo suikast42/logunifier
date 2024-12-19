@@ -160,6 +160,21 @@ func (ecs *EcsLogEntry) SetLogLevel(level LogLevel) {
 
 }
 
+func (ecs *EcsLogEntry) SetOriginFile(file string, line string) {
+	if ecs.Log == nil {
+		ecs.Log = &Log{}
+	}
+	if ecs.Log.Origin == nil {
+		ecs.Log.Origin = &Log_Origin{}
+	}
+	if ecs.Log.Origin.File == nil {
+		ecs.Log.Origin.File = &Log_Origin_File{
+			Name: file,
+			Line: line,
+		}
+	}
+}
+
 func (ecs *EcsLogEntry) SetMarkerEmojis() {
 	if ecs.HasTags() {
 		ecs.Log.LevelEmoji = ecs.Log.LevelEmoji + " " + EmojiMarker()

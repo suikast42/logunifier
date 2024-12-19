@@ -410,6 +410,35 @@ func TestLogunifier(t *testing.T) {
 
 }
 
+func TestTraefikLogLogFmt(t *testing.T) {
+	log := TestMetaLogFromJournalDFromConst([]byte(testTraefikLogLogfmt), t)
+	if log.HasProcessErrors() {
+		t.Errorf("Metalog with process errors %s", log.EcsLogEntry.ProcessError.Reason)
+		t.Errorf("Raw data [%s]", log.EcsLogEntry.ProcessError.RawData)
+	}
+	parsedEcs := patternfactory.Parse(log)
+
+	if parsedEcs.HasProcessError() {
+		t.Error("Expect no process error bu got " + parsedEcs.ProcessError.Reason)
+	}
+
+	if log.PatternKey != model.MetaLog_Traefik {
+		t.Errorf("Expected pattern [%s] but got [%s]", model.MetaLog_Traefik, log.PatternKey)
+	}
+	if parsedEcs.Log == nil {
+		t.Error("Expect message but was nil")
+	}
+
+	if parsedEcs.Log.Origin == nil {
+		t.Error("Expect origin but was nil")
+	}
+
+	if parsedEcs.Log.Level != model.LogLevel_debug {
+		t.Errorf("Expect level debug but got %s", parsedEcs.Log.Level)
+	}
+
+}
+
 func TestEcsOverJournald(t *testing.T) {
 	log := TestMetaLogFromJournalDFromConst([]byte(testJournaldEcs), t)
 
@@ -479,8 +508,8 @@ func TestEcsOverJournald(t *testing.T) {
 		t.Errorf("Expected Host metadata is nil")
 	}
 
-	if parsedEcs.Host != nil && parsedEcs.Host.Name != "WAP130259" {
-		t.Errorf("Expected Host name is WAP130259 but was %s", parsedEcs.Host.Name)
+	if parsedEcs.Host != nil && parsedEcs.Host.Name != "worker-01" {
+		t.Errorf("Expected Host name is worker-01 but was %s", parsedEcs.Host.Name)
 	}
 
 	if parsedEcs.Host != nil && parsedEcs.Host.Id != "ceacb99587e34bcc840bc7a7cc0d4453" {

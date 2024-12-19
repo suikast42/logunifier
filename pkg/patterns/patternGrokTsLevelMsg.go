@@ -67,8 +67,26 @@ func (g *GrokPatternTsLevelMsg) logInfo() GrokPatternExtractor {
 			delete(g._extractedFields, string(utils.PatternMatchKeyLevel))
 		}()
 		g._metaLog.EcsLogEntry.SetLogLevel(model.StringToLogLevel(level))
+
+	}
+	origin, originFound := g._extractedFields[string(utils.PatternMatchKeyOrigin)]
+	line, lineFound := g._extractedFields[string(utils.PatternMatchKeyOriginLine)]
+	if originFound {
+		defer func() {
+			delete(g._extractedFields, string(utils.PatternMatchKeyOrigin))
+		}()
+
 	}
 
+	if lineFound {
+		defer func() {
+			delete(g._extractedFields, string(utils.PatternMatchKeyOriginLine))
+		}()
+	}
+
+	if originFound && lineFound {
+		g._metaLog.EcsLogEntry.SetOriginFile(origin, line)
+	}
 	return g._this
 
 }

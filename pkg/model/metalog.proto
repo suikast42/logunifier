@@ -26,6 +26,8 @@ message MetaLog {
     Envoy = 5;
     // Common log format
     Clf = 6;
+    // Pattern of treafik logs
+    Traefik = 7;
   }
 
   // a PatternKey for parsing the log content
@@ -35,6 +37,6 @@ message MetaLog {
   // The log message
   string  rawMessage = 2;
 
-  EcsLogEntry ecsLogEntry =3;
+  EcsLogEntry ecsLogEntry = 3;
 
 }

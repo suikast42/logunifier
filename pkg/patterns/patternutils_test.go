@@ -276,6 +276,19 @@ func TestPatterns(t *testing.T) {
 				utils.PatternMatchTimeStamp: "01/Apr/2023:08:33:52 +0000",
 			},
 		},
+		{
+			//Traefik log format
+			pos:        12,
+			patternKey: model.MetaLog_Traefik,
+			data:       `2024-12-19T18:22:09Z DBG github.com/traefik/traefik/v3/pkg/provider/consulcatalog/consul_catalog.go:287 > Filtering disabled item providerName=consulcatalog serviceName=keycloak-postgres`,
+			want: map[utils.PatterMatch]string{
+				utils.PatternMatchTimeStamp:     "2024-12-19T18:22:09Z",
+				utils.PatternMatchKeyLevel:      "DBG",
+				utils.PatternMatchKeyMessage:    "Filtering disabled item providerName=consulcatalog serviceName=keycloak-postgres",
+				utils.PatternMatchKeyOrigin:     "github.com/traefik/traefik/v3/pkg/provider/consulcatalog/consul_catalog.go",
+				utils.PatternMatchKeyOriginLine: "287",
+			},
+		},
 	}
 
 	for _, test := range tests {

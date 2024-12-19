@@ -12,17 +12,21 @@ import (
 type PatterMatch string
 
 const (
-	PatternMatchTimeStamp  PatterMatch = "timestamp"
-	PatternMatchKeyLevel   PatterMatch = "level"
-	PatternMatchKeyMessage PatterMatch = "message"
-	PatternMatchKeyThread  PatterMatch = "thread"
+	PatternMatchTimeStamp     PatterMatch = "timestamp"
+	PatternMatchKeyLevel      PatterMatch = "level"
+	PatternMatchKeyMessage    PatterMatch = "message"
+	PatternMatchKeyThread     PatterMatch = "thread"
+	PatternMatchKeyOrigin     PatterMatch = "origin"
+	PatternMatchKeyOriginLine PatterMatch = "originline"
 )
 
 var patternMatchKeys = map[string]PatterMatch{
-	"timestamp": PatternMatchTimeStamp,
-	"level":     PatternMatchKeyLevel,
-	"message":   PatternMatchKeyMessage,
-	"thread":    PatternMatchKeyThread,
+	"timestamp":  PatternMatchTimeStamp,
+	"level":      PatternMatchKeyLevel,
+	"message":    PatternMatchKeyMessage,
+	"thread":     PatternMatchKeyThread,
+	"origin":     PatternMatchKeyOrigin,
+	"originline": PatternMatchKeyOriginLine,
 }
 
 const (
@@ -49,6 +53,7 @@ var CustomPatterns = map[string]string{
 	model.MetaLog_Envoy.String():      `[",',\[]?%{GENERIC_TS}[",',\]]?[",',\[]?%{NUMBER:thread}[",',\]]?[",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]?%{MULTILINE:message}`,
 	model.MetaLog_TsLevelMsg.String(): `[",',\[]?%{GENERIC_TS}[",',\]]? [",',\[]?%{LOGLEVEL_KEYWORD:level}[",',\]]? %{MULTILINE:message}`,
 	model.MetaLog_Clf.String():        `%{IPORHOST:client_ip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:http_version}\" %{NUMBER:status_code} %{NUMBER:bytes} \"%{DATA:referrer}\" \"%{DATA:user_agent}\"`,
+	model.MetaLog_Traefik.String():    `%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL_KEYWORD:level} %{DATA:origin}:%{NUMBER:originline} > %{GREEDYDATA:message}`,
 }
 
 func ParseAndGetRegisteredKey(compiler *grok.CompiledGrok, log string) (map[PatterMatch]string, error) {

@@ -51,6 +51,7 @@ var logPatternStringMap = map[string]MetaLog_PatternKey{
 	"ecs":        MetaLog_Ecs,
 	"tslevelmsg": MetaLog_TsLevelMsg,
 	"envoy":      MetaLog_Envoy,
+	"traefik":    MetaLog_Traefik,
 }
 
 var stringToLogLevelMap = map[string]LogLevel{
