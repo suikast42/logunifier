@@ -1,15 +1,14 @@
 module github.com/suikast42/logunifier
 
-go 1.23
+go 1.23.6
 
 require (
 	github.com/alexliesenfeld/health v0.8.0
-	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/loki-client-go v0.0.0-20240913122146-e119d400c3a5
 	github.com/grafana/loki/pkg/push v0.0.0-20241219121315-04994ca8218e
 	github.com/grafana/loki/v3 v3.3.2
-	github.com/nats-io/nats.go v1.38.0
+	github.com/nats-io/nats.go v1.39.0
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/prometheus/common v0.61.0
 	github.com/prometheus/prometheus v0.53.2-0.20240726125539-d4f098ae80fb
@@ -17,7 +16,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/xyproto/jpath v0.6.1
 	go.uber.org/automaxprocs v1.6.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
