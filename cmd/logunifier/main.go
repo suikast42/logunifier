@@ -10,7 +10,6 @@ import (
 	"github.com/suikast42/logunifier/internal/streams/ingress"
 	"github.com/suikast42/logunifier/internal/streams/ingress/ecs"
 	"github.com/suikast42/logunifier/internal/streams/ingress/journald"
-	"github.com/suikast42/logunifier/internal/streams/ingress/testingress"
 	"github.com/suikast42/logunifier/internal/streams/process"
 	internalPatterns "github.com/suikast42/logunifier/pkg/patterns"
 	// https://levelup.gitconnected.com/know-gomaxprocs-before-deploying-your-go-app-to-kubernetes-7a458fb63af1
@@ -55,14 +54,6 @@ func main() {
 		}
 	}(logger)
 
-	logger.Info().Msgf("Starting with config: %s", cfg.String())
-
-	err = process.Start(processChannel, cfg.EgressSubjectEcs())
-	if err != nil {
-		logger.Error().Err(err).Stack().Msg("Can't start process channel")
-		os.Exit(1)
-	}
-
 	//Initialize pattern factory
 	_, err = internalPatterns.Initialize()
 	if err != nil {
@@ -76,20 +67,20 @@ func main() {
 		streamNameLogStreamEgress  = "LogStreamEgress"
 	)
 
-	streamDefinitions := make(map[string]bootstrap.NatsStreamConfiguration)
+	streamDefinitions := make(map[string]*bootstrap.NatsStreamConfiguration)
 
-	streamDefinitions[streamNameLogStreamIngress] = bootstrap.NatsStreamConfiguration{
+	streamDefinitions[streamNameLogStreamIngress] = &bootstrap.NatsStreamConfiguration{
 		StreamConfiguration: bootstrap.StreamConfig(streamNameLogStreamIngress,
 			"Ingress stream for unify and enrich logs from various formats to ecs",
 			[]string{
 				cfg.IngressNatsJournald(),
-				cfg.IngresNatsTest(),
+				//cfg.IngresNatsTest(),
 				cfg.IngressNatsNativeEcs(),
 				//cfg.IngressNatsDocker(),
 			}),
 	}
 
-	streamDefinitions[streamNameLogStreamEgress] = bootstrap.NatsStreamConfiguration{
+	streamDefinitions[streamNameLogStreamEgress] = &bootstrap.NatsStreamConfiguration{
 		StreamConfiguration: bootstrap.StreamConfig(streamNameLogStreamEgress,
 			"Egress stream that contains ecs logs in json format for ship in various sinks",
 			[]string{
@@ -106,19 +97,19 @@ func main() {
 	)
 
 	// Ingress stream Consumer configuration
-	streamConsumerDefinitions := make(map[string]bootstrap.NatsConsumerConfiguration)
+	streamConsumerDefinitions := make(map[string]*bootstrap.NatsConsumerConfiguration)
 
-	streamConsumerDefinitions[ingressConsumerTest] = bootstrap.NatsConsumerConfiguration{
-		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
-			ingressConsumerTest,
-			ingressConsumerTest+"_Group",
-			streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
-			cfg.IngresNatsTest(),
-		),
-		StreamName: streamNameLogStreamIngress,
-		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &testingress.TestEcsConverter{}),
-	}
-	streamConsumerDefinitions[ingressConsumerJournalD] = bootstrap.NatsConsumerConfiguration{
+	//streamConsumerDefinitions[ingressConsumerTest] = &bootstrap.NatsConsumerConfiguration{
+	//	ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+	//		ingressConsumerTest,
+	//		ingressConsumerTest+"_Group",
+	//		streamDefinitions[streamNameLogStreamIngress].StreamConfiguration,
+	//		cfg.IngresNatsTest(),
+	//	),
+	//	StreamName: streamNameLogStreamIngress,
+	//	MsgHandler: bootstrap.IngressMsgHandler(processChannel, &testingress.TestEcsConverter{}),
+	//}
+	streamConsumerDefinitions[ingressConsumerJournalD] = &bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 			ingressConsumerJournalD,
 			ingressConsumerJournalD+"_Group",
@@ -129,7 +120,7 @@ func main() {
 		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
 	}
 
-	streamConsumerDefinitions[ingressConsumerNativeEcs] = bootstrap.NatsConsumerConfiguration{
+	streamConsumerDefinitions[ingressConsumerNativeEcs] = &bootstrap.NatsConsumerConfiguration{
 		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
 			ingressConsumerNativeEcs,
 			ingressConsumerNativeEcs+"_Group",
@@ -138,6 +129,17 @@ func main() {
 		),
 		StreamName: streamNameLogStreamIngress,
 		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &ecs.EcsWrapper{}),
+	}
+
+	streamConsumerDefinitions[egressLokiShipper] = &bootstrap.NatsConsumerConfiguration{
+		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
+			egressLokiShipper,
+			egressLokiShipper+"_Group",
+			streamDefinitions[streamNameLogStreamEgress].StreamConfiguration,
+			cfg.EgressSubjectEcs(),
+		),
+		StreamName: streamNameLogStreamEgress,
+		MsgHandler: bootstrap.EgressMessageHandler(egressChannelLoki),
 	}
 
 	//streamConsumerDefinitions[ingressConsumerDocker] = bootstrap.NatsConsumerConfiguration{
@@ -153,18 +155,17 @@ func main() {
 	// Egress stream Consumer configuration
 	lokiShipper := lokishipper.NewLokiShipper(cfg)
 	lokiShipper.Connect()
+	// Strat go channel receiver
 	lokiShipper.StartReceive(egressChannelLoki)
 
-	streamConsumerDefinitions[egressLokiShipper] = bootstrap.NatsConsumerConfiguration{
-		ConsumerConfiguration: bootstrap.QueueSubscribeConsumerGroupConfig(
-			egressLokiShipper,
-			egressLokiShipper+"_Group",
-			streamDefinitions[streamNameLogStreamEgress].StreamConfiguration,
-			cfg.EgressSubjectEcs(),
-		),
-		StreamName: streamNameLogStreamEgress,
-		MsgHandler: bootstrap.EgressMessageHandler(egressChannelLoki),
+	logger.Info().Msgf("Starting with config: %s", cfg.String())
+
+	err = process.Start(processChannel, cfg.EgressSubjectEcs(), streamConsumerDefinitions[egressLokiShipper])
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't start process channel")
+		os.Exit(1)
 	}
+
 	var dialer *bootstrap.NatsDialer
 	go func() {
 		dialer, err = bootstrap.New(streamDefinitions, streamConsumerDefinitions)
@@ -184,61 +185,6 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-
-	//processChannel := make(chan *ingress.IngressMsgContext, 4096)
-
-	//TODO find a nicer way to define the JetStream subscriptions
-	//subscriptionIngressJournald, err := journald.NewSubscription("IngressLogsJournaldStream", "IngressLogsJournaldProcessor", []string{instance.IngressNatsJournald()}, processChannel)
-	//if err != nil {
-	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngressNatsJournald())
-	//	os.Exit(1)
-	//}
-
-	//subscriptionIngressTest, err := testingress.NewSubscription("IngressLogsTestStream", "IngressLogsTestStreamProcessor", []string{instance.IngresNatsTest()}, processChannel)
-	//if err != nil {
-	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.IngresNatsTest())
-	//	os.Exit(1)
-	//}
-	//
-	//subscriptionEgressEcsToLoki, err := lokishipper.NewSubscription("EcsToLoki", "EcsToLokiProcessor", []string{instance.EgressSubjectEcs()})
-	//if err != nil {
-	//	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
-	//	os.Exit(1)
-	//}
-	//
-	////subscriptionEgressEcsToLoki2, err := lokishipper.NewSubscriptionLokiShipper2("EcsToLoki2", "EcsToLokiProcessor2", []string{instance.EgressSubjectEcs()})
-	////if err != nil {
-	////	logger.Error().Err(err).Msgf("Can't subscribe to %v", instance.EgressSubjectEcs())
-	////	os.Exit(1)
-	////}
-	//
-	//subscriptions := []bootstrap.NatsSubscription{
-	//	//subscriptionIngressJournald,
-	//	subscriptionIngressTest,
-	//	subscriptionEgressEcsToLoki,
-	//	//subscriptionEgressEcsToLoki2,
-	//}
-	//
-	//// Connect to nats server(s) should be a save background process
-	//// It handles reconnection logic itself
-	//// If an error occurs here then something is general wrong.
-	//// Exit here
-	//dialer := bootstrap.New(subscriptions)
-	//err = dialer.Connect()
-	//if err != nil {
-	//	logger.Error().Err(err).Stack().Msg("Can't connect to nats")
-	//	os.Exit(1)
-	//}
-	//for subscriptionEgressEcsToLoki.JCtx() == nil {
-	//	time.Sleep(time.Second * 1)
-	//}
-	//// Start egress channel
-	//err = process.Start(processChannel, instance.EgressSubjectEcs(), subscriptionEgressEcsToLoki.JCtx())
-	//if err != nil {
-	//	logger.Error().Err(err).Stack().Msg("Can't start egress stream")
-	//	os.Exit(1)
-	//}
-	// Handle interrupt and send ping to nats
 
 	for {
 		select {

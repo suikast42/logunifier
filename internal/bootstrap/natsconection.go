@@ -18,16 +18,16 @@ import _ "github.com/nats-io/nats.go"
 type NatsDialer struct {
 	ctx               context.Context
 	logger            *zerolog.Logger
-	nc                *nats.Conn
 	connectionTimeOut time.Duration
 	connectTimeWait   time.Duration
 	// Streams to create or update after the connection is done to nats server
 	// The key should be equal to the stream name
-	streamConfigurations map[string]NatsStreamConfiguration
+	streamConfigurations map[string]*NatsStreamConfiguration
 	// The key should be the same as the Consumer name
-	consumerConfigurations map[string]NatsConsumerConfiguration
+	consumerConfigurations map[string]*NatsConsumerConfiguration
 
 	subscriptions map[string]*nats.Subscription
+	connections   map[*NatsConsumerConfiguration]*nats.Conn
 }
 
 // NatsStreamConfiguration definition of a nats stream
@@ -53,7 +53,7 @@ type NatsConsumerConfiguration struct {
 var instance *NatsDialer
 var instanceLock sync.Mutex
 
-func New(streamConfigurations map[string]NatsStreamConfiguration, consumerConfigurations map[string]NatsConsumerConfiguration) (*NatsDialer, error) {
+func New(streamConfigurations map[string]*NatsStreamConfiguration, consumerConfigurations map[string]*NatsConsumerConfiguration) (*NatsDialer, error) {
 	instanceLock.Lock()
 	defer instanceLock.Unlock()
 	if instance == nil {
@@ -66,6 +66,7 @@ func New(streamConfigurations map[string]NatsStreamConfiguration, consumerConfig
 			streamConfigurations:   streamConfigurations,
 			consumerConfigurations: consumerConfigurations,
 			subscriptions:          make(map[string]*nats.Subscription),
+			connections:            make(map[*NatsConsumerConfiguration]*nats.Conn),
 		}
 		return instance, nil
 	}
@@ -83,19 +84,24 @@ func Intance() (*NatsDialer, error) {
 
 var connectionMtx sync.Mutex
 
-func (nd *NatsDialer) Connection() *nats.Conn {
-	return nd.nc
+func (nd *NatsDialer) AddConnection(consumerCfg *NatsConsumerConfiguration, conn *nats.Conn) {
+	nd.connections[consumerCfg] = conn
+}
+
+func (nd *NatsDialer) Connection(consumerCfg *NatsConsumerConfiguration) *nats.Conn {
+	return nd.connections[consumerCfg]
 }
 
 func (nd *NatsDialer) Health(ctx context.Context) error {
-	if nd.nc == nil {
-		return errors.New("connection is not set")
+	for _, conn := range nd.connections {
+		if conn != nil {
+			if !conn.IsConnected() {
+				return errors.New("not connected yet")
+			}
+			return nil
+		}
 	}
-
-	if !nd.nc.IsConnected() {
-		return errors.New("not connected yet")
-	}
-	return nil
+	return errors.New("connection is not set")
 }
 func (nd *NatsDialer) Connect() error {
 	connectionMtx.Lock()
@@ -108,110 +114,114 @@ func (nd *NatsDialer) Connect() error {
 	//	return nil
 	//}
 	defer connectionMtx.Unlock()
+	for _, definition := range nd.consumerConfigurations {
+		opts := []nats.Option{
+			nats.Name("logunifier"),
+			nats.Timeout(nd.connectionTimeOut),
+			nats.RetryOnFailedConnect(true),
+			nats.ConnectHandler(func(nc *nats.Conn) {
+				nd.doSubscribe(definition, nc)
+				nd.logger.Info().Msgf("Connected to  %s for consumer %s", nc.ConnectedUrl(), definition.ConsumerConfiguration.Name)
+			}),
+			nats.ClosedHandler(func(c *nats.Conn) {
+				closeByRequest := nd.ctx.Value("DisconnectRequest")
+				if closeByRequest != nil && closeByRequest.(bool) {
+					// This is the case if the connection loosed by the program itself
+					nd.logger.Info().Msgf("Connection closed to %s by a DisconnectRequest", c.ConnectedUrl())
+				} else {
+					// Fatal do a os.Exit(1)
+					nd.logger.Fatal().Msgf("Can't connect to %s connection lost", c.ConnectedUrl())
+					//
+					//// This is the case if the nats clients lost the connection
+					//nd.logger.Warn().Msgf("Connection to %s lost. Reconnect", c.ConnectedUrl())
+					//go func() {
+					//	connErr := nd.Connect()
+					//	if connErr != nil {
+					//		// Fatal do a os.Exit(1)
+					//		nd.logger.Fatal().Msgf("Can't connect to %s after connection lost")
+					//	}
+					//}()
+				}
 
-	opts := []nats.Option{
-		nats.Name("logunifier"),
-		nats.Timeout(nd.connectionTimeOut),
-		nats.RetryOnFailedConnect(true),
-		nats.ConnectHandler(func(nc *nats.Conn) {
-			nd.logger.Info().Msgf("Connected to  %s", nc.ConnectedUrl())
-			nd.nc = nc
-			nd.doSubscribe()
-		}),
-		nats.ClosedHandler(func(c *nats.Conn) {
-			closeByRequest := nd.ctx.Value("DisconnectRequest")
-			if closeByRequest != nil && closeByRequest.(bool) {
-				// This is the case if the connection loosed by the program itself
-				nd.logger.Info().Msgf("Connection closed to %s by a DisconnectRequest", c.ConnectedUrl())
-			} else {
-				// Fatal do a os.Exit(1)
-				nd.logger.Fatal().Msgf("Can't connect to %s connection lost", c.ConnectedUrl())
-				//
-				//// This is the case if the nats clients lost the connection
-				//nd.logger.Warn().Msgf("Connection to %s lost. Reconnect", c.ConnectedUrl())
-				//go func() {
-				//	connErr := nd.Connect()
-				//	if connErr != nil {
-				//		// Fatal do a os.Exit(1)
-				//		nd.logger.Fatal().Msgf("Can't connect to %s after connection lost")
-				//	}
-				//}()
-			}
+			}),
+			nats.ReconnectWait(nd.connectTimeWait),
+			nats.ReconnectHandler(func(nc *nats.Conn) {
+				nd.logger.Info().Msgf("Reconnected to %s", nc.ConnectedUrl())
+				nd.doSubscribe(definition, nc)
+			}),
+			nats.DisconnectErrHandler(func(c *nats.Conn, disconnectionError error) {
+				if disconnectionError != nil {
+					nd.logger.Error().Err(disconnectionError).Msg("Disconnection with error")
+				} else {
+					nd.logger.Info().Msgf("Disconnected from NATS %s", c.ConnectedUrl())
+				}
+			}),
 
-		}),
-		nats.ReconnectWait(nd.connectTimeWait),
-		nats.ReconnectHandler(func(nc *nats.Conn) {
-			nd.logger.Info().Msgf("Reconnected to %s", nc.ConnectedUrl())
-			nd.nc = nc
-			nd.doSubscribe()
-		}),
-		nats.DisconnectErrHandler(func(c *nats.Conn, disconnectionError error) {
-			if disconnectionError != nil {
-				nd.logger.Error().Err(disconnectionError).Msg("Disconnection with error")
-			} else {
-				nd.logger.Info().Msgf("Disconnected from NATS %s", c.ConnectedUrl())
-			}
-		}),
-
-		//This will kill the client if the connection is lost
-		//We will keep the connection
-		//nats.NoReconnect(),
+			//This will kill the client if the connection is lost
+			//We will keep the connection
+			//nats.NoReconnect(),
+		}
+		_, err = nats.Connect(cfg.NatsServers(), opts...)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = nats.Connect(cfg.NatsServers(), opts...)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (nd *NatsDialer) Disconnect() error {
-	if nd.nc == nil || !nd.nc.IsConnected() {
-		nd.logger.Info().Msg("Not connected to server nothing todo")
-		return nil
-	}
 	for key, subscription := range nd.subscriptions {
 		err := subscription.Drain()
 		if err != nil {
 			nd.logger.Error().Err(err).Msgf("Can't drain subscription %s", key)
 		}
 	}
-	// Disconnect and flush pending messages
-	if err := nd.nc.Drain(); err != nil {
-		nd.logger.Error().Err(err).Msg("Can't Drain")
-		//return err
+	for _, consumerCfg := range nd.consumerConfigurations {
+		nc := nd.connections[consumerCfg]
+		if nc == nil || !nc.IsConnected() {
+			nd.logger.Info().Msg("Not connected to server nothing todo")
+			return nil
+		}
+
+		// Disconnect and flush pending messages
+		if err := nc.Drain(); err != nil {
+			nd.logger.Error().Err(err).Msg("Can't Drain")
+			//return err
+		}
+		nd.ctx = context.WithValue(nd.ctx, "DisconnectRequest", true)
+		nc.Close()
+		delete(nd.connections, consumerCfg)
+		nd.logger.Info().Msg("Disconnected")
 	}
-	nd.ctx = context.WithValue(nd.ctx, "DisconnectRequest", true)
-	nd.nc.Close()
-	nd.logger.Info().Msg("Disconnected")
 	return nil
 }
-func (nd *NatsDialer) doSubscribe() {
-	streamDefinitionError := nd.upsertStreams()
+func (nd *NatsDialer) doSubscribe(definition *NatsConsumerConfiguration, nc *nats.Conn) {
+	streamDefinitionError := nd.upsertStreams(nc)
 	if streamDefinitionError != nil {
 		nd.logger.Error().Err(streamDefinitionError).Msgf("Can't create or update stream(s) for config %+v", nd.streamConfigurations)
 		os.Exit(1)
 	}
 
-	consumerDefinitionError := nd.upsertConsumers()
+	consumerDefinitionError := nd.upsertConsumers(nc)
 	if consumerDefinitionError != nil {
 		nd.logger.Error().Err(consumerDefinitionError).Msgf("Can't create or update consumer(s) for config %+v", nd.consumerConfigurations)
 		os.Exit(1)
 	}
 
-	subscriptionError := nd.startSubscriptions()
+	subscriptionError := nd.startSubscriptions(definition, nc)
 	if subscriptionError != nil {
 		nd.logger.Error().Err(subscriptionError).Msgf("Can't start subscription %+v", nd.consumerConfigurations)
 		os.Exit(1)
 	}
+
 }
 
-func (nd *NatsDialer) upsertStreams() error {
+func (nd *NatsDialer) upsertStreams(nc *nats.Conn) error {
 	logger := nd.logger
 	for key, definition := range nd.streamConfigurations {
 		logger.Info().Msgf("UpsertStream for definition key %s", key)
 
-		js, err := nd.nc.JetStream()
+		js, err := nc.JetStream()
 		if err != nil {
 			if err != nil {
 				logger.Error().Err(err).Msgf("Can't create JetStream for %+v", definition)
@@ -253,7 +263,7 @@ func (nd *NatsDialer) upsertStreams() error {
 	return nil
 }
 
-func (nd *NatsDialer) upsertConsumers() error {
+func (nd *NatsDialer) upsertConsumers(nc *nats.Conn) error {
 	logger := nd.logger
 	for key, definition := range nd.consumerConfigurations {
 		logger.Info().Msgf("UpsertConsumer for definition key %s", key)
@@ -261,7 +271,7 @@ func (nd *NatsDialer) upsertConsumers() error {
 		//if js == nil {
 		//	return errors.New(fmt.Sprintf("No JestStreamCtx found for consumer %s for stream  %s", definition.ConsumerConfiguration.Name, definition.StreamName))
 		//}
-		js, err := nd.nc.JetStream()
+		js, err := nc.JetStream()
 		if err != nil {
 			if err != nil {
 				logger.Error().Err(err).Msgf("Can't create JetStream for %+v", definition)
@@ -304,36 +314,39 @@ func (nd *NatsDialer) upsertConsumers() error {
 	return nil
 }
 
-func (nd *NatsDialer) startSubscriptions() error {
+func (nd *NatsDialer) startSubscriptions(definition *NatsConsumerConfiguration, nc *nats.Conn) error {
 	logger := nd.logger
 	//js := configuration.streamCtx
-	js, err := nd.nc.JetStream()
+
+	logger.Info().Msgf("Starting subscriptions")
+
+	logger.Info().Msgf("startSubscriptions for consumer %s in subject %s", definition.ConsumerConfiguration.Name, definition.ConsumerConfiguration.FilterSubject)
+	nd.connections[definition] = nc
+	js, err := nc.JetStream()
 	if err != nil {
 		if err != nil {
 			logger.Error().Err(err).Msg("startSubscriptions: Can't create JetStream for ")
 			return err
 		}
 	}
-	for key, definition := range nd.consumerConfigurations {
-		logger.Info().Msgf("Start subscription for consumer %s at stream %s and subject %s", key, definition.StreamName, definition.ConsumerConfiguration.FilterSubject)
-		_, exists := nd.streamConfigurations[definition.StreamName]
-		if !exists {
-			return errors.New(fmt.Sprintf("No stream configuration found for client configuration %+v ", definition))
-		}
-
-		subOpts := []nats.SubOpt{
-			nats.BindStream(definition.StreamName),
-			nats.Durable(definition.ConsumerConfiguration.Durable),
-			nats.ManualAck(), // Control the ack inProgress and nack self
-		}
-		sub, err := js.QueueSubscribe(definition.ConsumerConfiguration.FilterSubject, definition.ConsumerConfiguration.DeliverGroup, definition.MsgHandler, subOpts...)
-		if err != nil {
-			logger.Error().Err(err).Msgf("QueueSubscribe to %s failed", definition.ConsumerConfiguration.Name)
-			return err
-		}
-
-		nd.subscriptions[key] = sub
+	logger.Info().Msgf("Start subscription for consumer %s at stream %s and subject %s", definition.ConsumerConfiguration.Name, definition.ConsumerConfiguration.FilterSubject)
+	_, exists := nd.streamConfigurations[definition.StreamName]
+	if !exists {
+		return errors.New(fmt.Sprintf("No stream configuration found for client configuration %+v ", definition))
 	}
+
+	subOpts := []nats.SubOpt{
+		nats.BindStream(definition.StreamName),
+		nats.Durable(definition.ConsumerConfiguration.Durable),
+		nats.ManualAck(), // Control the ack inProgress and nack self
+	}
+	sub, err := js.QueueSubscribe(definition.ConsumerConfiguration.FilterSubject, definition.ConsumerConfiguration.DeliverGroup, definition.MsgHandler, subOpts...)
+	if err != nil {
+		logger.Error().Err(err).Msgf("QueueSubscribe to %s failed", definition.ConsumerConfiguration.Name)
+		return err
+	}
+
+	nd.subscriptions[definition.ConsumerConfiguration.Name] = sub
 
 	for streamInfo := range js.Streams() {
 		consumers := js.Consumers(streamInfo.Config.Name)
@@ -355,12 +368,15 @@ func (nd *NatsDialer) startSubscriptions() error {
 	return nil
 }
 func (nd *NatsDialer) SendPing() error {
-	if nd.nc == nil || !nd.nc.IsConnected() {
-		return errors.New("not connected to server")
+	for _, conn := range nd.connections {
+		if conn != nil {
+			err := conn.Publish("ping", []byte("ping"))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-	err := nd.nc.Publish("ping", []byte("ping"))
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return errors.New("not connected to server")
 }

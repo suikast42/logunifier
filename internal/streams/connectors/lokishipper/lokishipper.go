@@ -99,11 +99,11 @@ func (l *LokiShipper) StartReceive(processChannel <-chan connectors.EgressMsgCon
 					logger.Error().Msgf("Lokishipper. Nothing received %v %v", receivedCtx, ok)
 					return
 				}
-				err := receivedCtx.NatsMsg.InProgress()
-				if err != nil {
-					logger.Error().Err(err).Msg("Lokishipper. Can't set message InProgress")
-					continue
-				}
+				//err := receivedCtx.NatsMsg.InProgress()
+				//if err != nil {
+				//	logger.Error().Err(err).Msg("Lokishipper. Can't set message InProgress")
+				//	continue
+				//}
 				go l.Handle(receivedCtx.NatsMsg, receivedCtx.Ecs)
 			case <-time.After(l.ackTimeout):
 				logger.Warn().Msgf("Lokishipper. Nothing received after %v ", l.ackTimeout)
