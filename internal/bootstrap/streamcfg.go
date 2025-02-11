@@ -31,6 +31,11 @@ func StreamConfig(streamName string, description string, subjects []string) nats
 		Storage:    nats.FileStorage,
 	}
 }
+
+const (
+	QueueSubscribeConsumerGroupConfigMaxAckPending = 32 * 1024
+)
+
 func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, streamConfig nats.StreamConfig, subjectFilter string) nats.ConsumerConfig {
 	cfg, _ := config.Instance()
 	return nats.ConsumerConfig{
@@ -41,7 +46,7 @@ func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, stream
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Second * time.Duration(cfg.AckTimeoutS()),
 		FilterSubject: subjectFilter,
-		MaxAckPending: 1024,
+		MaxAckPending: QueueSubscribeConsumerGroupConfigMaxAckPending,
 		// That must match with the name for queue subscription
 		DeliverGroup:      name,
 		DeliverSubject:    consumerGroup,

@@ -25,7 +25,8 @@ func main() {
 
 	//fmt.Printf("GRPC_GO_LOG_VERBOSITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_VERBOSITY_LEVEL")) // 99
 	//fmt.Printf("GRPC_GO_LOG_SEVERITY_LEVEL: %s\n", os.Getenv("GRPC_GO_LOG_SEVERITY_LEVEL"))  // info
-	processChannel := make(chan ingress.IngressMsgContext, 4096)
+	processChannelEcs := make(chan ingress.IngressMsgContext, bootstrap.QueueSubscribeConsumerGroupConfigMaxAckPending)
+	processChannelJournalD := make(chan ingress.IngressMsgContext, bootstrap.QueueSubscribeConsumerGroupConfigMaxAckPending)
 	egressChannelLoki := make(chan connectors.EgressMsgContext, 4096)
 	//ctx, cancelFunc := context.WithCancel(context.Background())
 	// Listen on os exit signals
@@ -117,7 +118,7 @@ func main() {
 			cfg.IngressNatsJournald(),
 		),
 		StreamName: streamNameLogStreamIngress,
-		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &journald.JournaldDToEcsConverter{}),
+		MsgHandler: bootstrap.IngressMsgHandler(processChannelJournalD, &journald.JournaldDToEcsConverter{}),
 	}
 
 	streamConsumerDefinitions[ingressConsumerNativeEcs] = &bootstrap.NatsConsumerConfiguration{
@@ -128,7 +129,7 @@ func main() {
 			cfg.IngressNatsNativeEcs(),
 		),
 		StreamName: streamNameLogStreamIngress,
-		MsgHandler: bootstrap.IngressMsgHandler(processChannel, &ecs.EcsWrapper{}),
+		MsgHandler: bootstrap.IngressMsgHandler(processChannelEcs, &ecs.EcsWrapper{}),
 	}
 
 	streamConsumerDefinitions[egressLokiShipper] = &bootstrap.NatsConsumerConfiguration{
@@ -160,7 +161,13 @@ func main() {
 
 	logger.Info().Msgf("Starting with config: %s", cfg.String())
 
-	err = process.Start(processChannel, cfg.EgressSubjectEcs(), streamConsumerDefinitions[egressLokiShipper])
+	err = process.Start(processChannelEcs, "EcsLogChannel", cfg.EgressSubjectEcs(), bootstrap.QueueSubscribeConsumerGroupConfigMaxAckPending)
+	if err != nil {
+		logger.Error().Err(err).Stack().Msg("Can't start process channel")
+		os.Exit(1)
+	}
+
+	err = process.Start(processChannelJournalD, "JournalDLogChannel", cfg.EgressSubjectEcs(), bootstrap.QueueSubscribeConsumerGroupConfigMaxAckPending)
 	if err != nil {
 		logger.Error().Err(err).Stack().Msg("Can't start process channel")
 		os.Exit(1)
@@ -194,8 +201,11 @@ func main() {
 			if err != nil {
 				logger.Error().Err(err).Stack().Msg("Can't disconnect from nats")
 			}
-			if processChannel != nil {
-				close(processChannel)
+			if processChannelEcs != nil {
+				close(processChannelEcs)
+			}
+			if processChannelJournalD != nil {
+				close(processChannelJournalD)
 			}
 			if lokiShipper != nil {
 				lokiShipper.DisConnect()
