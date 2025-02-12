@@ -259,11 +259,13 @@ func TestPatterns(t *testing.T) {
 			//Logunifier log
 			pos:        11,
 			patternKey: model.MetaLog_TsLevelMsg,
-			data:       "2023-03-30T16:32:12.538785+02:00 INF Connected to Loki. State is READY",
+			//data:       "2023-03-30T16:32:12.538785+02:00 INF Connected to Loki. State is READY",
+			data: "2025-02-12T17:16:50.575363Z WRN Processor EcsLogChannel Nothing received after 10s",
+			//data: "2023-03-30T16:32:12 INF Processor EcsLogChannel Nothing received after 10s",
 			want: map[utils.PatterMatch]string{
-				utils.PatternMatchTimeStamp:  "2023-03-30T16:32:12.538785+02:00",
-				utils.PatternMatchKeyLevel:   "INF",
-				utils.PatternMatchKeyMessage: "Connected to Loki. State is READY",
+				utils.PatternMatchTimeStamp:  "2025-02-12T17:16:50.575363Z",
+				utils.PatternMatchKeyLevel:   "WRN",
+				utils.PatternMatchKeyMessage: "Processor EcsLogChannel Nothing received after 10s",
 			},
 		},
 
