@@ -81,7 +81,7 @@ func (eg *LogProcessor) startReceiving() {
 		case receivedCtx, ok := <-eg.processChannel:
 			if !ok {
 				instance = nil
-				eg.logger.Error().Msgf("Processor Nothing received %v %v", receivedCtx, ok)
+				eg.logger.Error().Msgf("Processor %s Nothing received %v %v", eg.channelName, receivedCtx, ok)
 				return
 			}
 			ecsLog := patternFactory.Parse(receivedCtx.MetaLog)
@@ -130,7 +130,7 @@ func (eg *LogProcessor) startReceiving() {
 				}
 			}
 		case <-time.After(eg.ackTimeout):
-			eg.logger.Warn().Msgf("Processor Nothing received after %v ", eg.ackTimeout)
+			eg.logger.Warn().Msgf("Processor %s Nothing received after %v", eg.channelName, eg.ackTimeout)
 			continue
 		}
 	}
