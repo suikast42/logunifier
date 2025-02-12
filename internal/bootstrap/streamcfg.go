@@ -31,6 +31,11 @@ func StreamConfig(streamName string, description string, subjects []string) nats
 		Storage:    nats.FileStorage,
 	}
 }
+
+const (
+	QueueSubscribeConsumerGroupConfigMaxAckPending = 32 * 1024
+)
+
 func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, streamConfig nats.StreamConfig, subjectFilter string) nats.ConsumerConfig {
 	cfg, _ := config.Instance()
 	return nats.ConsumerConfig{
@@ -41,7 +46,7 @@ func QueueSubscribeConsumerGroupConfig(name string, consumerGroup string, stream
 		AckPolicy:     nats.AckExplicitPolicy,
 		AckWait:       time.Second * time.Duration(cfg.AckTimeoutS()),
 		FilterSubject: subjectFilter,
-		MaxAckPending: 1024,
+		MaxAckPending: QueueSubscribeConsumerGroupConfigMaxAckPending,
 		// That must match with the name for queue subscription
 		DeliverGroup:      name,
 		DeliverSubject:    consumerGroup,
@@ -88,11 +93,11 @@ func EgressMessageHandler(processChannel chan<- connectors.EgressMsgContext) nat
 	}
 }
 
-func ProducerStream(ctx context.Context, conn *nats.Conn) (nats.JetStreamContext, error) {
-	return ProducerStreamWithErrorHandler(ctx, conn, nil)
+func ProducerStream(ctx context.Context, conn *nats.Conn, maxPending int) (nats.JetStreamContext, error) {
+	return ProducerStreamWithErrorHandler(ctx, conn, maxPending, nil)
 }
 
-func ProducerStreamWithErrorHandler(ctx context.Context, nc *nats.Conn, errorHandler nats.MsgErrHandler) (nats.JetStreamContext, error) {
+func ProducerStreamWithErrorHandler(ctx context.Context, nc *nats.Conn, maxPending int, errorHandler nats.MsgErrHandler) (nats.JetStreamContext, error) {
 	// Add at least a default publish error handler even if not defined
 	if errorHandler == nil {
 		errorHandler = func(stream nats.JetStream, msg *nats.Msg, _err error) {
@@ -103,7 +108,7 @@ func ProducerStreamWithErrorHandler(ctx context.Context, nc *nats.Conn, errorHan
 
 	opts := []nats.JSOpt{
 		nats.PublishAsyncErrHandler(errorHandler),
-		nats.PublishAsyncMaxPending(2 * 1024),
+		nats.PublishAsyncMaxPending(maxPending),
 		nats.Context(ctx),
 	}
 

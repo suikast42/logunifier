@@ -3,30 +3,7 @@ package config
 import (
 	"errors"
 	"github.com/nats-io/nats.go"
-	"time"
 )
-
-func (c Config) StreamConfig(streamName string, description string, subjects []string) nats.StreamConfig {
-	streamCfg := nats.StreamConfig{
-		Name:         streamName,
-		Description:  description,
-		Subjects:     subjects,
-		MaxBytes:     1024 * 1024 * 1_000, // 1GB ingress topic
-		MaxAge:       time.Hour * 24 * 30, // 30 days
-		MaxConsumers: 5,
-		Discard:      nats.DiscardOld,
-		Retention:    nats.InterestPolicy, //Messages are kept as long as there are Consumers on the stream
-		// (matching the message's subject if they are filtered consumers)
-		//for which the message has not yet been ACKed.
-		//Once all currently defined consumers have received explicit
-		//acknowledgement from a subscribing
-		//application for the message it is then removed from the stream.
-		NoAck:      false,
-		Duplicates: time.Minute * 5, // Duplicate time window
-		Storage:    nats.FileStorage,
-	}
-	return streamCfg
-}
 
 func (c Config) CreateOrUpdateStream(streamcfg *nats.StreamConfig, js nats.JetStreamContext) error {
 
