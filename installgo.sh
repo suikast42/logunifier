@@ -1,4 +1,4 @@
 #!/bin/bash
-Version=1.24.5
+Version=1.20.0
 go install golang.org/dl/go$Version@latest
 go$Version download
