@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/google/uuid"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func UUID() string {
@@ -58,7 +59,11 @@ var stringToLogLevelMap = map[string]LogLevel{
 	// Sync the chaanges here with the log level pattern LOGLEVEL_KEYWORD
 	"trace":                  LogLevel_trace,
 	"trc":                    LogLevel_trace,
+	"fine":                   LogLevel_trace,
+	"finer":                  LogLevel_trace,
+	"finest":                 LogLevel_trace,
 	"debug":                  LogLevel_debug,
+	"config":                 LogLevel_debug,
 	"dbg":                    LogLevel_debug,
 	"dbug":                   LogLevel_debug,
 	"info":                   LogLevel_info,
@@ -67,6 +72,7 @@ var stringToLogLevelMap = map[string]LogLevel{
 	"wrn":                    LogLevel_warn,
 	"warn":                   LogLevel_warn,
 	"warning":                LogLevel_warn,
+	"severe":                 LogLevel_error,
 	"error":                  LogLevel_error,
 	"err":                    LogLevel_error,
 	"alert":                  LogLevel_error,
