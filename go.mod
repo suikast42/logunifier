@@ -8,7 +8,7 @@ require (
 	github.com/grafana/loki-client-go v0.0.0-20240913122146-e119d400c3a5
 	// Use the go module version of used loki version. Not the latest
 	github.com/grafana/loki/pkg/push v0.0.0-20240924133635-758364c7775f
-	github.com/grafana/loki/v3 v3.5.3
+	github.com/grafana/loki/v3 v3.5.5
 	github.com/nats-io/nats.go v1.45.0
 	github.com/peterbourgon/ff/v3 v3.4.0
 	// Use the go module version of used loki version. Not the latest
@@ -19,7 +19,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/xyproto/jpath v0.6.1
 	go.uber.org/automaxprocs v1.6.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 )
 
 require (

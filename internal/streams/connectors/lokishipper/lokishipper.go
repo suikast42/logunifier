@@ -1,6 +1,14 @@
 package lokishipper
 
 import (
+	"os"
+	"os/signal"
+	"runtime/debug"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/grafana/loki/pkg/push"
 	"github.com/grafana/loki/v3/pkg/logproto"
 	"github.com/nats-io/nats.go"
@@ -9,13 +17,6 @@ import (
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors"
 	"github.com/suikast42/logunifier/pkg/model"
-	"os"
-	"os/signal"
-	"runtime/debug"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 // !!! The module issue is fixed with the V3 version of loki !!!
@@ -33,6 +34,7 @@ import (
 // Grafana loki model parsing https://github.com/grafana/loki/issues/114
 import (
 	"context"
+
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
 
 	"github.com/grafana/loki-client-go/loki"
@@ -273,7 +275,9 @@ func toLokiLabels(ecs *model.EcsLogEntry) pmodel.LabelSet {
 	labelsMap[pmodel.LabelName("process_error")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasProcessError()))
 	labelsMap[pmodel.LabelName("validation_error")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasValidationError()))
 	labelsMap[pmodel.LabelName("error_stack")] = pmodel.LabelValue(strconv.FormatBool(ecs.HasExceptionStackStrace()))
-
+	if ecs.HasErrorType() {
+		labelsMap[pmodel.LabelName("error_type")] = pmodel.LabelValue(ecs.Error.Type)
+	}
 	return labelsMap
 }
 

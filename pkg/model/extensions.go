@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/xyproto/jpath"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/xyproto/jpath"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (ecs *EcsLogEntry) HasProcessError() bool {
@@ -22,6 +23,10 @@ func (ecs *EcsLogEntry) HasValidationError() bool {
 
 func (ecs *EcsLogEntry) HasExceptionStackStrace() bool {
 	return ecs.Error != nil && len(ecs.Error.StackTrace) > 0
+}
+
+func (ecs *EcsLogEntry) HasErrorType() bool {
+	return ecs.Error != nil && len(ecs.Error.Type) > 0
 }
 
 func (ecs *EcsLogEntry) HasTags() bool {
