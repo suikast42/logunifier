@@ -9,7 +9,7 @@ require (
 	// Use the go module version of used loki version. Not the latest
 	github.com/grafana/loki/pkg/push v0.0.0-20240924133635-758364c7775f
 	github.com/grafana/loki/v3 v3.5.5
-	github.com/nats-io/nats.go v1.45.0
+	github.com/nats-io/nats.go v1.46.0
 	github.com/peterbourgon/ff/v3 v3.4.0
 	// Use the go module version of used loki version. Not the latest
 	github.com/prometheus/common v0.62.0
