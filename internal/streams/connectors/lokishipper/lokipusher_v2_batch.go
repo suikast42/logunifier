@@ -1,4 +1,5 @@
-//package lokishipper
+package lokishipper
+
 //
 //import (
 //	"bytes"
