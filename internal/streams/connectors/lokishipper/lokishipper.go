@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/grafana/dskit/backoff"
+	"github.com/grafana/dskit/flagext"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/grafana/loki/v3/pkg/logproto"
 	"github.com/nats-io/nats.go"
@@ -16,6 +18,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/suikast42/logunifier/internal/config"
 	"github.com/suikast42/logunifier/internal/streams/connectors"
+	"github.com/suikast42/logunifier/pkg/clients"
+	"github.com/suikast42/logunifier/pkg/clients/lokiclient"
+	lokiapi "github.com/suikast42/logunifier/pkg/clients/lokiclient/api"
 	"github.com/suikast42/logunifier/pkg/model"
 )
 
@@ -36,10 +41,6 @@ import (
 	"context"
 
 	lokiLabels "github.com/prometheus/prometheus/model/labels"
-
-	"github.com/grafana/loki-client-go/loki"
-	_ "github.com/grafana/loki/pkg/push"
-	_ "github.com/prometheus/common/model"
 )
 
 type LokiShipper struct {
@@ -47,7 +48,7 @@ type LokiShipper struct {
 	//GRPC_GO_LOG_SEVERITY_LEVEL=info
 	logger                   zerolog.Logger
 	lokiAddresses            []string
-	client                   *loki.Client
+	client                   lokiclient.Client
 	ctx                      context.Context
 	cancelFnc                context.CancelFunc
 	lokiReconnectionInterval time.Duration
@@ -145,33 +146,13 @@ func (l *LokiShipper) Handle(msg *nats.Msg, ecs *model.EcsLogEntry) {
 		}
 		return
 	}
-	lokiSendError := l.LogWithMetadata(toLokiLevel(ecs), labels, ecs.Timestamp.AsTime(), string(marshal), structuredMetadata(ecs))
-	if lokiSendError != nil {
-		if strings.Contains(strings.ToLower(lokiSendError.Error()), "entry too far behind") {
-			l.Logger().Error().Err(lokiSendError).Msgf("Event lost. Can't push message to l. Lost message: [%s]", marshal)
-			err := msg.Term()
-			if err != nil {
-				l.Logger().Error().Err(err).Msg("Can't terminate message")
-			}
-		} else {
-			//l.Logger().Error().Err(pushErr).Msgf("Can't push message to l. %s", marshal)
-			err := msg.NakWithDelay(l.natsRedeliverInterval)
-			if err != nil {
-				l.Logger().Error().Err(err).Msg("Can't nack message")
-			}
-		}
-		return
-	}
+	l.LogWithMetadata(toLokiLevel(ecs), labels, ecs.Timestamp.AsTime(), string(marshal), structuredMetadata(ecs), msg)
 
-	err := msg.Ack()
-	if err != nil {
-		l.Logger().Err(lokiSendError).Msgf("Can't ack message. ")
-	}
 }
 
 var conSync sync.Mutex
 
-func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmodel.LabelSet, t time.Time, message string, metadata push.LabelsAdapter) error {
+func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmodel.LabelSet, t time.Time, message string, metadata push.LabelsAdapter, msg *nats.Msg) {
 	lvlCtxLabels, ok := app.levelAdapters[level]
 	labels := pmodel.LabelSet{}
 	if ok {
@@ -179,11 +160,43 @@ func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmod
 	} else {
 		labels = lokiLabels
 	}
-	err := app.client.HandleWithMetadata(labels, t, message, metadata)
-	if err != nil {
-		return err
+
+	entry := lokiapi.Entry{
+		Labels: labels,
+		Entry: logproto.Entry{
+			Timestamp:          t,
+			Line:               message,
+			StructuredMetadata: metadata,
+		},
 	}
-	return nil
+
+	lokiapi.AddFeedbackNotifier(
+		&entry,
+		msg,
+		func(e *lokiapi.Entry, c *nats.Msg, status int) {
+			err := msg.Ack()
+			if err != nil {
+				app.Logger().Err(err).Msgf("Can't ack message. ")
+			}
+		},
+		func(e *lokiapi.Entry, c *nats.Msg, status int, lokiSendError error) {
+			if lokiSendError != nil && strings.Contains(strings.ToLower(lokiSendError.Error()), "entry too far behind") {
+				app.Logger().Error().Err(lokiSendError).Msgf("Event lost. Can't push message to l. Lost message: [%s]", message)
+				err := msg.Term()
+				if err != nil {
+					app.Logger().Error().Err(err).Msg("Can't terminate message")
+				}
+			} else {
+				//l.Logger().Error().Err(pushErr).Msgf("Can't push message to l. %s", marshal)
+				err := c.NakWithDelay(app.natsRedeliverInterval)
+				if err != nil {
+					app.Logger().Error().Err(err).Msg("Can't nack message")
+				}
+			}
+		},
+	)
+	app.client.Chan() <- entry
+
 }
 
 func (l *LokiShipper) Connect() {
@@ -192,18 +205,29 @@ func (l *LokiShipper) Connect() {
 
 		defer conSync.Unlock()
 		// TODO: how to connect to a loki cluster ?
-		cfg, err := loki.NewDefaultConfig(l.LokiAddresses()[0] + "/loki/api/v1/push")
+		var url = flagext.URLValue{}
+		urlErr := url.Set(l.LokiAddresses()[0] + "/loki/api/v1/push")
+		if urlErr != nil {
+			panic(urlErr)
+		}
+		cfg := lokiclient.Config{
+			URL:       url,
+			BatchWait: 1 * time.Second,
+			BatchSize: 32 * 1024 * 1024, // 32MB
+			//ExternalLabels: lokiflag.LabelSet{LabelSet: pmodel.LabelSet{"app": "robust-service"}},
+			BackoffConfig: backoff.Config{
+				MinBackoff: 100 * time.Millisecond,
+				MaxBackoff: 100 * time.Millisecond,
+				MaxRetries: 1, // High retry count handles longer reboots
+			},
+			Timeout: 10 * time.Second,
+		}
+
+		client, err := clients.NewLokiClient(cfg)
 		if err != nil {
 			panic(err)
 		}
-		cfg.BackoffConfig.MaxRetries = 1
-		cfg.BackoffConfig.MinBackoff = 100 * time.Millisecond
-		cfg.BackoffConfig.MaxBackoff = 100 * time.Millisecond
-		client, err := loki.New(cfg)
 		l.client = client
-		if err != nil {
-			panic(err)
-		}
 		//defer client.Stop()
 		//
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
