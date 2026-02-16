@@ -161,7 +161,7 @@ func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmod
 		labels = lokiLabels
 	}
 
-	entry := lokiapi.Entry{
+	entry := &lokiapi.Entry{
 		Labels: labels,
 		Entry: logproto.Entry{
 			Timestamp:          t,
@@ -171,7 +171,7 @@ func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmod
 	}
 
 	lokiapi.AddFeedbackNotifier(
-		&entry,
+		entry,
 		msg,
 		func(e *lokiapi.Entry, c *nats.Msg, status int) {
 			err := msg.Ack()
@@ -195,8 +195,8 @@ func (app *LokiShipper) LogWithMetadata(level pmodel.LabelValue, lokiLabels pmod
 			}
 		},
 	)
-	app.client.Chan() <- entry
-
+	//app.client.Chan() <- *entry
+	app.client.Send(entry)
 }
 
 func (l *LokiShipper) Connect() {

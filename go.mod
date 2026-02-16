@@ -1,6 +1,6 @@
 module github.com/suikast42/logunifier
 
-go 1.25.6
+go 1.26.0
 
 replace (
 	// Beginn Use the go module version of used loki version. Not the latest
@@ -14,9 +14,7 @@ replace (
 require (
 	github.com/alexliesenfeld/health v0.8.1
 	github.com/google/uuid v1.6.0
-	// Delete this dp and refactor loki shipment to lokishipperv2
-	// Commment the class out
-	github.com/grafana/loki/v3 v3.6.4
+	github.com/grafana/loki/v3 v3.6.5
 	github.com/nats-io/nats.go v1.48.0
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/zerolog v1.34.0

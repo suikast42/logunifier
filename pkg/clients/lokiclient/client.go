@@ -157,6 +157,7 @@ type Client interface {
 	// Stop goroutine sending batch of entries without retries.
 	StopNow()
 	Name() string
+	Send(entry *api.Entry)
 }
 
 // Client for pushing logs in snappy-compressed protos over HTTP.
@@ -530,4 +531,27 @@ func (c *client) processEntry(e api.Entry) (api.Entry, string) {
 
 func (c *client) Name() string {
 	return c.name
+}
+
+func (c *client) Send(entry *api.Entry) {
+	b := newBatch(c.maxStreams, *entry)
+	encode, _, err := b.encode()
+	if err != nil {
+		if entry.FeedbackNotifier.OnFailure != nil {
+			entry.FeedbackNotifier.OnFailure(entry, entry.FeedbackNotifier.SendCtx, -1, err)
+			return
+		}
+	}
+	status, err := c.send(c.ctx, c.cfg.TenantID, encode)
+	if err != nil {
+		if entry.FeedbackNotifier.OnFailure != nil {
+			entry.FeedbackNotifier.OnFailure(entry, entry.FeedbackNotifier.SendCtx, status, err)
+			return
+		}
+	}
+
+	if entry.FeedbackNotifier.OnSuccess != nil {
+		entry.FeedbackNotifier.OnSuccess(entry, entry.FeedbackNotifier.SendCtx, status)
+		return
+	}
 }
