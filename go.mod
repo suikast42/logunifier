@@ -1,6 +1,6 @@
 module github.com/suikast42/logunifier
 
-go 1.26.0
+go 1.26.1
 
 replace (
 	// Beginn Use the go module version of used loki version. Not the latest
